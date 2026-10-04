@@ -117,6 +117,7 @@ ul.plain li{margin:2px 0}
 .bars div{flex:1;background:var(--line);border-radius:2px 2px 0 0;position:relative;min-height:2px}
 .bars div.now{background:var(--accent)}
 .bars span{position:absolute;bottom:-16px;left:0;right:0;text-align:center;font-size:10px;color:var(--muted)}
+input.k{width:56px;padding:2px 5px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--fg);font:inherit}
 </style>
 
 <div class="app">
@@ -173,9 +174,13 @@ ul.plain li{margin:2px 0}
         <label>감기·독감 유행 <input type="range" id="pFlu" min="0" max="100" value="80"><b id="vFlu">80</b></label>
       </div>
       <div class="ctl" style="margin-top:6px">
-        <label><input type="checkbox" id="pEnt" checked> 기존 이비인후과 휴진(수·토)</label>
+        <label><input type="checkbox" id="pEnt" checked> 기존 이비인후과 휴진(수·토) ×<input class="k" type="number" id="kEx" min="0.5" max="3" step="0.1" value="1"></label>
         <label><input type="checkbox" id="pShort" checked> 도매 입고 부족</label>
         <label><input type="checkbox" id="pCash" checked> 신규약국 현금 제약</label>
+      </div>
+      <div class="ctl" style="margin-top:6px">
+        <label><input type="checkbox" id="pWx"> 날씨 나쁨(비·눈) ×<input class="k" type="number" id="kWx" min="0.3" max="1.5" step="0.05" value="0.85"></label>
+        <span class="mut" style="font-size:11px">두 배율 모두 근거 없는 임시 가정(방향만 E025·R08이 뒷받침)</span>
       </div>
       <div class="ctl" style="margin-top:8px">
         <button class="btn" id="bPreset1">슬라이스 1 시나리오</button>
@@ -279,7 +284,9 @@ function simulate(P){
   const info=d=>{const dt=new Date(base);dt.setDate(base.getDate()+d);const wd=dt.getDay();
     const closed=P.ent&&(wd===3||wd===6);
     const resp=Math.round(25+P.flu*0.65*Math.min(1,(d+1)/7));
-    return {dt,wd,closed,resp,demand:Math.round(14+resp*0.45+(closed?9:0))};};
+    let demand=Math.round(14+resp*0.45+(closed?9*(P.exK||1):0));
+    if(P.wx)demand=Math.round(demand*(P.wxK||1));
+    return {dt,wd,closed,resp,demand};};
   const fillAt=d=>(P.short&&d>=3&&d<=8)?0.4:1;
   for(let d=0;d<14;d++){
     const I=info(d);
@@ -308,7 +315,7 @@ function simulate(P){
   }
   return out;
 }
-const P={flu:80,ent:true,short:true,cash:true};
+const P={flu:80,ent:true,short:true,cash:true,exK:1,wx:false,wxK:.85};
 let H=simulate(P), HB=simulate({flu:0,ent:false,short:false,cash:false});
 let day=0, playing=false, tAcc=0;
 const fmtKRW=n=>Math.round(n/1000).toLocaleString('ko-KR')+'천원';
@@ -697,8 +704,9 @@ document.getElementById('tools').onclick=e=>{const b=e.target.closest('button');
   else if(v==='explode'){explodeGoal=explodeGoal?0:1;b.classList.toggle('on',!!explodeGoal);if(explodeGoal)fly(new T.Vector3(0,12,0),52,.55,1.2);else VIEWS.all();}
   else if(v==='labels'){showLabels=!showLabels;b.classList.toggle('on',showLabels);}};
 function recompute(){P.flu=+document.getElementById('pFlu').value;P.ent=document.getElementById('pEnt').checked;P.short=document.getElementById('pShort').checked;P.cash=document.getElementById('pCash').checked;
+  P.exK=+document.getElementById('kEx').value||1;P.wx=document.getElementById('pWx').checked;P.wxK=+document.getElementById('kWx').value||1;
   document.getElementById('vFlu').textContent=P.flu;H=simulate(P);applyDay();}
-['pFlu','pEnt','pShort','pCash'].forEach(id=>document.getElementById(id).addEventListener('input',recompute));
+['pFlu','pEnt','pShort','pCash','pWx','kEx','kWx'].forEach(id=>document.getElementById(id).addEventListener('input',recompute));
 document.getElementById('pHour').addEventListener('input',e=>{hour=+e.target.value;document.getElementById('vHour').textContent=hourClockStr();drawHourBars();renderHud();});
 function preset(f,e,s,c){document.getElementById('pFlu').value=f;document.getElementById('pEnt').checked=e;document.getElementById('pShort').checked=s;document.getElementById('pCash').checked=c;recompute();}
 document.getElementById('bPreset1').onclick=()=>preset(80,true,true,true);
