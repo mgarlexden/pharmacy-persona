@@ -1,0 +1,19 @@
+﻿profile_id,kind,section_ko,key,value,unit,summary_ko,detail_ko,source_file,source_sheet,generated_at
+PF01,narrative,기본 상황,,,,개업 초기의 처방 방문 연계형 약국 운영자,"2층, 인터뷰 당시 개업 약 3주, 약사 2인 운영",interview_master.xlsx,06_페르소나정리,2026-10-05T01:15
+PF02,narrative,주변 의료기관,,,,주요 처방 맥락은 정형외과·신규 이비인후과,교정 중심 치과도 같은 건물에 있다. 기존 의원과 신규 의원의 인지도·환자 기반이 다르다.,interview_master.xlsx,06_페르소나정리,2026-10-05T01:15
+PF03,narrative,접근성과 방문,,,,워크인 유입이 적고 약국으로 오는 동선 인지가 낮음,"기존 정형외과 환자의 타약국 이용, 후문·엘리베이터 경로, 학교·학원가를 함께 둔다.",interview_master.xlsx,06_페르소나정리,2026-10-05T01:15
+PF04,narrative,수요와 상품,,,,"처방 방문 중심, 일반약은 방문 중 추가 구매를 기대",파스·상비약 중심으로 시작; 영양제는 많이 두지 않음. 일반약 구매자는 하루 약 10~15명이라는 표현이다.,interview_master.xlsx,06_페르소나정리,2026-10-05T01:15
+PF05,narrative,자금·재고,,,,품절을 우려하지만 재고를 무한정 사두기 어려움,"초기 구매대금 부담, 유효기간, 반품조건, 공간을 함께 고려한다.",interview_master.xlsx,06_페르소나정리,2026-10-05T01:15
+PF06,narrative,정보 사용,,,,전산 조회와 실물 확인을 병행,품목은 수백 가지이며 주요 약은 눈으로 보는 게 빠르다. 과거 경험·제약사 자료도 참고한다.,interview_master.xlsx,06_페르소나정리,2026-10-05T01:15
+PF07,narrative,판단 방식,,,,남은 재고로 오늘·내일을 버틸지 판단,정해진 발주 산식보다 현장의 체감과 조건을 설명한다.,interview_master.xlsx,06_페르소나정리,2026-10-05T01:15
+PF08,narrative,상품·고객 판단,,,,상품의 성분·가격·디자인·마진과 고객의 반응을 함께 봄,"여러 용도로 쓰이는 상품의 진열, 추가 권유의 설명 부담, 고객별 요청 차이를 고려한다.",interview_master.xlsx,06_페르소나정리,2026-10-05T01:15
+PF09,narrative,운영업무,,,,손님이 없는 짧은 틈에 업무를 처리,고객 응대로 중단되면 잊기도 한다. 알림이 도움이 될 수 있다는 반응을 보였다.,interview_master.xlsx,06_페르소나정리,2026-10-05T01:15
+PF10,narrative,기록과 도구,,,,상품판매 정보와 다음 상담의 효용을 중시,구매 이력 자동 연결은 없고 필요 시 수기 메모를 사용한다. 비동의 자동 건강정보 수집은 우려한다.,interview_master.xlsx,06_페르소나정리,2026-10-05T01:15
+PF11,narrative,AI에 대한 반응,,,,약사의 판단을 대신하는 방식보다 참고정보 제공의 쓰임을 설명,판매·마진 참고정보는 일반약 판매가 많은 곳에서 유용할 수 있다고 답했다.,interview_master.xlsx,06_페르소나정리,2026-10-05T01:15
+PF12,narrative,현재 약국의 경험,,,,"학생상품·정형외과 유입의 예상 차이, 칫솔 관심, 안마봉 판매",관심·구매·판매·계획 상태를 나누어 보관한다.,interview_master.xlsx,06_페르소나정리,2026-10-05T01:15
+PF13,narrative,과거 경험과 비교,,,,"이전 약국의 코로나 키트 장기재고, 대형약국의 재고 담당자",응답자의 경험으로 연결하되 현재 약국의 재고·직원 값과는 분리한다.,interview_master.xlsx,06_페르소나정리,2026-10-05T01:15
+PF14,fact,확인된 사실값,pharmacy.floor,2,층,약국이 있는 층,,interview_master.xlsx,02_변수사전 + 직접 입력,2026-10-05T01:15
+PF15,fact,확인된 사실값,pharmacy.operating_age,3,주,인터뷰 당시 개업 후 경과,,interview_master.xlsx,02_변수사전 + 직접 입력,2026-10-05T01:15
+PF16,fact,확인된 사실값,pharmacy.opened_on,2026-09-09,date,개업일(E001),,interview_master.xlsx,02_변수사전 + 직접 입력,2026-10-05T01:15
+PF17,fact,확인된 사실값,pharmacy.pharmacist_count,2,명,운영 약사 수,,interview_master.xlsx,02_변수사전 + 직접 입력,2026-10-05T01:15
+PF18,fact,확인된 사실값,pharmacy.otc_buyers_per_day,10~15,명/일,응답자 표현. 근사 범위,,interview_master.xlsx,02_변수사전 + 직접 입력,2026-10-05T01:15

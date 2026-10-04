@@ -1,0 +1,660 @@
+<title>Persona Lab 빌딩</title>
+<style>
+:root{
+  --bg:#f4f1ea; --panel:#fbfaf6; --panel2:#efebe2; --fg:#23211c; --muted:#6d685c; --line:#d9d3c4;
+  --accent:#0f766e; --accent-soft:#d7ece8; --warn:#b45309; --warn-soft:#f7e6cf; --bad:#b42318; --bad-soft:#f6dcd8;
+  --virt:#6d3fc0; --virt-soft:#e8defa; --good:#2f7d32; --stage:#dfe6ea;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#14171a; --panel:#1b1f23; --panel2:#23282d; --fg:#e8e6df; --muted:#9a9a90; --line:#323840;
+  --accent:#4fd1c0; --accent-soft:#16413c; --warn:#f0b35a; --warn-soft:#3b2d14; --bad:#ff8a7a; --bad-soft:#44201c;
+  --virt:#b79bff; --virt-soft:#2d2347; --good:#7bd88a; --stage:#1c2227; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#14171a; --panel:#1b1f23; --panel2:#23282d; --fg:#e8e6df; --muted:#9a9a90; --line:#323840;
+  --accent:#4fd1c0; --accent-soft:#16413c; --warn:#f0b35a; --warn-soft:#3b2d14; --bad:#ff8a7a; --bad-soft:#44201c;
+  --virt:#b79bff; --virt-soft:#2d2347; --good:#7bd88a; --stage:#1c2227; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:"IBM Plex Sans KR","Pretendard","Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif;font-size:13px;line-height:1.5;padding-inline:0}
+button{font:inherit;color:inherit;cursor:pointer}
+.app{display:flex;flex-direction:column;min-height:100%;max-width:1500px;margin:0 auto}
+header{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line)}
+header h1{font-size:15px;margin:0;font-weight:600;letter-spacing:-.01em}
+header .sub{color:var(--muted);font-size:12px;flex:1;min-width:200px}
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:1px 7px;border-radius:999px;background:var(--virt-soft);color:var(--virt);font-weight:600;white-space:nowrap}
+.badge.real{background:var(--accent-soft);color:var(--accent)}
+.badge.warn{background:var(--warn-soft);color:var(--warn)}
+.badge.bad{background:var(--bad-soft);color:var(--bad)}
+.main{display:grid;grid-template-columns:150px minmax(0,1fr) 360px;gap:0;flex:1;min-height:560px}
+nav.floors{border-right:1px solid var(--line);padding:10px 8px;display:flex;flex-direction:column;gap:4px;background:var(--panel)}
+nav.floors h2,.panel h2{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:2px 4px 6px;font-weight:600}
+.fbtn{display:flex;flex-direction:column;text-align:left;background:transparent;border:1px solid transparent;border-radius:8px;padding:6px 8px}
+.fbtn b{font-size:12px}
+.fbtn small{color:var(--muted);font-size:11px;line-height:1.3}
+.fbtn:hover{background:var(--panel2)}
+.fbtn.on{background:var(--accent-soft);border-color:var(--accent)}
+.fbtn.lock{opacity:.65}
+.stagewrap{position:relative;min-width:0;display:flex;flex-direction:column}
+#stage{position:relative;flex:1;min-height:480px;background:var(--stage);overflow:hidden;touch-action:none;cursor:grab}
+#stage:active{cursor:grabbing}
+#stage canvas{display:block;width:100%;height:100%}
+#labels{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.lab{position:absolute;transform:translate(-100%,-50%);background:color-mix(in srgb,var(--panel) 92%,transparent);border:1px solid var(--line);border-radius:8px;padding:2px 8px;font-size:11px;white-space:nowrap;pointer-events:auto;cursor:pointer;line-height:1.35}
+.lab.c{transform:translate(-50%,-50%)}
+.lab small{display:block;color:var(--muted);font-size:10px}
+.lab.on{border-color:var(--accent);outline:1px solid var(--accent)}
+.hud{position:absolute;left:10px;top:10px;display:flex;flex-wrap:wrap;gap:6px;max-width:calc(100% - 20px)}
+.chip{background:color-mix(in srgb,var(--panel) 92%,transparent);border:1px solid var(--line);border-radius:8px;padding:3px 9px;font-size:12px;font-variant-numeric:tabular-nums}
+.chip span{color:var(--muted);font-size:10px;display:block;line-height:1.2}
+.chip b{font-weight:600}
+.chip.bad{border-color:var(--bad);color:var(--bad)}
+.tools{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:5px}
+.tools button{background:color-mix(in srgb,var(--panel) 94%,transparent);border:1px solid var(--line);border-radius:8px;padding:4px 10px;font-size:12px;text-align:left}
+.tools button:hover{border-color:var(--accent)}
+.tools button.on{background:var(--accent-soft);border-color:var(--accent)}
+.hint{position:absolute;left:10px;bottom:8px;font-size:11px;color:var(--muted);background:color-mix(in srgb,var(--panel) 85%,transparent);border-radius:6px;padding:2px 8px;max-width:calc(100% - 20px)}
+.panel{border-left:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;min-width:0;max-height:calc(100vh - 20px);}
+.tabs{display:flex;border-bottom:1px solid var(--line)}
+.tabs button{flex:1;background:transparent;border:0;border-bottom:2px solid transparent;padding:9px 4px;font-size:12px;color:var(--muted)}
+.tabs button.on{color:var(--fg);border-bottom-color:var(--accent);font-weight:600}
+.pbody{padding:12px 14px;overflow:auto;flex:1;min-height:0}
+.pbody h3{font-size:15px;margin:0 0 4px;letter-spacing:-.01em}
+.pbody p{margin:4px 0 8px}
+.mut{color:var(--muted)}
+.sec{margin-top:12px}
+.sec h4{margin:0 0 4px;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.bind{display:grid;grid-template-columns:1fr;gap:3px;margin:0;padding:0;list-style:none}
+.bind li{background:var(--panel2);border-radius:6px;padding:4px 8px;font-size:12px}
+.bind code{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px;color:var(--accent)}
+.refs{display:flex;flex-wrap:wrap;gap:5px}
+.ref{border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:1px 7px;font-size:11px;font-family:"IBM Plex Mono",ui-monospace,monospace}
+.ref:hover,.ref.on{border-color:var(--accent);color:var(--accent)}
+.evbox{margin-top:10px;border-left:3px solid var(--accent);background:var(--panel2);padding:6px 10px;border-radius:0 6px 6px 0;font-size:12px}
+.evbox b{display:block;font-size:11px;color:var(--accent);margin-bottom:2px}
+.card{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--panel)}
+.card .act{font-size:16px;font-weight:600;margin:2px 0 6px}
+table{border-collapse:collapse;width:100%;font-size:12px;font-variant-numeric:tabular-nums}
+th,td{padding:4px 6px;border-bottom:1px solid var(--line);text-align:left}
+th{color:var(--muted);font-weight:500;font-size:11px}
+tr.pick td{background:var(--accent-soft)}
+tr.no td{color:var(--muted)}
+ul.plain{margin:0;padding-left:16px}
+ul.plain li{margin:2px 0}
+.sim{border-top:1px solid var(--line);background:var(--panel);padding:10px 16px;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1.4fr);gap:14px 24px}
+.sim h2{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 6px;font-weight:600}
+.ctl{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
+.ctl label{display:flex;align-items:center;gap:6px;font-size:12px}
+.ctl input[type=range]{width:120px;accent-color:var(--accent)}
+.btn{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:4px 10px;font-size:12px}
+.btn:hover{border-color:var(--accent)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn.pri{color:#06201c}}
+:root[data-theme="dark"] .btn.pri{color:#06201c}
+.tl{display:grid;grid-template-columns:repeat(14,minmax(0,1fr));gap:3px}
+.tl button{border:1px solid var(--line);background:var(--panel2);border-radius:6px;padding:3px 0 4px;font-size:10px;line-height:1.25;min-width:0;position:relative}
+.tl button i{display:block;height:5px;margin:3px 4px 0;border-radius:3px;background:var(--line)}
+.tl button.on{border-color:var(--accent);outline:1px solid var(--accent)}
+.tl button.so{box-shadow:inset 0 -2px 0 var(--bad)}
+.legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11px;color:var(--muted);margin-top:5px}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.spark{width:100%;height:84px}
+@media (max-width:1100px){
+  .main{grid-template-columns:120px minmax(0,1fr)}
+  .panel{grid-column:1 / -1;border-left:0;border-top:1px solid var(--line);max-height:none}
+}
+@media (max-width:700px){
+  .main{grid-template-columns:minmax(0,1fr)}
+  nav.floors{flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line);padding:8px 12px}
+  nav.floors h2{display:none}
+  .fbtn{flex:0 0 auto;min-width:92px}
+  #stage{min-height:360px}
+  .sim{grid-template-columns:minmax(0,1fr)}
+  header,.sim{padding-inline:16px}
+  .tools{flex-direction:row;flex-wrap:wrap;left:10px;right:auto;top:auto;bottom:34px}
+  .hint{display:none}
+}
+</style>
+
+<div class="app">
+  <header>
+    <h1>Persona Lab · 동네 약국 빌딩</h1>
+    <span class="badge">가상 시연 데이터</span>
+    <span class="sub">슬라이스 1 목업 — 층이 곧 메뉴입니다. 건물을 돌려 보고, 층을 눌러 들어가고, 물건을 눌러 근거를 확인합니다.</span>
+  </header>
+
+  <div class="main">
+    <nav class="floors" id="floorNav"><h2>층 안내</h2></nav>
+
+    <div class="stagewrap">
+      <div id="stage">
+        <div id="labels"></div>
+        <div class="hud" id="hud"></div>
+        <div class="tools" id="tools">
+          <button data-v="all">전체 보기</button>
+          <button data-v="front">정면</button>
+          <button data-v="side">측면</button>
+          <button data-v="top">위에서</button>
+          <button data-v="explode" id="bExplode">층 분리</button>
+          <button data-v="labels" id="bLabels">라벨</button>
+        </div>
+        <div class="hint">드래그 회전 · 휠/핀치 줌 · 우클릭·Shift 이동 · 층 클릭 → 줌인 · 물건 클릭 → 상세 · 빈 곳 더블클릭 → 전체</div>
+      </div>
+    </div>
+
+    <aside class="panel">
+      <div class="tabs" id="tabs">
+        <button data-t="scene" class="on">장면</button>
+        <button data-t="decide">판단</button>
+        <button data-t="compare">비교</button>
+        <button data-t="trust">신뢰</button>
+      </div>
+      <div class="pbody" id="pbody"></div>
+    </aside>
+  </div>
+
+  <div class="sim">
+    <div>
+      <h2>시나리오 조작</h2>
+      <div class="ctl">
+        <button class="btn pri" id="bPlay">▶ 재생</button>
+        <button class="btn" id="bStep">하루 ▸</button>
+        <label>속도 <select id="speed" class="btn"><option value="1">1×</option><option value="2" selected>2×</option><option value="4">4×</option></select></label>
+      </div>
+      <div class="ctl" style="margin-top:8px">
+        <label>감기·독감 유행 <input type="range" id="pFlu" min="0" max="100" value="80"><b id="vFlu">80</b></label>
+      </div>
+      <div class="ctl" style="margin-top:6px">
+        <label><input type="checkbox" id="pEnt" checked> 기존 이비인후과 휴진(수·토)</label>
+        <label><input type="checkbox" id="pShort" checked> 도매 입고 부족</label>
+        <label><input type="checkbox" id="pCash" checked> 신규약국 현금 제약</label>
+      </div>
+      <div class="ctl" style="margin-top:8px">
+        <button class="btn" id="bPreset1">슬라이스 1 시나리오</button>
+        <button class="btn" id="bPreset0">평시</button>
+      </div>
+    </div>
+    <div>
+      <h2>타임라인 · 14일 <span class="mut" style="text-transform:none;letter-spacing:0;font-weight:400">(칸을 눌러 그날로 이동)</span></h2>
+      <div class="tl" id="tl"></div>
+      <div class="legend"><span><i style="background:#9a9a90"></i>유지</span><span><i style="background:#d4881f"></i>소량</span><span><i style="background:#0f9b8c"></i>표준</span><span><i style="background:#8b5cf6"></i>대량·조정</span><span><i style="background:var(--bad)"></i>품절 발생일(아래 선)</span></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+"use strict";
+const T = THREE;
+/* ───────── 근거 사전 (실제 CSV 문구) ───────── */
+const EV = {
+ R02:{t:'규칙 R02 · 잔여량으로 오늘·내일 감당 가능성 판단',b:'남은 양·체감 사용속도로 “오늘은 버티지만 내일은 어려울지”를 사람이 판단한다. 실제 주문량 산식은 상황 입력에 따라 정한다.'},
+ R03:{t:'규칙 R03 · 개업 초기 자금·재고 부담 함께 고려',b:'품절 우려가 있어도 무한정 미리 사두지는 못한다. 회전이 높고 자금에 여유가 있으면 더 보유할 수 있다고도 설명했다.'},
+ R04:{t:'규칙 R04 · 반품을 쉽게 되돌릴 수 있는 선택으로 보지 않음',b:'반품 조건이 불리할 수 있으므로 가능한 한 반품을 피하는 편이 이득이라고 본다. 반품 조건은 거래처·품목에 따라 다르다.'},
+ R05:{t:'규칙 R05 · 초도 상품을 여러 기준으로 비교',b:'과거 선호 경험·제약사 목록·성분·가격·디자인·마진을 함께 보며 일반약을 선정했다.'},
+ R06:{t:'규칙 R06 · 실제 방문 목적에 맞춘 구색 계획',b:'파스·상비약을 준비하고 방문 중 추가 구매를 염두에 두며 영양제는 많이 두지 않았다.'},
+ R08:{t:'규칙 R08 · 주변 휴진과 혼잡을 연결해 인식',b:'기존 이비인후과가 쉬는 날에 신규 의원이 붐비는 경향을 말한다. 주변 의원 휴진과 혼잡을 연결한 관찰이다.'},
+ R15:{t:'규칙 R15 · 인원보다 수행 가능한 업무를 확인',b:'경험이 조금 있어도 교육이 필요하고 초보자는 바로 처리하기 어렵다.'},
+ R17:{t:'규칙 R17 · 영업 중 한가한 틈에 운영업무 처리',b:'중간중간 정리·발주 업무를 하고 너무 바쁘면 마감 후 처리한다.'},
+ E002:{t:'발언 E002 · 입지·동일 건물 진료과',b:'“일층에는 정형외과가 있고 이층에는 이비인후과가” — 약국은 2층이며 1층 정형외과·같은 층 이비인후과가 언급된다.'},
+ E003:{t:'발언 E003 · 동반 개원',b:'“이비인후과도 신규로 삼 주 전을 … 열어가지고” — 같은 층 이비인후과도 신규 개원 상태.'},
+ E013:{t:'발언 E013 · 접근성',b:'“2층까지 올라와 입구가 들어오기 … 힘든데” — 층수와 입구 찾기 어려움을 방문 제약으로 인식한다.'},
+ E014:{t:'발언 E014 · 건물 내 치과',b:'“교정전문 … 치과기 때문에” — 정형외과·이비인후과 외에 교정 중심 치과가 같은 건물에 있다고 설명한다. (층 정보는 발언에 없음)'},
+ E017:{t:'발언 E017 · 정형외과 유입 예상 차이',b:'“생각보다 많이 안 올라와” — 같은 건물 정형외과에서 유입될 것으로 기대한 환자가 생각보다 적었다.'},
+ G02:{t:'가드레일 G02 · 없는 수량·비율을 만들지 않기',b:'가상 입력은 가상으로 표시하고, 현재 인터뷰 값처럼 저장하지 않는다. 이 화면의 재고·현금·처방 수치는 모두 가상값이다.'},
+ G04:{t:'가드레일 G04 · 생성 결과와 관측 결과 분리',b:'제안, 실제 시행, 실제 관측, 가상 모형 결과를 구분한다. LLM이 쓴 성과를 실제 성과로 다시 넣지 않는다.'},
+ G07:{t:'가드레일 G07 · 응답자와 공동운영 정책 구분',b:'응답자 1인의 설명이라는 범위를 유지한다. 약사 2인 운영만으로 두 사람의 합의·권한·성향을 확정하지 않는다.'}
+};
+const FLOORS = [
+ {id:'1F',name:'1층',sub:'로비 · 정형외과',locked:false,slab:0xcfc8b8,wall:0xe9e3d4},
+ {id:'2F',name:'2층',sub:'약국 + 이비인후과',locked:false,slab:0xcfc8b8,wall:0xf0ebdd},
+ {id:'3F',name:'3층',sub:'발주 판단실',locked:false,slab:0xc3c9d8,wall:0xe3e7f1},
+ {id:'4F',name:'4층',sub:'진열·상품 구성',locked:true,slab:0xcfc8b8,wall:0xe9e3d4},
+ {id:'5F',name:'5층',sub:'인력·업무 중단',locked:true,slab:0xcfc8b8,wall:0xe9e3d4},
+ {id:'RF',name:'옥상',sub:'관제실 · 근거·검증',locked:false,slab:0xb9bec6,wall:0xdfe3ea}
+];
+const FINFO = [
+ {t:'1층 · 로비와 정형외과',d:'건물 입구와 엘리베이터가 있는 층. 인터뷰에서 약국 개업 전부터 있던 정형외과가 언급됩니다. 교정 치과도 같은 건물에 있다고 하지만 층은 발언에 없어 그리지 않았습니다.',
+  b:['persona_profile.floor → 약국이 몇 층인지','환경 데이터(주변 의료기관) → 건물 내 진료과 간판'],r:['E002','E017','E014','E013']},
+ {t:'2층 · 약국 + 이비인후과',d:'인터뷰의 실제 입지(약국 2층, 같은 층 신규 이비인후과). 왼쪽이 약국(조제실·카운터·진열대), 오른쪽이 이비인후과입니다. 약사는 2인 운영이지만 응답자는 1명입니다.',
+  b:['rx_daily.rx_count_total → 약국 안 손님 수','inventory_daily.days_of_supply → 감기약 진열대 색','calendar 휴진 표시 → 이비인후과 대기 인원'],r:['E002','E003','R08','R06','G07']},
+ {t:'3층 · 발주 판단실 (슬라이스 1)',d:'하루가 끝나면 에이전트가 선택지를 책상 위에 올리고, 규칙·제약을 거쳐 하나를 고릅니다. 벽 스크린과 오른쪽 ‘판단’ 탭이 같은 결정 카드를 보여 줍니다.',
+  b:['rules R02·R03·R04·R08 → 결정 근거','scenarios.csv → 아래 조작 패널','결정 카드 JSON → 벽 스크린·선택지 카드'],r:['R02','R03','R04','R08']},
+ {t:'4층 · 진열·상품 구성 (2차)',d:'구색·진열 판단(R05~R07)을 다루는 층. 슬라이스 1 범위 밖이라 윤곽만 보이게 잠가 두었습니다.',b:['entity_product, 진열 위치 → (2차)'],r:['R05','R06']},
+ {t:'5층 · 인력·업무 중단 (2차)',d:'인력 공백, 중단 업무 알림(R15~R18). 약사 2인 운영과 직결되어 G07 정리가 먼저 필요합니다.',b:['인력 변수 → (2차)'],r:['R15','R17','G07']},
+ {t:'옥상 · 관제실',d:'화면에 보이는 값이 어디서 왔는지, 얼마나 믿을 만한지 모아 보는 층. 가상 배지, 근거 등급, 구조 검증 결과가 여기에 속합니다. 오른쪽 ‘신뢰’ 탭과 연결됩니다.',
+  b:['data_sources.judgement → 실제/참고/가상 배지','virtual_params.support_grade → A/B/C','validate.py 8가지 → 점검 신호'],r:['G02','G04']}
+];
+const OBJ = {
+ cold:{t:'감기약 진열대',d:'감기약 A의 재고를 보여 줍니다. 초록=여유, 주황=내일이 빠듯함, 빨강=1.5일 미만 또는 품절.',b:['inventory_daily.days_of_supply → 선반 색','inventory_daily.closing_physical_stock → 선반 채움 높이'],r:['R02'],z:4.6},
+ pas:{t:'파스·상비약 선반',d:'정형외과 환자를 예상해 파스를 많이 준비했다는 발언에서 온 구색입니다. 다만 실제 유입은 기대보다 적었습니다.',b:['entity_product.category → 선반 배치'],r:['R06','E017'],z:4.2},
+ vit:{t:'영양제 선반',d:'영양제는 “많이 안” 들였다는 발언을 반영해 작게 그렸습니다.',b:['entity_product.category → 선반 크기'],r:['R06'],z:4},
+ dig:{t:'소화제 선반',d:'소화제는 기대보다 덜 팔리고 감기약은 팔린다는 대비 발언을 반영합니다.',b:['entity_product → 선반'],r:['R06'],z:4},
+ dispense:{t:'조제실',d:'처방 조제가 이뤄지는 칸막이 공간. 처방 건수가 늘면 조제실 약사 쪽 작업 표시가 켜집니다.',b:['rx_daily.rx_count_total → 조제 작업 표시'],r:['E002'],z:5.2},
+ phA:{t:'약사 A (조제실)',d:'인터뷰 응답자의 시점을 대표하는 인물로 둡니다. 판단 규칙은 이 응답자의 설명에서만 가져옵니다.',b:['persona_profile → 응답자 프로필'],r:['G07'],z:4},
+ phB:{t:'약사 B (카운터)',d:'공동 운영 약사. 두 사람의 합의·권한·성향은 확정하지 않으므로 이 인물의 판단은 만들지 않습니다.',b:['(없음: G07에 따라 판단 규칙을 만들지 않음)'],r:['G07'],z:4},
+ counter:{t:'복약 상담 카운터',d:'처방을 받고 설명하는 곳. 손님 수는 처방 건수에서 가져옵니다.',b:['rx_daily.rx_count_total → 카운터 앞 손님 수'],r:['E010'],z:4.5},
+ ent:{t:'신규 이비인후과 (같은 층)',d:'약국과 같은 층에 새로 개원한 의원. 기존 이비인후과가 쉬는 날 붐빈다는 관찰(R08)로, 휴진 설정을 켜면 대기 인원이 늘고 약국 처방도 늘어납니다.',b:['calendar 휴진 → 대기 인원','rx_daily → 약국 처방 증가'],r:['E003','R08'],z:5.2},
+ ortho:{t:'정형외과 (1층)',d:'약국 개업 전부터 이용하던 환자가 있는 기존 의원.',b:['환경 데이터 → 간판'],r:['E002','E017'],z:5.2},
+ board:{t:'결정 선택지 카드',d:'발주 선택지 4개. 제약(현금 한도, 반품 회피 상한)을 통과한 것만 선명하고, 선택된 것은 떠오릅니다. 카드를 눌러도 ‘판단’ 탭이 열립니다.',b:['결정 카드 JSON.options → 카드 4장'],r:['R02','R03','R04'],z:6},
+ screen:{t:'벽 스크린',d:'오른쪽 판단 탭과 같은 결정 카드를 벽에 띄운 것입니다.',b:['결정 카드 JSON → 스크린'],r:['R02'],z:7},
+ truck:{t:'도매 트럭',d:'공급 데이터에서 오는 입고량. 입고율이 낮으면 적재량이 줄고 주황색이 됩니다. 입고가 없는 날은 오지 않습니다.',b:['supply_daily.supplied_qty → 적재량·도착 여부'],r:['R04'],z:9},
+ exent:{t:'기존 이비인후과 (건너편)',d:'휴진 설정을 켜면 셔터가 내려오고 간판이 붉어집니다. 이 휴진이 같은 건물 신규 의원의 혼잡으로 이어집니다.',b:['calendar 휴진 → 셔터'],r:['R08','E003'],z:9},
+ mon:{t:'관제 모니터',d:'데이터 출처, 근거 등급, 검증 결과를 모은 화면. 오른쪽 ‘신뢰’ 탭으로 이어집니다.',b:['data_sources, virtual_params, validate.py'],r:['G02','G04'],z:6}
+};
+/* ───────── 시뮬레이션(가상) ───────── */
+const WD=['일','월','화','수','목','금','토'];
+function simulate(P){
+  const out=[]; let stock=60, cash=P.cash?900000:2400000, pend=0, prevOrder=0;
+  const COST=2800, PRICE=4300, RES=P.cash?500000:300000;
+  const base=new Date(2026,9,5);
+  const info=d=>{const dt=new Date(base);dt.setDate(base.getDate()+d);const wd=dt.getDay();
+    const closed=P.ent&&(wd===3||wd===6);
+    const resp=Math.round(25+P.flu*0.65*Math.min(1,(d+1)/7));
+    return {dt,wd,closed,resp,demand:Math.round(14+resp*0.45+(closed?9:0))};};
+  const fillAt=d=>(P.short&&d>=3&&d<=8)?0.4:1;
+  for(let d=0;d<14;d++){
+    const I=info(d);
+    const recv=Math.round(pend*fillAt(d)); const fillPct=pend?recv/pend:1;
+    stock+=recv;
+    const sales=Math.min(stock,I.demand), so=I.demand-sales;
+    stock-=sales; cash+=sales*PRICE;
+    const N=info(d+1), fc=N.demand, fillN=fillAt(d+1);
+    const target=P.cash?2:3.5;
+    const need=Math.max(0,Math.ceil((target*fc-stock)/fillN));
+    const capOver=4*fc, capCash=Math.max(0,Math.floor((cash-RES)/COST));
+    const mk=(k,q)=>({k,q,ok:q<=capCash&&q<=capOver,cashLeft:cash-q*COST,dos:(stock+q*fillN)/fc});
+    const opts=[mk('유지',0),mk('소량',Math.ceil(need*.5)),mk('표준',need),mk('대량',Math.ceil(need*1.6))];
+    let ci=2, adj=false;
+    if(!opts[2].ok){
+      const q=Math.min(capCash,capOver);
+      if(q>0 && q>opts[1].q){opts[2]=Object.assign(mk('표준(제약 조정)',q),{ok:true,adj:true}); ci=2; adj=true;}
+      else if(opts[1].ok){ci=1;} else ci=0;
+    }
+    if(need===0) ci=0;
+    const ch=opts[ci]; cash-=ch.q*COST; pend=ch.q; prevOrder=ch.q;
+    const lvl=(P.short&&fillN<1?1:0)+(P.flu>60?1:0)+(P.ent&&N.closed?1:0);
+    out.push({d,dt:I.dt,wd:I.wd,closed:I.closed,resp:I.resp,demand:I.demand,sales,so,stock,cash,recv,fillPct,
+      rx:Math.round(30+I.resp*.5+(I.closed?14:0)),fc,fillN,need,capOver,capCash,opts,ci,adj,order:ch.q,
+      dos:stock/fc,nextClosed:N.closed,conf:lvl===0?'높음':lvl===1?'보통':'낮음',target,RES,COST});
+  }
+  return out;
+}
+const P={flu:80,ent:true,short:true,cash:true};
+let H=simulate(P), HB=simulate({flu:0,ent:false,short:false,cash:false});
+let day=0, playing=false, tAcc=0;
+const fmtKRW=n=>Math.round(n/1000).toLocaleString('ko-KR')+'천원';
+const dlabel=s=>`${s.dt.getMonth()+1}/${s.dt.getDate()}(${WD[s.wd]})`;
+const KCOL={'유지':'#9a9a90','소량':'#d4881f','표준':'#0f9b8c','대량':'#8b5cf6'};
+const kcol=s=>{const o=s.opts[s.ci];return o.adj?'#8b5cf6':KCOL[o.k]||'#0f9b8c'};
+
+/* ───────── Three.js 장면 ───────── */
+const stage=document.getElementById('stage');
+const renderer=new T.WebGLRenderer({antialias:true,alpha:false,preserveDrawingBuffer:false});
+renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=T.PCFSoftShadowMap;
+stage.insertBefore(renderer.domElement,stage.firstChild);
+const scene=new T.Scene();
+const cam=new T.PerspectiveCamera(38,1,0.1,300);
+const hemi=new T.HemisphereLight(0xffffff,0x8a8f98,0.85); scene.add(hemi);
+const sun=new T.DirectionalLight(0xffffff,0.8); sun.position.set(14,30,22); sun.castShadow=true;
+sun.shadow.mapSize.set(1024,1024); const sc=sun.shadow.camera; sc.left=-30;sc.right=30;sc.top=30;sc.bottom=-30;sc.near=1;sc.far=90; sun.shadow.bias=-0.0006;
+scene.add(sun);
+const mats={};
+function mat(c,o){const k=c+JSON.stringify(o||{}); if(!mats[k]) mats[k]=new T.MeshStandardMaterial(Object.assign({color:c,roughness:.85,metalness:0},o||{})); return mats[k];}
+function box(p,w,h,d,c,x,y,z,o){const m=new T.Mesh(new T.BoxGeometry(w,h,d),(o&&o.m)||mat(c,o&&o.mo));m.position.set(x,y+h/2,z);m.castShadow=!(o&&o.noShadow);m.receiveShadow=true;p.add(m);return m;}
+const W=14,D=8,FH=3.1;
+const monitors=[]; const pick=[]; const bldg=new T.Group(); scene.add(bldg);
+const FG=[]; const objs={};
+function reg(mesh,key,fi){mesh.userData.obj=key;mesh.userData.fi=fi;pick.push(mesh);(objs[key]=objs[key]||[]).push(mesh);return mesh;}
+function person(c,s){const g=new T.Group();const b=box(g,.38*s,.78*s,.26*s,c,0,0,0);const h=box(g,.3*s,.3*s,.3*s,0xe8c9a0,0,.8*s,0);g.userData.b=b;return g;}
+const glassMat=new T.MeshStandardMaterial({color:0x9ec5d8,transparent:true,opacity:.1,roughness:.1,side:T.DoubleSide,depthWrite:false});
+FLOORS.forEach((f,i)=>{
+  const g=new T.Group(); g.position.y=i*FH; bldg.add(g); FG.push(g);
+  const lk=f.locked, wo=lk?{transparent:true,opacity:.22,depthWrite:false}:null;
+  const sl=box(g,W+.8,.25,D+.8,f.slab,0,0,0,{mo:lk?{transparent:true,opacity:.5}:null}); sl.userData.fi=i;pick.push(sl);
+  const wall=(w,h,d,x,z)=>{const m=box(g,w,h,d,f.wall,x,.25,z,{mo:wo,noShadow:lk});m.userData.fi=i;pick.push(m);return m;};
+  if(i===5){ // 옥상: 낮은 난간 + 관제실
+    box(g,W+.8,.5,.15,0xaeb3ba,0,.25,D/2+.3); box(g,.15,.5,D+.8,0xaeb3ba,-W/2-.3,.25,0); box(g,.15,.5,D+.8,0xaeb3ba,W/2+.3,.25,0);
+    const cw=0xdfe3ea; box(g,.2,FH-.4,5.2,cw,-4.6,.25,-1.2).userData.fi=i; box(g,.2,FH-.4,5.2,cw,3.6,.25,-1.2).userData.fi=i;
+    box(g,8.4,FH-.4,.2,cw,-.5,.25,-3.8).userData.fi=i; box(g,8.4,.25,5.4,0xc9ced6,-.5,FH-.4+.25,-1.3,{mo:{transparent:true,opacity:.45}});
+    // 모니터 3대
+    const mm=[0x1b2a33,0x1b2a33,0x1b2a33];
+    [-3,-.5,2].forEach((x,k)=>{const m=box(g,2,1.2,.12,0x10181d,x,1.2,-3.6);reg(m,'mon',i);
+      const c=document.createElement('canvas');c.width=256;c.height=150;m.userData.cv=c;m.userData.k=k;
+      const tx=new T.CanvasTexture(c);const pl=new T.Mesh(new T.PlaneGeometry(1.85,1.05),new T.MeshBasicMaterial({map:tx}));pl.position.set(x,1.8,-3.53);g.add(pl);m.userData.tx=tx;m.userData.pl=pl;monitors.push(m);});
+    box(g,.15,2.6,.15,0x9aa0a8,5.5,.25,-2); // 안테나
+    return;
+  }
+  wall(W,FH-.25,.25,0,-D/2+.125);
+  wall(.25,FH-.25,D,-W/2+.125,0); wall(.25,FH-.25,D,W/2-.125,0);
+  const gl=new T.Mesh(new T.PlaneGeometry(W,FH-.25),glassMat); gl.position.set(0,.25+(FH-.25)/2,D/2); gl.raycast=()=>{}; g.add(gl);
+});
+/* 1층 */
+(()=>{const g=FG[0],i=0;
+  box(g,2.2,2.5,1.6,0x9aa4b0,-.6,.25,-3.1).userData.fi=0; // 엘리베이터
+  box(g,.02,2.2,1,0xc8d0d8,.55,.35,-3.1);
+  box(g,2.6,.9,.8,0xb98f5f,-4.6,.25,-2.2); // 안내 데스크
+  box(g,1.2,.04,.5,0x3a4a5a,-4.6,1.1,-2.2);
+  // 정형외과
+  box(g,.12,FH-.25,5,0xd8d0c0,1.3,.25,-1.5);
+  const od=box(g,2.6,.9,.8,0x7c8a9a,4.4,.25,1.4); reg(od,'ortho',i);
+  box(g,2,.5,.9,0xcfd6df,5.2,.25,-2.4).userData.fi=0; box(g,2,.5,.9,0xcfd6df,2.8,.25,-2.4).userData.fi=0; // 검사 침대
+  const sg=box(g,2.4,.5,.1,0x7c8a9a,4.4,1.9,-3.82); reg(sg,'ortho',i);
+  for(let k=0;k<3;k++) box(g,.5,.4,.5,0x667,2.2+k*.8,.25,3.2);
+  // 건물 입구
+  box(g,1.6,2.3,.08,0x6aa5c0,-1.2,.25,D/2-.04,{mo:{transparent:true,opacity:.5}});
+})();
+/* 2층 약국 + ENT */
+const shelfMeshes=[]; const custPh=[], entPh=[]; let phA,phB;
+(()=>{const g=FG[1],i=1;
+  box(g,.14,FH-.25,D,0xd4cdbd,-.5,.25,0).userData.fi=1; // 칸막이
+  // 조제실
+  box(g,3.5,.04,2.9,0xdbe7ee,-5.1,.25,-2.45,{mo:{}});
+  const gp={transparent:true,opacity:.28,color:0x9fd0e0};
+  const dg=new T.Mesh(new T.BoxGeometry(3.5,1.9,.06),new T.MeshStandardMaterial({color:0x9fd0e0,transparent:true,opacity:.28,depthWrite:false}));dg.position.set(-5.1,.25+.95,-.95);g.add(dg);reg(dg,'dispense',i);
+  const dg2=new T.Mesh(new T.BoxGeometry(.06,1.9,2.9),new T.MeshStandardMaterial({color:0x9fd0e0,transparent:true,opacity:.28,depthWrite:false}));dg2.position.set(-3.35,.25+.95,-2.45);g.add(dg2);reg(dg2,'dispense',i);
+  reg(box(g,3,.9,.7,0xe5ddc9,-5.2,.25,-1.5),'dispense',i); // 조제대
+  reg(box(g,.5,.35,.4,0x2a3340,-5.9,1.15,-1.5),'dispense',i);
+  for(let k=0;k<4;k++) reg(box(g,.7,2.1,.5,0xb6a68a,-6.4+k*.78,.25,-3.65),'dispense',i); // 약장
+  phA=person(0x2f6fb5,1.15); phA.position.set(-5.0,.25,-2.2); g.add(phA); reg(phA.children[0],'phA',i); reg(phA.children[1],'phA',i);
+  // 카운터
+  reg(box(g,2.5,1,.65,0xc6a77a,-2.2,.25,-.7),'counter',i); box(g,2.6,.06,.75,0x5a4a35,-2.2,1.25,-.7);
+  phB=person(0xffffff,1.15); phB.position.set(-2.2,.25,-1.7); g.add(phB); reg(phB.children[0],'phB',i); reg(phB.children[1],'phB',i);
+  phB.children[0].material=mat(0xf4f4f4);
+  // 진열대
+  const mkShelf=(key,x,z,w,dp,h,ry)=>{const gg=new T.Group();gg.position.set(x,.25,z);gg.rotation.y=ry||0;g.add(gg);
+    const frame=box(gg,w,h,dp,0xcdbf9f,0,0,0);reg(frame,key,i);
+    const fills=[];for(let k=0;k<3;k++){const f=box(gg,w*.9,h*.24,dp*1.05,0x6aa86f,0,.15+k*h*.3,0,{m:new T.MeshStandardMaterial({color:0x6aa86f,roughness:.7})});reg(f,key,i);fills.push(f);}
+    gg.userData.fills=fills; gg.userData.h=h; shelfMeshes.push({key,gg,fills});return gg;};
+  mkShelf('cold',-4.4,1.2,2.2,.6,1.7); mkShelf('cold',-4.4,2.6,2.2,.6,1.7);
+  mkShelf('pas',-6.55,.2,.55,2,1.6,0); mkShelf('vit',-6.55,2.1,.55,1,.9,0); mkShelf('dig',-6.55,3.2,.55,1,1.4,0);
+  for(let k=0;k<2;k++) box(g,.55,.4,.55,0x8a6d4a,-1.3+k*.8,.25,3.2); // 대기 의자
+  box(g,1.5,2.3,.08,0x6aa5c0,-1.4,.25,D/2-.04,{mo:{transparent:true,opacity:.35}});
+  for(let k=0;k<6;k++){const p=person([0xd9534f,0x5b8def,0xe0a030,0x58a55c,0xa06cc4,0x555b66][k],1);p.visible=false;g.add(p);custPh.push(p);}
+  // ENT
+  const ed=box(g,2.4,.9,.7,0x9bb8c9,3.2,.25,1.8); reg(ed,'ent',i); box(g,2.5,.05,.8,0x5a7a8c,3.2,1.15,1.8);
+  const ex=box(g,2.6,.5,.9,0xcfd6df,5.2,.25,-2.6); reg(ex,'ent',i);
+  reg(box(g,2.4,.55,.1,0x4d7f99,3.4,1.9,-3.82),'ent',i);
+  const dr=person(0xdfe6ea,1.1); dr.position.set(5.2,.75,-2.6); g.add(dr);
+  for(let k=0;k<8;k++){const p=person([0xd9534f,0x5b8def,0xe0a030,0x58a55c,0xa06cc4,0x555b66,0xc0507a,0x3f9aa0][k],1);const col=k%4,row=Math.floor(k/4);p.position.set(1.2+col*.8,.25+.42,-.2+row*.8);p.visible=false;g.add(p);entPh.push(p);
+    box(g,.6,.4,.5,0x7a8a98,1.2+col*.8,.25,-.2+row*.8);}
+  box(g,1.4,2.3,.08,0x6aa5c0,5,.25,D/2-.04,{mo:{transparent:true,opacity:.35}});
+})();
+/* 3층 판단실 */
+let screenC, screenTx, screenMesh; const cards=[];
+(()=>{const g=FG[2],i=2;
+  box(g,6.6,.12,2.2,0xa6794a,0,.75,.6); for(const x of [-3,3]) for(const z of [-.3,1.5]) box(g,.12,.75,.12,0x6b4a2a,x,.25,z);
+  screenC=document.createElement('canvas');screenC.width=1024;screenC.height=512;screenTx=new T.CanvasTexture(screenC);
+  const frame=box(g,9.2,2.2,.12,0x11161b,0,.6,-3.75);reg(frame,'screen',i);
+  screenMesh=new T.Mesh(new T.PlaneGeometry(9,2),new T.MeshBasicMaterial({map:screenTx}));screenMesh.position.set(0,1.7,-3.67);g.add(screenMesh);
+  for(let k=0;k<4;k++){const c=box(g,1.2,.9,.14,0x8a8f98,-2.6+k*1.75,.9,.2,{m:new T.MeshStandardMaterial({color:0x8a8f98,roughness:.5,transparent:true})});c.userData.bx=-2.6+k*1.75;reg(c,'board',i);cards.push(c);}
+  for(let k=0;k<4;k++) box(g,.6,.5,.6,0x59636f,-3.2+k*2.1,.25,3);
+  // 책장
+  box(g,.4,2.2,3,0x8f7a58,-6.6,.25,-1.2).userData.fi=2;
+})();
+/* 4층 / 5층 (잠김) */
+(()=>{const mk=(g,i)=>{const gh={transparent:true,opacity:.25,depthWrite:false};
+  for(let k=0;k<6;k++){const m=box(g,1.6,1.6,.5,0xb7b0a0,-5+k*2,.25,-2.8,{mo:gh,noShadow:true});m.userData.fi=i;pick.push(m);}
+  };
+  mk(FG[3],3);
+  const g=FG[4]; for(let k=0;k<4;k++){const m=box(g,1.6,.8,.9,0xb7b0a0,-5+k*3.2,.25,-1.5,{mo:{transparent:true,opacity:.25,depthWrite:false},noShadow:true});m.userData.fi=4;pick.push(m);}
+})();
+/* 거리·주변 */
+const ground=new T.Mesh(new T.PlaneGeometry(160,160),new T.MeshStandardMaterial({color:0xbfc7b4,roughness:1}));ground.rotation.x=-Math.PI/2;ground.position.y=-.06;ground.receiveShadow=true;scene.add(ground);
+const sw=box(scene,60,.12,2.4,0xd8d4c8,0,-.06,D/2+1.9,{noShadow:true}); sw.castShadow=false;
+const road=box(scene,80,.06,6.4,0x4a4e55,0,-.06,D/2+6.2,{noShadow:true});
+for(let k=-8;k<=8;k++) box(scene,1.4,.02,.12,0xe8e4d0,k*3.8,0,D/2+6.2,{noShadow:true});
+for(const x of [-24,-9.5,15,22]){const t=new T.Group();t.position.set(x,0,D/2+3);scene.add(t);box(t,.18,1,.18,0x6b4a2a,0,0,0);const c=new T.Mesh(new T.ConeGeometry(.9,2.1,7),mat(0x4f8a52));c.position.y=2;c.castShadow=true;t.add(c);}
+// 기존 이비인후과 (왼쪽 건너편 건물)
+const exg=new T.Group();exg.position.set(-15.5,0,-.5);scene.add(exg);
+box(exg,6,5.4,6.4,0xd7cfbf,0,0,0); const exSign=box(exg,4,.6,.12,0x2d7f9a,0,3.9,3.25); reg(exSign,'exent',-1);
+const exWin=box(exg,4.4,2.1,.1,0x8ab6c9,0,1.2,3.22,{mo:{transparent:true,opacity:.6}}); reg(exWin,'exent',-1);
+const shutter=box(exg,4.4,2.2,.14,0x707780,0,2.3,3.28); shutter.visible=false; reg(shutter,'exent',-1);
+// 오른쪽 이웃 건물
+const nb=new T.Group();nb.position.set(15.5,0,-.5);scene.add(nb);box(nb,6,7.5,6.4,0xcfc6b2,0,0,0);box(nb,4,.5,.12,0x8a8f98,0,2.6,3.25);box(nb,4.4,2,.1,0xa9bcc7,0,.6,3.22);
+// 트럭
+const truck=new T.Group();scene.add(truck);
+const cab=box(truck,1.5,1.7,1.8,0xd4881f,2.2,.35,0);reg(cab,'truck',-1);
+const cargo=box(truck,4,2.2,1.9,0xe9e6df,-.2,.35,0);reg(cargo,'truck',-1);
+const loads=[];for(let k=0;k<6;k++){const b=box(truck,.55,.55,.55,0x8a6d4a,-1.8+k*.62,2.6,(k%2?.45:-.45));loads.push(b);}
+for(const x of [-1.6,-.2,1.9]) for(const z of [-.95,.95]){const w=new T.Mesh(new T.CylinderGeometry(.38,.38,.3,12),mat(0x1b1c1f));w.rotation.x=Math.PI/2;w.position.set(x,.38,z);truck.add(w);}
+truck.position.set(40,0,D/2+5.2);
+// 거리 환자
+const street=[];for(let k=0;k<22;k++){const p=person([0xd9534f,0x5b8def,0xe0a030,0x58a55c,0xa06cc4,0x555b66][k%6],1);p.userData.u=Math.random();p.userData.sx=(Math.random()<.5?-1:1)*(10+Math.random()*14);p.userData.sp=.05+Math.random()*.03;p.visible=false;scene.add(p);street.push(p);}
+// 구름과 비
+const clouds=new T.Group();scene.add(clouds);const cmat=new T.MeshStandardMaterial({color:0xffffff,roughness:1,transparent:true,opacity:.85});
+for(let k=0;k<7;k++){const c=new T.Mesh(new T.SphereGeometry(2.6+Math.random()*1.4,12,8),cmat);c.scale.y=.45;c.position.set(-26+k*8+Math.random()*3,26+Math.random()*3,-10+Math.random()*16);clouds.add(c);}
+const RN=260,rp=new Float32Array(RN*6);for(let k=0;k<RN;k++){const x=-30+Math.random()*60,z=-12+Math.random()*34,y=Math.random()*26;rp.set([x,y,z,x,y-.9,z],k*6);}
+const rg=new T.BufferGeometry();rg.setAttribute('position',new T.BufferAttribute(rp,3));
+const rain=new T.LineSegments(rg,new T.LineBasicMaterial({color:0x7aa6d6,transparent:true,opacity:.6}));scene.add(rain);rain.visible=false;
+
+/* ───────── 카메라 조작 ───────── */
+const cur={th:.62,ph:1.18,r:40,t:new T.Vector3(0,8.6,0)};
+const goal={th:cur.th,ph:cur.ph,r:cur.r,t:cur.t.clone()};
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function fly(t,r,th,ph){goal.t.copy(t);if(r!=null)goal.r=r;if(th!=null)goal.th=th;if(ph!=null)goal.ph=ph;}
+const VIEWS={all:()=>fly(new T.Vector3(0,8.6,0),40,.62,1.18),front:()=>fly(new T.Vector3(0,8.6,0),38,0,1.4),side:()=>fly(new T.Vector3(0,8.6,0),38,1.45,1.35),top:()=>fly(new T.Vector3(0,6,0),42,.2,.2)};
+let explode=0, explodeGoal=0;
+const yOf=i=>i*FH+explode*i*1.6;
+function ptrDown(){}
+const ptrs=new Map();let down=null,pinch=null;
+const cv=renderer.domElement;
+cv.addEventListener('contextmenu',e=>e.preventDefault());
+cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});down={x:e.clientX,y:e.clientY,t:performance.now(),moved:0};pinch=null;});
+function pan(dx,dy){const k=goal.r*.0017;goal.t.x+=(-Math.cos(goal.th)*dx)*k;goal.t.z+=(Math.sin(goal.th)*dx)*k;goal.t.y=clamp(goal.t.y+dy*k,-1,28);goal.t.x=clamp(goal.t.x,-30,30);goal.t.z=clamp(goal.t.z,-20,20);}
+cv.addEventListener('pointermove',e=>{
+  const pr=ptrs.get(e.pointerId);if(!pr)return;const dx=e.clientX-pr.x,dy=e.clientY-pr.y;pr.x=e.clientX;pr.y=e.clientY;if(down)down.moved+=Math.abs(dx)+Math.abs(dy);
+  if(ptrs.size===1){ if(e.shiftKey||(e.buttons&2)||(e.buttons&4)) pan(dx,dy); else {goal.th-=dx*.006;goal.ph=clamp(goal.ph-dy*.006,.12,1.55);} }
+  else if(ptrs.size===2){const a=[...ptrs.values()],d=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y),m={x:(a[0].x+a[1].x)/2,y:(a[0].y+a[1].y)/2};
+    if(pinch){goal.r=clamp(goal.r*pinch.d/d,2.5,60);pan(m.x-pinch.m.x,m.y-pinch.m.y);} pinch={d,m};}
+});
+function up(e){ptrs.delete(e.pointerId);pinch=null;
+  if(down&&e.type==='pointerup'&&down.moved<6&&performance.now()-down.t<600&&ptrs.size===0&&e.button===0) doPick(e);
+  if(!ptrs.size)down=null;}
+cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
+cv.addEventListener('wheel',e=>{e.preventDefault();goal.r=clamp(goal.r*Math.exp(e.deltaY*.0012),2.5,60);},{passive:false});
+cv.addEventListener('dblclick',e=>{if(!hit(e)){selected=null;VIEWS.all();renderNav();renderPanel();}});
+const ray=new T.Raycaster(),mv=new T.Vector2();
+function hit(e){const r=cv.getBoundingClientRect();mv.set(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);ray.setFromCamera(mv,cam);
+  const hs=ray.intersectObjects(pick,false);for(const h of hs){let o=h.object,vis=true;while(o){if(!o.visible){vis=false;break;}o=o.parent;}if(vis)return h.object;}return null;}
+function doPick(e){const m=hit(e);if(!m)return;
+  if(m.userData.obj){selectObj(m.userData.obj,m);}else if(m.userData.fi!=null&&m.userData.fi>=0){selectFloor(m.userData.fi);}}
+/* ───────── 선택 · 패널 ───────── */
+let selected=null, tab='scene', evKey=null, showLabels=innerWidth>700;
+function floorCenter(i){return new T.Vector3(0,yOf(i)+1.5,0);}
+function selectFloor(i){selected={type:'floor',i};fly(floorCenter(i),i===5?20:19,.3,1.28);if(i===2)tab='decide';else tab='scene';evKey=null;renderNav();renderPanel();}
+function selectObj(key,mesh){
+  const o=OBJ[key];selected={type:'obj',key};
+  const wp=new T.Vector3();mesh.getWorldPosition(wp);
+  if(key==='truck'||key==='exent'){fly(wp,o.z,.5,1.2);} else fly(wp,o.z,.35,1.25);
+  if(key==='board'||key==='screen')tab='decide';else tab='scene';evKey=null;renderNav();renderPanel();}
+function renderNav(){
+  const nav=document.getElementById('floorNav');
+  nav.innerHTML='<h2>층 안내</h2>'+[5,4,3,2,1,0].map(i=>{const f=FLOORS[i];const on=selected&&selected.type==='floor'&&selected.i===i;
+    return `<button class="fbtn${on?' on':''}${f.locked?' lock':''}" data-f="${i}"><b>${f.id} ${f.sub.split(' ·')[0].split(' +')[0]}</b><small>${f.sub}</small></button>`;}).join('')
+    +`<button class="fbtn" data-f="street"><b>거리</b><small>날씨 · 환자 · 도매 트럭</small></button>`;
+  nav.querySelectorAll('.fbtn').forEach(b=>b.onclick=()=>{const v=b.dataset.f;if(v==='street'){selected={type:'street'};fly(new T.Vector3(0,1.5,D/2+4),22,.1,1.4);tab='scene';evKey=null;renderNav();renderPanel();}else selectFloor(+v);});
+  updateLabelStates();
+}
+const refsHtml=r=>`<div class="refs">${r.map(k=>`<button class="ref${evKey===k?' on':''}" data-ev="${k}">${k}</button>`).join('')}</div>`;
+const evHtml=()=>evKey&&EV[evKey]?`<div class="evbox"><b>${EV[evKey].t}</b>${EV[evKey].b}</div>`:'';
+function stateLine(){const s=H[day];return `<div class="sec"><h4>지금 값 <span class="badge">가상</span></h4><table><tr><th>날짜</th><td>${dlabel(s)}</td><th>호흡기 지수</th><td>${s.resp}</td></tr><tr><th>예상 수요</th><td>${s.demand}개</td><th>처방</th><td>${s.rx}건</td></tr><tr><th>재고</th><td>${s.stock}개</td><th>재고일수</th><td>${s.dos.toFixed(1)}일</td></tr></table></div>`;}
+function renderPanel(){
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
+  const el=document.getElementById('pbody');let h='';
+  if(tab==='scene'){
+    if(!selected){h=`<h3>건물을 둘러보세요</h3><p class="mut">층을 클릭하면 그 층으로 줌인하고, 안의 물건을 클릭하면 어떤 데이터가 이 모양을 만드는지와 근거 발언이 나옵니다.</p>
+      <div class="sec"><h4>줌 단계 3개</h4><ul class="plain"><li><b>건물</b> — 층별 상태를 한눈에 (라벨의 숫자)</li><li><b>층</b> — 그 층의 장면과 데이터 연결</li><li><b>물건</b> — 진열대·약사·트럭 하나의 값과 근거</li></ul></div>
+      <div class="sec"><h4>먼저 해 보세요</h4><ul class="plain"><li>아래 <b>재생</b>을 눌러 하루가 지나가는 모습 보기</li><li><b>3층</b>을 눌러 결정 카드 보기</li><li><b>층 분리</b>로 단면 펼치기</li></ul></div>`+stateLine();}
+    else if(selected.type==='floor'){const f=FINFO[selected.i];h=`<h3>${f.t}</h3>${FLOORS[selected.i].locked?'<span class="badge warn">2차 · 잠김</span>':''}<p>${f.d}</p>
+      <div class="sec"><h4>이 장면을 만드는 데이터 <span class="mut" style="text-transform:none;font-weight:400">(제안)</span></h4><ul class="bind">${f.b.map(x=>`<li>${x.replace(/^([\w_.]+)/,'<code>$1</code>')}</li>`).join('')}</ul></div>
+      <div class="sec"><h4>근거</h4>${refsHtml(f.r)}</div>${evHtml()}${stateLine()}`;}
+    else if(selected.type==='obj'){const o=OBJ[selected.key];h=`<h3>${o.t}</h3><p>${o.d}</p>${objDyn(selected.key)}
+      <div class="sec"><h4>연결되는 데이터 <span class="mut" style="text-transform:none;font-weight:400">(제안)</span></h4><ul class="bind">${o.b.map(x=>`<li>${x.replace(/^([\w_.]+)/,'<code>$1</code>')}</li>`).join('')}</ul></div>
+      <div class="sec"><h4>근거</h4>${refsHtml(o.r)}</div>${evHtml()}`;}
+    else {h=`<h3>거리</h3><p>건물 밖 환경입니다. 감기·독감 지수가 높아지면 거리에 환자가 늘고 날씨가 흐려지며, 입고가 있는 날에는 도매 트럭이 옵니다. 건너편에는 휴진 여부를 보여 주는 기존 이비인후과가 있습니다.</p>
+      <div class="sec"><h4>연결되는 데이터 <span class="mut" style="text-transform:none;font-weight:400">(제안)</span></h4><ul class="bind"><li><code>환경 변수(감기·독감 지수)</code> → 날씨, 거리 환자 수</li><li><code>supply_daily.supplied_qty</code> → 도매 트럭 적재량</li><li><code>calendar</code> 휴진 → 건너편 셔터</li></ul></div>`+stateLine();}
+  } else if(tab==='decide'){ h=decideHtml(); }
+  else if(tab==='compare'){ h=compareHtml(); }
+  else { h=trustHtml(); }
+  el.innerHTML=h;
+  el.querySelectorAll('[data-ev]').forEach(b=>b.onclick=()=>{evKey=evKey===b.dataset.ev?null:b.dataset.ev;renderPanel();});
+}
+function objDyn(k){const s=H[day];
+  if(k==='cold')return `<div class="sec"><h4>지금 값 <span class="badge">가상</span></h4><p>재고 ${s.stock}개 · 내일 예상 수요 ${s.fc}개 → <b>${s.dos.toFixed(1)}일치</b> ${s.so>0?'<span class="badge bad">오늘 품절 '+s.so+'개</span>':''}</p></div>`;
+  if(k==='truck')return `<div class="sec"><h4>지금 값 <span class="badge">가상</span></h4><p>${s.recv>0?`오늘 입고 ${s.recv}개 (주문 대비 ${Math.round(s.fillPct*100)}%)`:'오늘은 입고 없음'}</p></div>`;
+  if(k==='exent'||k==='ent')return `<div class="sec"><h4>지금 값 <span class="badge">가상</span></h4><p>${s.closed?'오늘 기존 이비인후과 <b>휴진</b> → 신규 의원 붐빔, 처방 '+s.rx+'건':'오늘 기존 이비인후과 진료 → 신규 의원은 평시, 처방 '+s.rx+'건'}</p></div>`;
+  if(k==='counter'||k==='dispense')return `<div class="sec"><h4>지금 값 <span class="badge">가상</span></h4><p>오늘 처방 ${s.rx}건</p></div>`;
+  if(k==='board'||k==='screen')return `<div class="sec"><p><b>${s.opts[s.ci].k}</b> 선택 · 발주 +${s.order}개 — ‘판단’ 탭에서 자세히 봅니다.</p></div>`;
+  return '';}
+function decideHtml(){const s=H[day],c=s.opts[s.ci];
+  const reasons=[];
+  reasons.push(`<li><span class="ref" data-ev="R02">R02</span> 남은 ${s.stock}개는 내일 예상 수요 ${s.fc}개의 <b>${s.dos.toFixed(1)}일치</b>. 목표 ${s.target}일치에 ${s.dos>=s.target?'충분합니다':'모자랍니다'}.</li>`);
+  if(s.nextClosed)reasons.push(`<li><span class="ref" data-ev="R08">R08</span> <span class="ref" data-ev="E003">E003</span> 내일 기존 이비인후과 휴진 → 신규 의원이 붐벼 처방이 늘 것으로 보고 수요를 +9개로 반영.</li>`);
+  if(P.short&&s.fillN<1)reasons.push(`<li><span class="badge">가상 설정</span> 도매 입고율 ${Math.round(s.fillN*100)}% 예상 → 필요량을 입고율로 나눠 늘림. <span class="mut">(근거 발언 없음 — G02)</span></li>`);
+  reasons.push(`<li><span class="ref" data-ev="R03">R03</span> 현금 ${fmtKRW(s.cash+c.q*s.COST)}, 최소 보유 ${fmtKRW(s.RES)} → 발주 한도 <b>${s.capCash}개</b>.</li>`);
+  reasons.push(`<li><span class="ref" data-ev="R04">R04</span> 반품이 쉽지 않아 내일 수요의 4배(${s.capOver}개)를 넘기지 않음.</li>`);
+  const chg=[];
+  if(c.adj)chg.push(`발주 한도(현금)가 ${s.need}개 이상이 되면 제약이 풀려 ${s.need}개를 그대로 발주`);
+  if(P.short&&s.fillN<1)chg.push('도매 입고율이 100%로 확인되면 발주량이 약 '+Math.round(s.fillN*100)+'% 수준으로 줄어듦');
+  if(s.nextClosed)chg.push('휴진 정보가 틀렸다면 수요가 9개 줄어 소량으로 충분');
+  if(!chg.length)chg.push('유행 지수가 20 이상 오르면 표준에서 대량으로 올릴 수 있음');
+  return `<h3>결정 카드 · ${dlabel(s)} 마감</h3><span class="badge">가상 시연</span> <span class="badge ${s.conf==='높음'?'real':s.conf==='보통'?'warn':'bad'}">확신 ${s.conf}</span>
+  <div class="card" style="margin-top:8px"><div class="mut" style="font-size:11px">제안된 행동 (이 목업에서는 규칙 계산이 LLM 제안을 대신함)</div><div class="act">감기약 A 발주 +${s.order}개 · ${c.k}</div>
+  ${c.adj?'<span class="badge warn">현금 한도로 조정됨</span>':''}</div>
+  <div class="sec"><h4>왜 이렇게 판단했나 · 근거를 눌러 원문 확인</h4><ul class="plain">${reasons.join('')}</ul></div>${evHtml()}
+  <div class="sec"><h4>선택지와 제약 검사 (코드가 확인)</h4><table><tr><th>선택지</th><th>수량</th><th>예상 재고일수</th><th>현금 잔액</th><th>제약</th></tr>
+  ${s.opts.map((o,k)=>`<tr class="${k===s.ci?'pick':o.ok?'':'no'}"><td>${o.k}${k===s.ci?' ✓':''}</td><td>${o.q}</td><td>${o.dos.toFixed(1)}일</td><td>${fmtKRW(o.cashLeft)}</td><td>${o.ok?'통과':'<span style="color:var(--bad)">초과</span>'}</td></tr>`).join('')}</table></div>
+  <div class="sec"><h4>무엇이 바뀌면 판단이 달라지나</h4><ul class="plain">${chg.map(x=>`<li>${x}</li>`).join('')}</ul></div>
+  <div class="sec"><h4>결과 (다음 날)</h4><p class="mut">${day<13?`내일 입고 ${H[day+1].recv}개, 품절 ${H[day+1].so}개`:'기간 마지막 날'} — <span class="ref" data-ev="G04">G04</span> 제안과 관측 결과는 따로 기록합니다.</p></div>`;}
+function compareHtml(){
+  const sm=a=>({so:a.filter(x=>x.so>0).length,soq:a.reduce((q,x)=>q+x.so,0),minS:Math.min(...a.map(x=>x.stock)),minC:Math.min(...a.map(x=>x.cash)),ord:a.reduce((q,x)=>q+x.order,0)});
+  const a=sm(H),b=sm(HB);
+  const W2=300,H2=84,mx=Math.max(...H.map(x=>x.stock),...HB.map(x=>x.stock),1);
+  const pl=arr=>arr.map((x,i)=>`${(i/13*(W2-20)+10).toFixed(1)},${(H2-10-x.stock/mx*(H2-20)).toFixed(1)}`).join(' ');
+  return `<h3>시나리오 비교</h3><p class="mut">‘평시’(휴진·입고 부족·현금 제약 없음, 유행 0)와 지금 설정을 같은 14일로 돌려 비교합니다. <span class="badge">가상</span></p>
+  <table><tr><th></th><th>평시</th><th>지금 설정</th></tr>
+  <tr><td>품절 발생일</td><td>${b.so}일</td><td><b>${a.so}일</b></td></tr><tr><td>품절 총량</td><td>${b.soq}개</td><td><b>${a.soq}개</b></td></tr>
+  <tr><td>최저 재고</td><td>${b.minS}개</td><td><b>${a.minS}개</b></td></tr><tr><td>최저 현금</td><td>${fmtKRW(b.minC)}</td><td><b>${fmtKRW(a.minC)}</b></td></tr>
+  <tr><td>총 발주량</td><td>${b.ord}개</td><td><b>${a.ord}개</b></td></tr></table>
+  <div class="sec"><h4>마감 재고 추이</h4><svg class="spark" viewBox="0 0 ${W2} ${H2}" role="img" aria-label="평시와 현재 설정의 마감 재고 추이"><line x1="10" y1="${H2-10}" x2="${W2-10}" y2="${H2-10}" stroke="var(--line)"/>
+  <polyline fill="none" stroke="var(--muted)" stroke-width="1.6" stroke-dasharray="4 3" points="${pl(HB)}"/><polyline fill="none" stroke="var(--accent)" stroke-width="2.2" points="${pl(H)}"/>
+  <line x1="${(day/13*(W2-20)+10).toFixed(1)}" y1="6" x2="${(day/13*(W2-20)+10).toFixed(1)}" y2="${H2-10}" stroke="var(--virt)" stroke-width="1"/></svg>
+  <div class="legend"><span><i style="background:var(--muted)"></i>평시</span><span><i style="background:var(--accent)"></i>지금 설정</span><span><i style="background:var(--virt)"></i>현재 날짜</span></div></div>
+  <p class="mut" style="margin-top:8px">실제 서비스에서는 같은 시나리오를 규칙만 바꿔 돌리는 비교(‘R04를 빼면?’)도 이 탭에 들어옵니다.</p>`;}
+function trustHtml(){return `<h3>신뢰 · 옥상 관제실</h3><p>화면의 값이 어디서 왔는지 한눈에 봅니다.</p>
+  <div class="sec"><h4>이 화면의 값</h4><table><tr><th>값</th><th>표시</th></tr>
+  <tr><td>재고·현금·처방·입고</td><td><span class="badge">가상</span></td></tr><tr><td>감기·독감 지수</td><td><span class="badge">가상</span> <span class="mut">실데이터 연결 예정</span></td></tr>
+  <tr><td>2층 약국·같은 층 이비인후과·1층 정형외과</td><td><span class="badge real">인터뷰 사실</span></td></tr><tr><td>판단 규칙 R02·R03·R04·R08</td><td><span class="badge real">인터뷰 근거</span></td></tr></table></div>
+  <div class="sec"><h4>근거 등급</h4><p>A 실측·직접 근거 / B 파생·부분 근거 / C 가정 중심. 가정은 A가 될 수 없습니다. 이 목업의 가상값은 등급을 붙이지 않고 ‘가상’으로만 표시했습니다.</p></div>
+  <div class="sec"><h4>가드레일</h4>${refsHtml(['G02','G04','G07'])}${evHtml()}</div>
+  <div class="sec"><h4>구조 검증</h4><p>CSV 묶음의 구조 검증 8가지 통과 <span class="mut">(저장소 기준)</span>. 서비스에서는 이 신호등을 이 층에서 보여 줍니다.</p></div>`;}
+document.getElementById('tabs').onclick=e=>{const b=e.target.closest('button');if(!b)return;tab=b.dataset.t;renderPanel();};
+
+/* ───────── 라벨 · HUD · 타임라인 ───────── */
+const labs=[];const labEl=document.getElementById('labels');
+function addLab(html,posFn,cls,click){const el=document.createElement('div');el.className='lab '+(cls||'');el.innerHTML=html;el.onclick=click||null;labEl.appendChild(el);const o={el,posFn,html};labs.push(o);return o;}
+const floorLabs=[];
+FLOORS.forEach((f,i)=>{const l=addLab('',()=>new T.Vector3(-W/2-.9,yOf(i)+1.6,D/2+.3),'',()=>selectFloor(i));floorLabs.push(l);});
+const trLab=addLab('',()=>truck.position.clone().add(new T.Vector3(0,3.6,0)),'c',()=>{selectObj('truck',cab);});
+const exLab=addLab('',()=>new T.Vector3(-15.5,6.6,3.2),'c',()=>{selectObj('exent',exSign);});
+function floorLabHtml(i){const s=H[day];const f=FLOORS[i];
+  const st=[`${f.id} ${f.sub}`,
+    `${f.id} ${f.sub}<small>처방 ${s.rx}건 · 재고 ${s.dos.toFixed(1)}일치</small>`,
+    `${f.id} ${f.sub}<small>${s.opts[s.ci].k} · +${s.order}개</small>`,
+    `${f.id} ${f.sub}<small>잠김 · 2차</small>`,`${f.id} ${f.sub}<small>잠김 · 2차</small>`,`${f.id} ${f.sub}<small>검증 8/8 통과</small>`];
+  return st[i];}
+function updateLabelStates(){floorLabs.forEach((l,i)=>l.el.classList.toggle('on',!!selected&&selected.type==='floor'&&selected.i===i));}
+function refreshLabelText(){const s=H[day];floorLabs.forEach((l,i)=>{l.el.innerHTML=floorLabHtml(i);});
+  trLab.el.innerHTML=s.recv>0?`도매 입고 ${s.recv}개<small>주문 대비 ${Math.round(s.fillPct*100)}%</small>`:`도매 입고 없음`;
+  exLab.el.innerHTML=s.closed?`<span style="color:var(--bad)">기존 이비인후과 휴진</span>`:`기존 이비인후과 진료`;}
+const v3=new T.Vector3();
+function placeLabels(){const r=stage.getBoundingClientRect();
+  labs.forEach(l=>{if(!showLabels){l.el.style.display='none';return;}
+    v3.copy(l.posFn());v3.project(cam);const hide=v3.z>1||Math.abs(v3.x)>1.1||Math.abs(v3.y)>1.1;
+    if(l.el.classList.contains('c')&&goal.r<6)l.el.style.display='none'; else l.el.style.display=hide?'none':'';
+    l.el.style.left=((v3.x+1)/2*r.width)+'px';l.el.style.top=((1-v3.y)/2*r.height)+'px';});}
+function renderHud(){const s=H[day];document.getElementById('hud').innerHTML=
+  `<div class="chip"><span>날짜</span><b>${dlabel(s)}</b></div><div class="chip"><span>호흡기 지수</span><b>${s.resp}</b></div><div class="chip"><span>처방</span><b>${s.rx}건</b></div>
+   <div class="chip ${s.dos<1.5?'bad':''}"><span>감기약 재고일수</span><b>${s.dos.toFixed(1)}일</b></div><div class="chip"><span>현금</span><b>${fmtKRW(s.cash)}</b></div>${s.so>0?`<div class="chip bad"><span>오늘 품절</span><b>${s.so}개</b></div>`:''}`;}
+function renderTl(){const el=document.getElementById('tl');el.innerHTML=H.map((s,i)=>`<button class="${i===day?'on':''}${s.so>0?' so':''}" data-d="${i}" title="${dlabel(s)} · ${s.opts[s.ci].k}">${s.dt.getDate()}<br><span style="color:var(--muted)">${WD[s.wd]}</span><i style="background:${kcol(s)}"></i></button>`).join('');
+  el.querySelectorAll('button').forEach(b=>b.onclick=()=>{day=+b.dataset.d;playing=false;setPlayBtn();onDay();});}
+function setPlayBtn(){const b=document.getElementById('bPlay');b.textContent=playing?'❚❚ 일시정지':'▶ 재생';}
+/* ───────── 상태 → 장면 ───────── */
+function drawText(ctx,t,x,y,font,col){ctx.font=font;ctx.fillStyle=col;ctx.fillText(t,x,y);}
+function drawScreen(){const s=H[day],c=screenC.getContext('2d'),w=1024,h=512;
+  c.fillStyle='#0e1519';c.fillRect(0,0,w,h);c.fillStyle='#122b2a';c.fillRect(0,0,w,64);
+  drawText(c,'발주 판단실 · 결정 카드',28,42,'600 30px sans-serif','#7fe3d4');drawText(c,'가상 시연',w-170,42,'600 24px sans-serif','#b79bff');
+  drawText(c,`${dlabel(s)} 마감 · 감기약 A`,28,110,'500 26px sans-serif','#cfd8dc');
+  drawText(c,`발주 +${s.order}개 (${s.opts[s.ci].k})`,28,176,'700 54px sans-serif','#ffffff');
+  drawText(c,`재고 ${s.stock}개 · ${s.dos.toFixed(1)}일치`,28,226,'500 28px sans-serif',s.dos<1.5?'#ff8a7a':'#9ee6a0');
+  drawText(c,`확신 ${s.conf}  ·  현금 ${fmtKRW(s.cash)}`,28,268,'500 26px sans-serif','#cfd8dc');
+  drawText(c,'근거: R02 · R03 · R04'+(s.nextClosed?' · R08':''),28,314,'500 24px sans-serif','#7fe3d4');
+  s.opts.forEach((o,k)=>{const x=560+0,y=110+k*62;c.fillStyle=k===s.ci?'#0f766e':'#1c262c';c.fillRect(x,y,430,50);drawText(c,`${o.k}  ${o.q}개`,x+16,y+34,'500 24px sans-serif',o.ok?'#fff':'#7d8a90');drawText(c,o.ok?'통과':'초과',x+340,y+34,'500 22px sans-serif',o.ok?'#9ee6a0':'#ff8a7a');});
+  drawText(c,'제안 → 제약 검사 → 결정 → 결과',28,470,'500 22px sans-serif','#7d8a90');
+  screenTx.needsUpdate=true;
+  monitors.forEach(m=>{const cc=m.userData.cv.getContext('2d');cc.fillStyle='#0e1519';cc.fillRect(0,0,256,150);
+    const t=[['데이터 출처','가상 6 · 인터뷰 4'],['구조 검증','8/8 통과'],['근거 등급','A · B · C 표시']][m.userData.k];
+    drawText(cc,t[0],14,40,'500 20px sans-serif','#7fe3d4');drawText(cc,t[1],14,94,'600 28px sans-serif','#fff');m.userData.tx.needsUpdate=true;});}
+const shelfCol=d=>d<1.5?0xd9534f:d<3.5?0xe0a030:0x5fae66;
+function applyDay(){
+  const s=H[day];
+  shelfMeshes.forEach(sm=>{if(sm.key!=='cold')return;const col=shelfCol(s.dos);const lvl=clamp(s.stock/80,.06,1);
+    sm.fills.forEach((f,k)=>{f.material=new T.MeshStandardMaterial({color:s.stock<=0?0x555b66:col,roughness:.7});f.scale.y=clamp(lvl*1.6-k*.2,.15,1);f.userData.base=1;});});
+  const nCust=clamp(Math.ceil(s.rx/14),1,6);custPh.forEach((p,k)=>{p.visible=k<nCust;});
+  const cs=[[-2.6,.25,.2],[-1.6,.25,.4],[-3.2,.25,.9],[-2.2,.25,1.2],[-1.2,.25,1.1],[-3.6,.25,.1]];custPh.forEach((p,k)=>p.position.set(cs[k][0],.25,cs[k][2]));
+  const nEnt=s.closed?8:3;entPh.forEach((p,k)=>{p.visible=k<nEnt;});
+  shutter.visible=s.closed; exSign.material=mat(s.closed?0xb42318:0x2d7f9a);
+  const nSt=clamp(Math.round(s.resp/100*22),2,22);street.forEach((p,k)=>{p.visible=k<nSt;});
+  const stormy=s.resp>=70;rain.visible=stormy;cmat.color.set(stormy?0x8c929c:s.resp>=45?0xd9dde2:0xffffff);
+  truckTarget=s.recv>0?9:48; const nl=s.recv>0?Math.max(1,Math.round(6*Math.min(1,s.recv/60))):0;loads.forEach((b,k)=>b.visible=k<nl);
+  const partial=s.recv>0&&s.fillPct<.99;cab.material=mat(partial?0xd4881f:0x3f9aa0);
+  cards.forEach((c,k)=>{const o=s.opts[k];c.material.color.set(k===s.ci?0x0f9b8c:o.ok?0x8a8f98:0x7a4b47);c.material.opacity=o.ok||k===s.ci?1:.55;c.userData.up=k===s.ci?.35:0;});
+  drawScreen();refreshLabelText();renderHud();renderTl();renderPanel();
+}
+let truckTarget=48;
+function onDay(){applyDay();}
+function resize(){const r=stage.getBoundingClientRect();renderer.setSize(r.width,r.height,false);cam.aspect=r.width/r.height;cam.updateProjectionMatrix();}
+new ResizeObserver(resize).observe(stage);
+/* ───────── 루프 ───────── */
+const isDark=()=>{const r=document.documentElement.getAttribute('data-theme');if(r)return r==='dark';return matchMedia('(prefers-color-scheme: dark)').matches;};
+let lastDark=null;
+function theme(){const d=isDark();if(d===lastDark)return;lastDark=d;
+  scene.background=new T.Color(d?0x1c2227:0xdfe6ea);scene.fog=new T.Fog(d?0x1c2227:0xdfe6ea,70,170);
+  ground.material.color.set(d?0x3a4238:0xbfc7b4);hemi.intensity=d?.55:.85;sun.intensity=d?.55:.8;}
+const clock=new T.Clock();let frame=0;
+function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.05),t=clock.elapsedTime;frame++;
+  if(frame%20===1)theme();
+  const k=1-Math.pow(.0005,dt);cur.th+=(goal.th-cur.th)*k;cur.ph+=(goal.ph-cur.ph)*k;cur.r+=(goal.r-cur.r)*k;cur.t.lerp(goal.t,k);
+  explode+=(explodeGoal-explode)*(1-Math.pow(.001,dt));FG.forEach((g,i)=>g.position.y=yOf(i));
+  cam.position.set(cur.t.x+cur.r*Math.sin(cur.ph)*Math.sin(cur.th),cur.t.y+cur.r*Math.cos(cur.ph),cur.t.z+cur.r*Math.sin(cur.ph)*Math.cos(cur.th));cam.lookAt(cur.t);
+  if(playing){tAcc+=dt*(+document.getElementById('speed').value);if(tAcc>3.2){tAcc=0;if(day<13){day++;onDay();}else{playing=false;setPlayBtn();}}}
+  // 애니메이션
+  truck.position.x+=(truckTarget-truck.position.x)*(1-Math.pow(.02,dt));
+  street.forEach(p=>{if(!p.visible)return;const u=p.userData;u.u+=dt*u.sp;if(u.u>=1){u.u=0;u.sx=(Math.random()<.5?-1:1)*(10+Math.random()*14);}
+    const dx=-1.2,x=u.sx+(dx-u.sx)*Math.min(1,u.u/.92);const z=D/2+(u.u<.92?2.2:2.2-(u.u-.92)/.08*2);p.position.set(x,Math.abs(Math.sin(t*6+u.sx))*.05-.0,z);p.scale.setScalar(u.u>.97?Math.max(.01,(1-u.u)/.03):1);p.rotation.y=dx>u.sx?Math.PI/2:-Math.PI/2;});
+  custPh.forEach((p,i)=>{if(p.visible)p.position.y=.25+Math.abs(Math.sin(t*1.5+i))*.03;});
+  if(phA)phA.position.x=-5.0+Math.sin(t*.6)*.5; if(phB)phB.position.x=-2.2+Math.sin(t*.4)*.35;
+  cards.forEach(c=>{const up=c.userData.up||0;c.position.y+=((.75+.12+.45+up)-c.position.y)*.1;});
+  if(rain.visible){const a=rg.attributes.position;for(let i=0;i<RN;i++){let y=a.array[i*6+1]-dt*22;if(y<0){y+=26;}a.array[i*6+1]=y;a.array[i*6+4]=y-.9;}a.needsUpdate=true;}
+  clouds.children.forEach((c,i)=>{c.position.x+=dt*.25;if(c.position.x>34)c.position.x=-34;});
+  renderer.render(scene,cam);placeLabels();
+}
+/* ───────── 컨트롤 연결 ───────── */
+document.getElementById('tools').onclick=e=>{const b=e.target.closest('button');if(!b)return;const v=b.dataset.v;
+  if(VIEWS[v]){selected=null;VIEWS[v]();renderNav();renderPanel();}
+  else if(v==='explode'){explodeGoal=explodeGoal?0:1;b.classList.toggle('on',!!explodeGoal);if(explodeGoal)fly(new T.Vector3(0,12,0),52,.55,1.2);else VIEWS.all();}
+  else if(v==='labels'){showLabels=!showLabels;b.classList.toggle('on',showLabels);}};
+function recompute(){P.flu=+document.getElementById('pFlu').value;P.ent=document.getElementById('pEnt').checked;P.short=document.getElementById('pShort').checked;P.cash=document.getElementById('pCash').checked;
+  document.getElementById('vFlu').textContent=P.flu;H=simulate(P);applyDay();}
+['pFlu','pEnt','pShort','pCash'].forEach(id=>document.getElementById(id).addEventListener('input',recompute));
+function preset(f,e,s,c){document.getElementById('pFlu').value=f;document.getElementById('pEnt').checked=e;document.getElementById('pShort').checked=s;document.getElementById('pCash').checked=c;recompute();}
+document.getElementById('bPreset1').onclick=()=>preset(80,true,true,true);
+document.getElementById('bPreset0').onclick=()=>preset(25,false,false,false);
+document.getElementById('bPlay').onclick=()=>{if(!playing&&day>=13)day=0;playing=!playing;setPlayBtn();onDay();};
+document.getElementById('bStep').onclick=()=>{playing=false;setPlayBtn();day=day<13?day+1:0;onDay();};
+document.getElementById('bLabels').classList.toggle('on',showLabels);resize();theme();renderNav();applyDay();VIEWS.all();loop();
+window.__lab={cam,goal,cur,selectFloor,selectObj,get day(){return day},set day(v){day=v;onDay()}};
+})();
+</script>

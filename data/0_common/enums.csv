@@ -1,0 +1,86 @@
+﻿enum_group,code,label_ko,description_ko
+judgement,real,실데이터,개체 한 곳 단위로 공개된 데이터
+judgement,reference,참고용,지역 단위 등. 분모로 나눠 규모를 바꿔 씀
+judgement,virtual,가상,공개 자료가 없어 팀이 만든 데이터
+value_origin,measured,실측,공개 통계·고시 등을 그대로 옮긴 값
+value_origin,derived,파생,실측값끼리 계산해 얻은 값
+value_origin,assumption,가정,근거가 약하거나 팀이 정한 값. 등급 A 불가
+value_origin,interview,인터뷰,인터뷰 발언에서 온 값
+value_origin,decision,결정,"팀이 정한 설정값(기간, 시드 등)"
+support_grade,A,충분,공표 자료나 법령으로 직접 확인
+support_grade,B,부분,근거는 있으나 단위·지역·시점이 다르거나 변환을 거침
+support_grade,C,약함,근거가 없거나 일반 상식 수준. 약사 검증 우선 대상
+variable_category,fixed_attribute,고정 속성,
+variable_category,structural_constraint,구조적 제약,
+variable_category,internal_state,내부 동적 상태,
+variable_category,external_trigger,외부 환경·트리거,
+variable_category,decision_rule,판단규칙,
+variable_category,outcome_learning,결과·학습,
+data_scope,world_linked,세계 데이터와 연결,variable_data_map 에 행이 있음
+data_scope,interview_only,인터뷰 전용,공개·가상 데이터 대상이 아님
+link_type,claim_supports_variable,발언→변수,
+link_type,claim_supports_rule,발언→규칙,
+link_type,rule_uses_variable,규칙→변수,
+link_type,profile_uses_variable,프로필→변수,
+link_type,profile_cites_claim,프로필→발언,
+link_type,guardrail_cites_claim,가드레일→발언,
+link_type,case_cites_claim,사례→발언,
+link_type,case_illustrates_rule,사례→규칙,
+role,input,입력,시뮬레이터가 읽는 값
+role,derived,파생,다른 열에서 계산되는 값
+product_category,prescription_drug,전문의약품,
+product_category,otc_drug,일반의약품,
+product_category,health_supplement,건강기능식품,
+product_category,drink_quasi_drug,마시는 의약외품,
+product_category,other_goods,기타 의약외품·잡화,
+vendor,VA,대형 의약품도매(주거래),
+vendor,VB,지역 의약품도매,
+vendor,VC,제약사·건기식 직거래,
+action,keep,유지,
+action,replace_with_real,실데이터로 교체,
+action,scenario_variable,시나리오 변수,
+action,validate_with_pharmacist,약사 검증 대상,
+action,regenerate_with_profile,인터뷰 프로필로 재생성,
+applies_to,거래 관행 설명,거래 관행 설명,
+applies_to,과거 경험에 대한 평가,과거 경험에 대한 평가,
+applies_to,과거 근무 경험,과거 근무 경험,
+applies_to,과거 근무 약국,과거 근무 약국,
+applies_to,과거 인근 약국,과거 인근 약국,
+applies_to,과거 인근 약국 관찰,과거 인근 약국 관찰,
+applies_to,다른 서비스 의견,다른 서비스 의견,
+applies_to,다른 약국 일반,다른 약국 일반,
+applies_to,다른 운영형 비교,다른 운영형 비교,
+applies_to,다른 유형에 대한 의견,다른 유형에 대한 의견,
+applies_to,본인 경험,본인 경험,
+applies_to,본인 운영 경험,본인 운영 경험,
+applies_to,본인 운영 방식,본인 운영 방식,
+applies_to,본인 의견,본인 의견,
+applies_to,상품 일반,상품 일반,
+applies_to,서비스 경험·의견,서비스 경험·의견,
+applies_to,약국 전반,약국 전반,
+applies_to,약품 일반,약품 일반,
+applies_to,약품·상품 일반,약품·상품 일반,
+applies_to,업계 일반,업계 일반,
+applies_to,업계·가정 사례,업계·가정 사례,
+applies_to,유형 비교,유형 비교,
+applies_to,응답자의 운영 방식,응답자의 운영 방식,
+applies_to,응답자의 전산 사용 설명,응답자의 전산 사용 설명,
+applies_to,인터뷰 상황,인터뷰 상황,
+applies_to,인터뷰어 아이디어,인터뷰어 아이디어,
+applies_to,일반 경험,일반 경험,
+applies_to,일반 상황,일반 상황,
+applies_to,주변 의료기관,주변 의료기관,
+applies_to,현재 관점,현재 관점,
+applies_to,현재 구상＋타유형,현재 구상＋타유형,
+applies_to,현재 및 다른 유형,현재 및 다른 유형,
+applies_to,현재 약국,현재 약국,
+applies_to,현재 약국·가정 상황,현재 약국·가정 상황,
+applies_to,현재 약국·인접 의원,현재 약국·인접 의원,
+applies_to,현재 약국·일반 조건,현재 약국·일반 조건,
+applies_to,현재 약국＋과거 경험,현재 약국＋과거 경험,
+applies_to,현재 운영 관점,현재 운영 관점,
+applies_to,현재·과거 시스템 비교,현재·과거 시스템 비교,
+applies_to,현재·본인 경험,현재·본인 경험,
+applies_to,현재·업계 경험,현재·업계 경험,
+applies_to,현재·일반 운영,현재·일반 운영,
+applies_to,현재와 장기운영 비교,현재와 장기운영 비교,

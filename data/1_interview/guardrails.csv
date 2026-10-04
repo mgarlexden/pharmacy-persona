@@ -1,0 +1,8 @@
+﻿guardrail_id,rule_ko,applies_at,handling_ko,distinguish_ko,check_type,source_file,source_sheet,generated_at
+G01,현재·과거·타약국 구분,근거를 검색·입력할 때,"현재 약국 설명, 응답자의 과거 경험, 타약국 비교를 구분해 검색한다.",과거 대형약국 재고·직원을 현재값에 합치지 않는다.,scope_field,interview_extension.xlsx,04_RAG주의,2026-10-05T01:15
+G02,없는 수량·비율을 만들지 않기,재고·예산·비중이 없는 상황,추가로 필요한 정보와 조건부 판단을 표시한다. 실제 값 없이 정량 행동을 확정하지 않는다.,"가상 입력은 가상으로 표시하고, 현재 인터뷰 값처럼 저장하지 않는다.",value_origin_and_null,interview_extension.xlsx,04_RAG주의,2026-10-05T01:15
+G03,의료·법률 발언의 사용범위,제도·약물 관련 발언을 읽을 때,운영자의 인식과 제약 설명으로 보관한다. 검증 전 자동 대체·병용·처리 허용 규칙에 사용하지 않는다.,제품 코드나 안전정보 조회가 자동 추천의 허용 근거가 되는 것은 아니다.,no_auto_substitution_basis,interview_extension.xlsx,04_RAG주의,2026-10-05T01:15
+G04,생성 결과와 관측 결과 분리,행동 제안 뒤 결과를 기록할 때,"제안, 실제 시행, 실제 관측, 가상 모형 결과를 구분한다.",LLM이 쓴 성과를 실제 성과나 평가 정답으로 다시 넣지 않는다.,generated_vs_observed,interview_extension.xlsx,04_RAG주의,2026-10-05T01:15
+G05,현재 상태에 최종 발언 반영,같은 사건에 후속 설명이 나올 때,출처와 시점을 보존하고 현재값에는 확인된 후속 설명을 반영한다.,고장이었고 수리됐다는 내용을 두고 현재도 재고 부족 경고라고 답하지 않는다.,latest_statement_wins,interview_extension.xlsx,04_RAG주의,2026-10-05T01:15
+G06,계획·의견과 실행 구분,바람·계획·효용 반응을 읽을 때,해야 한다·하려 한다·좋을 수 있다를 했다·효과가 났다와 분리한다.,세트 진열 계획과 알림에 대한 반응을 시행·성과로 쓰지 않는다.,plan_vs_action,interview_extension.xlsx,04_RAG주의,2026-10-05T01:15
+G07,응답자와 공동운영 정책 구분,약국 전체의 판단을 대표할 때,응답자 1인의 설명이라는 범위를 유지한다.,약사 2인 운영만으로 두 사람의 합의·권한·성향을 확정하지 않는다.,respondent_scope,interview_extension.xlsx,04_RAG주의,2026-10-05T01:15

@@ -1,0 +1,24 @@
+﻿field_key,label_ko,source_table,source_column,variable_id,param_id,field_kind,transform_note,status
+event.calendar.is_open,영업 여부,calendar,is_open,X001,,event,,draft
+event.calendar.holiday_adjacency,연휴 전후 구분,calendar,holiday_adjacency,X001,,event,,draft
+event.clinic_schedule.ent_closed,이비인후과 휴진 여부,calendar,ent_closed,X003,,event,확인 필요: 더미의 휴진이 같은 건물 의원인지 인근 기존 의원인지. 인터뷰는 '기존 의원 휴진 → 신규 의원 혼잡',draft
+event.epidemic.influenza_ili,인플루엔자 의사환자분율,calendar,influenza_ili_per_1000,X005,,event,,draft
+event.epidemic.respiratory_index,호흡기 처방지수,calendar,respiratory_index,X005,,event,,draft
+state.rx_volume.total,일 처방 건수,rx_daily,rx_count_total,P018,,state,,draft
+state.book_stock,전산 재고,inventory_daily,closing_system_stock,S001,,state,품목별,draft
+state.physical_stock,실물 재고,inventory_daily,closing_physical_stock,S002,,state,품목별,draft
+state.stock_gap,전산-실물 오차,inventory_daily,system_physical_gap,S004,,state,,draft
+state.expected_coverage,잔여일수,inventory_daily,days_of_supply,S008,,state,인터뷰는 '오늘·내일 버틸지'의 체감 판단. 수치 환산은 가정,draft
+state.recent_usage,최근 7일 일평균 사용,inventory_daily,avg_daily_use_7d,S008,,state,,draft
+event.supplier.order_supplied,실제 공급 수량,inventory_daily,supplied_qty,X006,,event,order_qty 와 비교해 품절 판정,draft
+event.supplier.stockout_rate,거래처 결품률,supply_daily,stockout_rate,X006,,event,,draft
+constraint.supplier.same_day_delivery,당일 배송 가능,supply_daily,same_day_delivery,C015,,constraint,,draft
+constraint.supplier.order_cutoff,주문 마감,supply_daily,order_cutoff,C015,,constraint,,draft
+constraint.supplier.min_order,최소 주문금액,supply_daily,min_order_krw,C015,,constraint,,draft
+constraint.working_capital.closing_cash,기말 현금,cash_daily,closing_cash_krw,C001,,constraint,시작 현금은 시나리오 변수(VP 시작 현금),draft
+constraint.working_capital.unpaid,미지급 도매대금,cash_daily,unpaid_wholesale_krw,C001,,constraint,,draft
+state.purchase_pressure.runway_days,현금 여력일수,cash_daily,cash_runway_days,S011,,state,,draft
+state.purchase_pressure.burden_ratio,구매대금 부담률,cash_daily,purchase_burden_ratio,S011,,state,,draft
+constraint.payment_terms.terms,결제 조건,payment_daily,payment_terms,C002,,constraint,,draft
+constraint.payment_terms.discount_rate,금융비용 할인율,payment_daily,discount_rate_pct,C002,,constraint,,draft
+state.otc_buyer_count,일반약 구매자 수,otc_hourly,buyers_total,S013,,state,인터뷰 10~15명/일과 비교,draft

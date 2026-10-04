@@ -1,0 +1,300 @@
+<title>약국 데이터 점검판</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<style>
+/* 레이아웃: 상단 요약 + 탭 5개. 표를 누르면 근거·연결이 아래로 펼쳐지는 점검 도구 */
+:root{
+  --bg:#f4f6f5; --panel:#ffffff; --ink:#1c2827; --muted:#586664; --faint:#8a9694; --line:#d9e1df; --soft:#eaf0ee;
+  --accent:#1d6b65; --accent-soft:#dcefec; --accent-ink:#0f4743;
+  --ok:#2c7a4b; --ok-bg:#e0f1e6; --warn:#9a5b0a; --warn-bg:#fbefd6; --bad:#b0352a; --bad-bg:#fae0dc;
+  --sans:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121b1a; --panel:#1a2524; --ink:#e4ecea; --muted:#a2b0ad; --faint:#74827f; --line:#2c3b39; --soft:#223130;
+  --accent:#58b9b0; --accent-soft:#1b3b38; --accent-ink:#a9e3dd;
+  --ok:#6cc58d; --ok-bg:#1c3326; --warn:#e0a24c; --warn-bg:#392c14; --bad:#ee7f73; --bad-bg:#3d1f1b; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121b1a; --panel:#1a2524; --ink:#e4ecea; --muted:#a2b0ad; --faint:#74827f; --line:#2c3b39; --soft:#223130;
+  --accent:#58b9b0; --accent-soft:#1b3b38; --accent-ink:#a9e3dd;
+  --ok:#6cc58d; --ok-bg:#1c3326; --warn:#e0a24c; --warn-bg:#392c14; --bad:#ee7f73; --bad-bg:#3d1f1b; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.55;margin:0}
+[hidden]{display:none!important}
+.wrap{max-width:1280px;margin:0 auto;padding-inline:20px;padding-block:24px 56px}
+h1{font-size:22px;margin:0 0 4px;font-weight:600;letter-spacing:-.01em;text-wrap:balance}
+.sub{color:var(--muted);margin:0 0 18px;max-width:70ch}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--line);position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);padding-block:8px;z-index:5}
+.tabs button{font:inherit;border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:8px;padding:6px 14px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.tabs button .n{font-family:var(--mono);font-size:11.5px;margin-left:6px;opacity:.8}
+button:focus-visible,select:focus-visible,input:focus-visible,tr.r:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.panel{display:flex;flex-direction:column;gap:22px;padding-top:18px;min-width:0}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;min-width:0}
+.tile .k{font-size:12px;color:var(--muted)}
+.tile .v{font-family:var(--mono);font-size:22px;font-weight:500;font-variant-numeric:tabular-nums}
+.tile .v small{font-size:13px;color:var(--faint)}
+.bar{height:6px;background:var(--soft);border-radius:3px;margin-top:6px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ok)}
+.bar.warn i{background:var(--warn)} .bar.bad i{background:var(--bad)}
+h2{font-size:15px;margin:0 0 8px;font-weight:600}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;min-width:0}
+.checks{display:grid;gap:6px}
+.check{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;padding:6px 0;border-bottom:1px solid var(--soft)}
+.check:last-child{border-bottom:0}
+.check .t{font-weight:500} .check .m{color:var(--bad);font-size:12.5px}
+.chip{display:inline-block;font-size:11.5px;font-weight:600;border-radius:5px;padding:1px 8px;white-space:nowrap;background:var(--soft);color:var(--muted)}
+.chip.ok{background:var(--ok-bg);color:var(--ok)} .chip.warn{background:var(--warn-bg);color:var(--warn)} .chip.bad{background:var(--bad-bg);color:var(--bad)}
+.chip.acc{background:var(--accent-soft);color:var(--accent-ink)}
+.chip.mono,.mono{font-family:var(--mono)}
+.todo{margin:0;padding-left:18px;display:grid;gap:4px}
+.todo li{color:var(--ink)} .todo b{font-family:var(--mono);font-weight:500}
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.filters label{font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:center;white-space:nowrap}
+select,input[type=search]{font:inherit;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:7px;padding:5px 8px;min-width:0;max-width:100%}
+input[type=search]{width:220px}
+.count{margin-left:auto;color:var(--muted);font-size:12.5px}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;min-width:680px;font-size:13px}
+th{position:sticky;top:0;text-align:left;font-size:12px;color:var(--muted);font-weight:600;background:var(--panel);border-bottom:1.5px solid var(--line);padding:8px 10px;white-space:nowrap}
+td{padding:7px 10px;border-bottom:1px solid var(--soft);vertical-align:top}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--mono)}
+tr.r{cursor:pointer} tr.r:hover td{background:var(--soft)}
+tr.r td:first-child{font-family:var(--mono);white-space:nowrap}
+tr.d td{background:var(--bg);padding:12px 14px}
+.det{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.det h3{font-size:12px;color:var(--muted);margin:0 0 4px;font-weight:600}
+.det p{margin:0 0 6px}
+.det ul{margin:0;padding:0;list-style:none;display:grid;gap:6px}
+.det li{background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:6px 9px;min-width:0;overflow-wrap:anywhere}
+.det li .id{font-family:var(--mono);font-size:12px;color:var(--accent-ink);margin-right:6px}
+.det li .q{display:block;color:var(--muted);font-size:12.5px;margin-top:2px}
+.none{color:var(--faint)}
+.tabsub{display:flex;gap:6px;flex-wrap:wrap}
+.tabsub button{font:inherit;font-family:var(--mono);font-size:12.5px;border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:7px;padding:4px 10px;cursor:pointer}
+.tabsub button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-ink)}
+.note{color:var(--muted);font-size:12.5px;max-width:80ch}
+.gen{color:var(--faint);font-size:12px;margin-top:18px}
+@media (max-width:560px){.wrap{padding-inline:16px} input[type=search]{width:100%} .count{margin-left:0}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <h1>약국 데이터 점검판</h1>
+  <p class="sub">정의된 변수·데이터·가상값이 근거와 함께 빠짐없이 이어지는지 확인하는 화면입니다. CSV를 읽어 만든 것이라 값을 고치려면 CSV(또는 원본 Excel)를 고치고 다시 만들어야 합니다.</p>
+  <div class="tabs" role="tablist" id="tabs"></div>
+  <section class="panel" id="p-summary" role="tabpanel"></section>
+  <section class="panel" id="p-files" role="tabpanel" hidden></section>
+  <section class="panel" id="p-search" role="tabpanel" hidden></section>
+  <section class="panel" id="p-variables" role="tabpanel" hidden></section>
+  <section class="panel" id="p-data" role="tabpanel" hidden></section>
+  <section class="panel" id="p-params" role="tabpanel" hidden></section>
+  <section class="panel" id="p-tables" role="tabpanel" hidden></section>
+  <section class="panel" id="p-rules" role="tabpanel" hidden></section>
+  <div class="gen" id="gen"></div>
+</div>
+
+<script>
+const D = /*DATA*/null;
+if (!D) { document.body.innerHTML = '<div style="max-width:560px;margin:60px auto;padding:0 20px;font:15px/1.7 sans-serif"><h2>이 파일은 데이터가 없는 틀입니다</h2><p>scripts/build_viewer.py 를 실행해 만들어지는 <b>viewer/index.html</b> 을 여세요.</p></div>'; throw new Error('template'); }
+const $ = (s, r=document) => r.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const chip = (cls, t) => `<span class="chip ${cls}">${esc(t)}</span>`;
+const JL = {real:['ok','실데이터'], reference:['acc','참고용'], virtual:['warn','가상']};
+const GR = {A:'ok', B:'acc', C:'bad', '':''};
+const ORIGIN = {measured:'실측', derived:'파생', assumption:'가정', interview:'인터뷰', decision:'결정'};
+const STAT = {ok:['ok','정상'], weak:['warn','근거 약함'], bad:['bad','확인 필요']};
+const by = (arr, k) => arr.reduce((m, x) => ((m[x[k]] ||= []).push(x), m), {});
+const claimHtml = id => { const c = D.claims[id]; return c ? `<li><span class="id">${id}</span>${esc(c.topic)}<span class="q">“${esc(c.quote)}” · ${esc(c.loc)}</span></li>` : `<li><span class="id">${id}</span><span class="none">claims.csv에 없음</span></li>`; };
+const dataHtml = id => { const d = D.dataById[id]; return d ? `<li><span class="id">${id}</span>${esc(d.item)} ${chip(...JL[d.judgement])}<span class="q">${esc(d.provider)} · ${esc(d.spatial)} · ${esc(d.time)}</span></li>` : `<li><span class="id">${id}</span><span class="none">data_sources.csv에 없음</span></li>`; };
+const paramHtml = p => `<li><span class="id">${p.id}</span>${esc(p.label)} = ${esc(p.value)} ${esc(p.unit)} ${p.grade ? chip(GR[p.grade], p.grade) : ''} ${chip('', ORIGIN[p.origin])}<span class="q">${esc(p.reason)}</span></li>`;
+const list = (items, empty) => items.length ? `<ul>${items.join('')}</ul>` : `<span class="none">${empty}</span>`;
+
+/* 표 + 펼침 행 */
+function table(cols, items, rowFn, detailFn, id) {
+  const head = cols.map(c => `<th class="${c[1]||''}">${c[0]}</th>`).join('');
+  const body = items.map((it, i) => `<tr class="r" tabindex="0" data-i="${i}" aria-expanded="false">${rowFn(it)}</tr><tr class="d" hidden><td colspan="${cols.length}">${detailFn(it)}</td></tr>`).join('');
+  return `<div class="scroll"><table id="${id}"><thead><tr>${head}</tr></thead><tbody>${body || `<tr><td colspan="${cols.length}" class="none">조건에 맞는 항목이 없습니다.</td></tr>`}</tbody></table></div>`;
+}
+document.addEventListener('click', e => toggle(e.target.closest('tr.r')));
+document.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('tr.r')) { e.preventDefault(); toggle(e.target); } });
+function toggle(tr) { if (!tr) return; const d = tr.nextElementSibling; d.hidden = !d.hidden; tr.setAttribute('aria-expanded', String(!d.hidden)); }
+const opts = (vals, all) => `<option value="">${all}</option>` + vals.map(v => `<option value="${esc(v[0])}">${esc(v[1])}</option>`).join('');
+
+/* ---------- 요약 ---------- */
+function renderSummary() {
+  const S = D.summary, el = $('#p-summary');
+  const tile = (k, n, total, warn) => { const pct = total ? Math.round(100 * n / total) : 0; return `<div class="tile"><div class="k">${k}</div><div class="v">${n}<small> / ${total}</small></div><div class="bar ${warn ? 'warn' : ''}"><i style="width:${pct}%"></i></div></div>`; };
+  const failed = D.checks.filter(c => c.msgs.length).length;
+  el.innerHTML = `
+  <div class="tiles">
+    ${tile('근거 발언이 있는 변수', S.varsWithClaim, S.vars)}
+    ${tile('근거 발언이 있는 규칙', S.rulesWithClaim, S.rules)}
+    ${tile('변수와 이어진 데이터', S.dataUsed, S.data, S.data !== S.dataUsed)}
+    ${tile('등급이 있는 가상값 (결정값 제외)', S.paramsGraded, S.paramsNeedGrade)}
+    ${tile('대표 변수가 붙은 가상값', S.paramsLinked, S.params, S.paramsLinked !== S.params)}
+    ${tile('열 정의와 일치하는 시계열 표', S.tablesOk, S.tables)}
+  </div>
+  <div class="box"><h2>구조 검증 8가지 ${failed ? chip('bad', failed + '개 실패') : chip('ok', '모두 통과')}</h2>
+    <div class="checks">${D.checks.map(c => `<div class="check">${chip(c.msgs.length ? 'bad' : 'ok', c.msgs.length ? '실패' : '통과')}<div><div class="t">${c.n}. ${esc(c.title)}</div>${c.msgs.slice(0, 6).map(m => `<div class="m">${esc(m)}</div>`).join('')}</div></div>`).join('')}</div></div>
+  <div class="box"><h2>확인이 필요한 것</h2><ul class="todo">${S.todo.map(t => `<li>${t}</li>`).join('')}</ul></div>`;
+}
+
+/* ---------- 변수 ---------- */
+const varDetail = v => `<div class="det">
+        <div><h3>인터뷰에서 파악한 내용</h3><p>${esc(v.finding)}</p><p class="none">${esc(v.implName)} · ${esc(v.fmt)}</p>${v.scope === 'interview_only' ? `<p>${chip('', '인터뷰 전용')} ${esc(v.scopeNote)}</p>` : ''}</div>
+        <div><h3>근거 발언 ${v.claims.length}건</h3>${list(v.claims.map(claimHtml), '근거 발언이 없습니다.')}</div>
+        <div><h3>연결된 데이터 ${v.data.length}건</h3>${list(v.data.map(dataHtml), v.scope === 'interview_only' ? '인터뷰 전용 변수라 데이터 연결이 없습니다.' : '연결된 데이터가 없습니다.')}</div>
+        <div><h3>가상값 ${v.params.length}건</h3>${list(v.params.map(id => paramHtml(D.paramById[id])), '이 변수에 붙은 가상값이 없습니다.')}${v.fields.length ? `<h3 style="margin-top:8px">시뮬레이터 필드 대응</h3>${list(v.fields.map(f => `<li><span class="id">${esc(f.key)}</span>${esc(f.table)}.${esc(f.col)}</li>`), '')}` : ''}</div>
+        <div><h3>쓰이는 규칙 ${v.rules.length}건</h3>${list(v.rules.map(id => `<li><span class="id">${id}</span>${esc(D.ruleById[id]?.title || '')}</li>`), '이 변수를 쓰는 규칙이 없습니다.')}</div></div>`;
+function renderVariables() {
+  const el = $('#p-variables');
+  el.innerHTML = `<div class="filters">
+    <label>범주 <select id="vf-cat">${opts(D.categories.map(c => [c[0], c[1]]), '전체')}</select></label>
+    <label>데이터 <select id="vf-scope">${opts([['world_linked','연결됨'],['interview_only','인터뷰 전용']], '전체')}</select></label>
+    <label>상태 <select id="vf-st">${opts([['ok','정상'],['weak','근거 약함'],['bad','확인 필요']], '전체')}</select></label>
+    <label>검색 <input type="search" id="vf-q" placeholder="ID 또는 이름"></label><span class="count" id="vf-n"></span></div>
+    <p class="note">행을 누르면 인터뷰 근거 원문, 연결된 데이터, 가상값, 규칙이 펼쳐집니다. 상태는 근거 발언이 없거나 연결이 끊기면 ‘확인 필요’, 연결된 가상값 중 등급 C가 있으면 ‘근거 약함’입니다.</p>
+    <div id="vt"></div>`;
+  const draw = () => {
+    const f = {cat: $('#vf-cat').value, sc: $('#vf-scope').value, st: $('#vf-st').value, q: $('#vf-q').value.trim().toLowerCase()};
+    const items = D.variables.filter(v => (!f.cat || v.cat === f.cat) && (!f.sc || v.scope === f.sc) && (!f.st || v.status === f.st) && (!f.q || (v.id + v.label).toLowerCase().includes(f.q)));
+    $('#vf-n').textContent = `${items.length} / ${D.variables.length}개`;
+    $('#vt').innerHTML = table([['변수'],['이름'],['범주'],['근거','num'],['데이터','num'],['가상값','num'],['규칙','num'],['상태']], items,
+      v => `<td>${v.id}</td><td>${esc(v.label)}</td><td>${esc(v.catKo)}</td><td class="num">${v.claims.length}</td><td class="num">${v.scope === 'interview_only' ? '<span class="none">–</span>' : v.data.length}</td><td class="num">${v.params.length || '<span class="none">0</span>'}</td><td class="num">${v.rules.length || '<span class="none">0</span>'}</td><td>${chip(...STAT[v.status])}</td>`,
+      varDetail, 'vtab');
+  };
+  ['vf-cat','vf-scope','vf-st'].forEach(i => $('#' + i).addEventListener('change', draw)); $('#vf-q').addEventListener('input', draw); draw();
+}
+
+/* ---------- 데이터 ---------- */
+function renderData() {
+  const el = $('#p-data');
+  el.innerHTML = `<div class="filters">
+    <label>영역 <select id="df-area">${opts(D.areas.map(a => [a, a]), '전체')}</select></label>
+    <label>판정 <select id="df-j">${opts([['real','실데이터'],['reference','참고용'],['virtual','가상']], '전체')}</select></label>
+    <label>사용 <select id="df-u">${opts([['0','변수와 안 이어짐'],['1','이어짐']], '전체')}</select></label>
+    <label>검색 <input type="search" id="df-q" placeholder="ID, 항목, 제공처"></label><span class="count" id="df-n"></span></div>
+    <p class="note">여기서 보이는 것은 데이터 명세입니다. 실데이터와 참고용 데이터의 실제 값은 아직 받아 오지 않았고(API 연동 전), 가상 데이터만 값이 CSV에 들어 있습니다. 변수와 안 이어진 데이터는 분모나 검증 기준값처럼 의도된 것인지 확인할 대상입니다.</p><div id="dt"></div>`;
+  const draw = () => {
+    const f = {a: $('#df-area').value, j: $('#df-j').value, u: $('#df-u').value, q: $('#df-q').value.trim().toLowerCase()};
+    const items = D.data.filter(d => (!f.a || d.area === f.a) && (!f.j || d.judgement === f.j) && (!f.u || (f.u === '1') === (d.usedBy.length > 0)) && (!f.q || (d.id + d.item + d.provider).toLowerCase().includes(f.q)));
+    $('#df-n').textContent = `${items.length} / ${D.data.length}개`;
+    $('#dt').innerHTML = table([['데이터'],['항목'],['영역'],['판정'],['제공처'],['변수','num']], items,
+      d => `<td>${d.id}</td><td>${esc(d.item)}</td><td>${esc(d.area)}</td><td>${chip(...JL[d.judgement])}</td><td>${esc(d.provider)}</td><td class="num">${d.usedBy.length || '<span class="none">0</span>'}</td>`,
+      d => `<div class="det">
+        <div><h3>명세</h3><p>${esc(d.dataset)}</p><p class="none">접근: ${esc(d.access)} · 형식: ${esc(d.format)}</p><p class="none">공간 ${esc(d.spatial)} · 시간 ${esc(d.time)} · 기간 ${esc(d.period)} · 갱신 ${esc(d.refresh)}</p></div>
+        <div><h3>연결 키</h3><p>${esc(d.keyText) || '<span class="none">없음</span>'}</p><p>${d.keys.map(k => chip('mono', k)).join(' ') || '<span class="none">key_registry에 표준 키가 없습니다.</span>'}</p></div>
+        <div><h3>이 데이터를 쓰는 변수 ${d.usedBy.length}개</h3><p>${d.usedBy.map(v => chip('mono', v)).join(' ') || '<span class="none">없음</span>'}</p><p class="none">확인 상태: ${esc(d.check)}</p></div>
+        <div><h3>받는 방법</h3><p>${esc(d.how) || '<span class="none">기록 없음</span>'}</p></div></div>`, 'dtab');
+  };
+  ['df-area','df-j','df-u'].forEach(i => $('#' + i).addEventListener('change', draw)); $('#df-q').addEventListener('input', draw); draw();
+}
+
+/* ---------- 가상값 ---------- */
+function renderParams() {
+  const el = $('#p-params');
+  el.innerHTML = `<div class="filters">
+    <label>등급 <select id="pf-g">${opts([['A','A'],['B','B'],['C','C'],['-','등급 없음']], '전체')}</select></label>
+    <label>값 성격 <select id="pf-o">${opts(Object.entries(ORIGIN), '전체')}</select></label>
+    <label>대표 변수 <select id="pf-v">${opts([['1','연결됨'],['0','없음']], '전체')}</select></label>
+    <label>검색 <input type="search" id="pf-q" placeholder="이름"></label><span class="count" id="pf-n"></span></div>
+    <p class="note">등급 규칙: 값 성격이 ‘가정’이면 A가 될 수 없습니다. ‘대표 변수’는 제가 붙인 후보이고 PM 확인 전에는 후보 상태입니다. 행을 누르면 근거와 약사 검증 질문이 나옵니다.</p><div id="pt"></div>`;
+  const draw = () => {
+    const f = {g: $('#pf-g').value, o: $('#pf-o').value, v: $('#pf-v').value, q: $('#pf-q').value.trim().toLowerCase()};
+    const items = D.params.filter(p => (!f.g || (f.g === '-' ? !p.grade : p.grade === f.g)) && (!f.o || p.origin === f.o) && (!f.v || (f.v === '1') === !!p.variable) && (!f.q || p.label.toLowerCase().includes(f.q)));
+    $('#pf-n').textContent = `${items.length} / ${D.params.length}개`;
+    $('#pt').innerHTML = table([['파라미터'],['이름'],['값'],['값 성격'],['등급'],['대표 변수'],['검증']], items,
+      p => `<td>${p.id}</td><td>${esc(p.label)}</td><td>${esc(p.value)} ${esc(p.unit)}</td><td>${chip('', ORIGIN[p.origin])}</td><td>${p.grade ? chip(GR[p.grade], p.grade) : '<span class="none">–</span>'}</td><td class="mono">${p.variable ? esc(p.variable) + (p.linkStatus === 'candidate' ? ' ' + chip('warn', '후보') : '') : '<span class="none">없음</span>'}</td><td>${p.validation ? chip('', p.validation.status === 'not_asked' ? '미질문' : p.validation.status) : '<span class="none">–</span>'}</td>`,
+      p => `<div class="det">
+        <div><h3>등급 이유</h3><p>${esc(p.reason) || '<span class="none">없음</span>'}</p><h3>출처·계산</h3><p>${esc(p.basis)}</p></div>
+        <div><h3>연결</h3><p>대표 데이터: ${p.dataId ? chip('mono', p.dataId) : '<span class="none">없음</span>'}</p><p>쓰이는 곳: ${esc(p.usedIn)}</p><p>조치: ${esc(p.action)}${p.profileRef ? ' · 프로필 참조 ' + esc(p.profileRef) : ''}</p></div>
+        <div><h3>약사에게 물을 질문</h3><p>${p.validation ? esc(p.validation.question) : '<span class="none">등급 A이거나 결정값이라 질문 대상이 아닙니다.</span>'}</p></div></div>`, 'ptab');
+  };
+  ['pf-g','pf-o','pf-v'].forEach(i => $('#' + i).addEventListener('change', draw)); $('#pf-q').addEventListener('input', draw); draw();
+}
+
+/* ---------- 시계열 ---------- */
+function renderTables() {
+  const el = $('#p-tables'); let cur = D.tables[0].name;
+  const draw = () => {
+    const t = D.tables.find(x => x.name === cur);
+    el.innerHTML = `<div class="tabsub">${D.tables.map(x => `<button aria-pressed="${x.name === cur}" data-t="${x.name}">${x.name}${x.issues ? ' ⚠' : ''}</button>`).join('')}</div>
+      <p class="note"><b>${t.rows.toLocaleString()}행</b> · 열 ${t.cols.length}개 · 기간 ${esc(t.span)} · ${t.issues ? chip('bad', t.issues + '개 열에서 정의와 다름') : chip('ok', '열 정의와 일치')} · 원본 시트 ${esc(t.sheet)}</p>
+      <div class="scroll"><table><thead><tr><th>열</th><th>한글 이름</th><th>타입</th><th>단위</th><th>역할</th><th class="num">정의 최소</th><th class="num">정의 최대</th><th class="num">실제 최소</th><th class="num">실제 최대</th><th class="num">빈 칸</th><th>점검</th></tr></thead><tbody>
+      ${t.cols.map(c => `<tr><td class="mono">${esc(c.en)}</td><td>${esc(c.ko)}</td><td>${esc(c.type)}</td><td>${esc(c.unit)}</td><td>${c.role ? chip(c.role === 'input' ? 'acc' : '', c.role === 'input' ? '입력' : '파생') : ''}</td><td class="num">${esc(c.dmin)}</td><td class="num">${esc(c.dmax)}</td><td class="num">${esc(c.amin)}</td><td class="num">${esc(c.amax)}</td><td class="num">${c.nulls}</td><td>${c.issue ? chip('bad', c.issue) : chip('ok', '정상')}</td></tr>`).join('')}</tbody></table></div>
+      <h2>앞 10행</h2><div class="scroll"><table><thead><tr>${t.cols.map(c => `<th>${esc(c.en)}</th>`).join('')}</tr></thead><tbody>${t.preview.map(r => `<tr>${t.cols.map(c => `<td class="mono">${esc(r[c.en])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+    el.querySelectorAll('[data-t]').forEach(b => b.addEventListener('click', () => { cur = b.dataset.t; draw(); }));
+  };
+  draw();
+}
+
+/* ---------- 규칙·프로필 ---------- */
+function renderRules() {
+  const el = $('#p-rules');
+  const cl = ids => ids.length ? ids.map(i => chip('mono', i)).join(' ') : '<span class="none">없음</span>';
+  el.innerHTML = `<div class="box"><h2>판단 규칙 ${D.rules.length}건</h2><div class="scroll"><table><thead><tr><th>규칙</th><th>제목</th><th>발언 성격</th><th>근거 발언</th><th>쓰는 변수</th></tr></thead><tbody>${D.rules.map(r => `<tr><td class="mono">${r.id}</td><td>${esc(r.title)}</td><td>${esc(r.type)}</td><td>${cl(r.claims)}</td><td>${cl(r.vars)}</td></tr>`).join('')}</tbody></table></div></div>
+  <div class="box"><h2>주의 규칙 ${D.guardrails.length}건</h2><div class="scroll"><table><thead><tr><th>규칙</th><th>기준</th><th>적용 시점</th><th>검사 유형</th><th>근거 발언</th></tr></thead><tbody>${D.guardrails.map(g => `<tr><td class="mono">${g.id}</td><td>${esc(g.rule)}</td><td>${esc(g.at)}</td><td class="mono">${esc(g.check)}</td><td>${cl(g.claims)}</td></tr>`).join('')}</tbody></table></div></div>
+  <div class="box"><h2>인터뷰 약국 프로필 ${D.profile.length}행</h2><div class="scroll"><table><thead><tr><th>ID</th><th>구분</th><th>항목</th><th>내용</th><th>근거 발언</th><th>변수</th></tr></thead><tbody>${D.profile.map(p => `<tr><td class="mono">${p.id}</td><td>${esc(p.section)}</td><td>${p.kind === 'fact' ? `<span class="mono">${esc(p.key)}</span>` : chip('', '서술')}</td><td>${p.kind === 'fact' ? `<b>${esc(p.value)}</b> ${esc(p.unit)} · ` : ''}${esc(p.summary)}</td><td>${cl(p.claims)}</td><td>${cl(p.vars)}</td></tr>`).join('')}</tbody></table></div></div>`;
+}
+
+
+
+/* ---------- 파일 안내 ---------- */
+const FOLDER_KO = {'0_common':'0_common · 공통 코드와 마스터', '1_interview':'1_interview · 인터뷰에서 나온 것', '2_world':'2_world · 약국 바깥의 데이터', '3_virtual':'3_virtual · 공개 자료가 없어 만든 가상값', '4_bridge':'4_bridge · 시뮬레이터에 넣는 다리', '5_validation':'5_validation · 약사 검증'};
+const KIND = {'사전':'acc','사전·중심':'acc','사전·연결':'acc','내용':'','내용·검증':'warn','연결':'ok','검증':'warn'};
+function renderFiles() {
+  const el = $('#p-files'), F = D.files, st = D.files.filter(f => !f.path.includes('tables/')).length, ts = F.length - st;
+  el.innerHTML = `<p class="note">구조 파일 <b>${st}개</b>와 시계열 표 <b>${ts}개</b>, 모두 <b>${F.length}개</b>의 CSV가 만들어졌습니다. 구조 파일은 값을 설명하고 서로 잇는 파일이고, 시계열 표는 가상 약국의 날짜별 데이터입니다. 행을 누르면 열 목록과 앞 5행이 보입니다.
+  <br>종류: ${chip('acc','사전')} 무엇이 있는지 목록 · ${chip('','내용')} 실제 값 · ${chip('ok','연결')} 두 사전을 잇는 표(한 연결을 한 줄로) · ${chip('warn','검증')} 값을 믿어도 되는지 확인하는 기록</p>
+  ` + Object.keys(FOLDER_KO).map(fd => { const fs = F.filter(f => f.folder === fd);
+    return `<div><h2>${FOLDER_KO[fd]} · ${fs.length}개</h2>` + table([['파일'],['종류'],['하는 일'],['행','num'],['열','num']], fs,
+      f => `<td>${esc(f.path.replace(fd + '/', ''))}</td><td>${chip(KIND[f.kind], f.kind)}</td><td>${esc(f.what)}</td><td class="num">${f.rows.toLocaleString()}</td><td class="num">${f.cols.length}</td>`,
+      f => `<div class="det">
+        <div><h3>담고 있는 것</h3><p>${esc(f.has)}</p><h3>다른 파일과의 관계</h3><p>${esc(f.refs)}</p><h3>원본</h3><p>${esc(f.src)}${f.prov ? ' · 출처 열 3개(source_file, source_sheet, generated_at) 포함' : ''}</p></div>
+        <div><h3>열 ${f.cols.length}개</h3><p>${f.cols.map(c => chip('mono', c)).join(' ')}</p></div></div>
+        <div class="scroll" style="margin-top:12px"><table style="min-width:0"><thead><tr>${f.cols.map(c => `<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${f.preview.map(r => `<tr>${f.cols.map(c => `<td class="mono">${esc(r[c])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`, 'ft-' + fd) + `</div>`; }).join('');
+}
+
+/* ---------- 전체 검색 ---------- */
+function renderSearch() {
+  const el = $('#p-search');
+  const claimUse = {};
+  D.variables.forEach(v => v.claims.forEach(c => (claimUse[c] ||= {v: [], r: []}).v.push(v.id)));
+  D.rules.forEach(r => r.claims.forEach(c => (claimUse[c] ||= {v: [], r: []}).r.push(r.id)));
+  el.innerHTML = `<div class="filters"><label style="flex:1;min-width:240px">전체 검색 <input type="search" id="sq" style="width:100%" placeholder="ID, 이름, 인터뷰 발언 속 단어 · 예: X005, 재고, 감기, DT_L11, 호흡기"></label></div>
+    <p class="note">변수, 인터뷰 발언 원문, 데이터, 가상값, 규칙을 한꺼번에 찾습니다. 찾는 항목이 한 곳도 안 나오면 아직 정의되지 않은 것입니다. 변수를 누르면 근거와 연결이 펼쳐집니다.</p><div id="sr"></div>`;
+  const draw = () => {
+    const q = $('#sq').value.trim().toLowerCase(), out = $('#sr');
+    if (!q) { out.innerHTML = `<p class="none">검색어를 입력하세요.</p>`; return; }
+    const hit = (...xs) => xs.join(' ').toLowerCase().includes(q);
+    const cap = (arr, n = 12) => [arr.slice(0, n), arr.length - n];
+    const groups = [
+      ['변수', D.variables.filter(v => hit(v.id, v.label, v.finding, v.implName)), v => ({id: v.id, title: v.label, sub: `${v.catKo} · 근거 ${v.claims.length} · 데이터 ${v.data.length} · 가상값 ${v.params.length}`, detail: varDetail(v), chip: STAT[v.status]})],
+      ['인터뷰 발언', Object.entries(D.claims).filter(([id, c]) => hit(id, c.topic, c.quote)), ([id, c]) => { const u = claimUse[id] || {v: [], r: []}; return {id, title: c.topic, sub: `“${c.quote}” · ${c.loc}`, detail: `<div class="det"><div><h3>이 발언을 근거로 쓰는 변수</h3><p>${u.v.map(x => chip('mono', x)).join(' ') || '<span class="none">없음</span>'}</p></div><div><h3>이 발언을 근거로 쓰는 규칙</h3><p>${u.r.map(x => chip('mono', x)).join(' ') || '<span class="none">없음</span>'}</p></div></div>`}; }],
+      ['데이터', D.data.filter(d => hit(d.id, d.item, d.provider, d.dataset, d.area)), d => ({id: d.id, title: d.item, sub: `${d.provider} · ${d.spatial} · ${d.time} · 변수 ${d.usedBy.length}개`, chip: JL[d.judgement], detail: `<div class="det"><div><h3>이 데이터를 쓰는 변수</h3><p>${d.usedBy.map(x => chip('mono', x)).join(' ') || '<span class="none">없음</span>'}</p></div><div><h3>연결 키</h3><p>${d.keys.map(k => chip('mono', k)).join(' ') || '<span class="none">없음</span>'}</p></div></div>`})],
+      ['가상값', D.params.filter(p => hit(p.id, p.label, p.basis, p.reason)), p => ({id: p.id, title: `${p.label} = ${p.value} ${p.unit}`, sub: `${ORIGIN[p.origin]} · 등급 ${p.grade || '–'} · 대표 변수 ${p.variable || '없음'}`, chip: p.grade ? [GR[p.grade], p.grade] : null, detail: `<div class="det"><div><h3>등급 이유</h3><p>${esc(p.reason)}</p><h3>출처·계산</h3><p>${esc(p.basis)}</p></div><div><h3>약사에게 물을 질문</h3><p>${p.validation ? esc(p.validation.question) : '대상 아님'}</p></div></div>`})],
+      ['규칙', D.rules.filter(r => hit(r.id, r.title)).concat(D.guardrails.filter(g => hit(g.id, g.rule))), r => ({id: r.id, title: r.title || r.rule, sub: `근거 발언 ${r.claims.length}건 · ${(r.vars || []).length ? '변수 ' + r.vars.join(', ') : ''}`, detail: `<div class="det"><div><h3>근거 발언</h3>${list(r.claims.map(claimHtml), '없음')}</div></div>`})],
+    ];
+    const total = groups.reduce((n, g) => n + g[1].length, 0);
+    out.innerHTML = `<p class="note"><b>${total}건</b> 찾았습니다.</p>` + (total ? groups.filter(g => g[1].length).map(([name, arr, fn]) => {
+      const [shown, more] = cap(arr);
+      return `<div class="box"><h2>${name} ${arr.length}건</h2><div class="scroll"><table><tbody>${shown.map(fn).map(r => `<tr class="r" tabindex="0" aria-expanded="false"><td>${esc(r.id)}</td><td>${esc(r.title)}<div class="none">${esc(r.sub)}</div></td><td>${r.chip ? chip(...r.chip) : ''}</td></tr><tr class="d" hidden><td colspan="3">${r.detail}</td></tr>`).join('')}</tbody></table></div>${more > 0 ? `<p class="note">외 ${more}건. 검색어를 더 구체적으로 입력하세요.</p>` : ''}</div>`;
+    }).join('') : `<div class="box"><b>일치하는 항목이 없습니다.</b><p class="note">이 단어를 가진 변수, 발언, 데이터, 가상값, 규칙이 정의되어 있지 않다는 뜻입니다. 다른 표현으로도 검색해 보세요.</p></div>`);
+  };
+  $('#sq').addEventListener('input', draw); draw();
+}
+
+/* ---------- 탭 ---------- */
+const TABS = [['summary','요약',null],['files','파일',D.files.length],['search','검색',null],['variables','변수',D.variables.length],['data','데이터',D.data.length],['params','가상값',D.params.length],['tables','시계열',D.tables.length],['rules','규칙·프로필',null]];
+function show(id) {
+  TABS.forEach(t => { $('#p-' + t[0]).hidden = t[0] !== id; });
+  document.querySelectorAll('#tabs button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.id === id)));
+  try { history.replaceState(null, '', '#' + id); } catch (e) {}
+}
+$('#tabs').innerHTML = TABS.map(t => `<button role="tab" data-id="${t[0]}">${t[1]}${t[2] != null ? `<span class="n">${t[2]}</span>` : ''}</button>`).join('');
+$('#tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) show(b.dataset.id); });
+renderSummary(); renderFiles(); renderSearch(); renderVariables(); renderData(); renderParams(); renderTables(); renderRules();
+const h = location.hash.slice(1); show(TABS.some(t => t[0] === h) ? h : 'summary');
+$('#gen').textContent = `CSV 기준 시각 ${D.generatedAt} · ${D.counts}`;
+</script>
