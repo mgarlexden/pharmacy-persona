@@ -403,6 +403,27 @@ const shelfMeshes=[]; const custPh=[], entPh=[]; let phA,phB;
     box(g,.6,.4,.5,0x7a8a98,1.2+col*.8,.25,-.2+row*.8);}
   box(g,1.4,2.3,.08,0x6aa5c0,5,.25,D/2-.04,{mo:{transparent:true,opacity:.35}});
 })();
+/* 2층 손님 보행 경로: 문(-1.4,D/2 근처) → 카운터 앞 대기열 → 문. custPh 풀(6명)을 그대로 재사용한다. */
+const custState=custPh.map((p,k)=>({state:'out',t:Math.random()*3,slot:k%3}));
+const custDoor=new T.Vector3(-1.4,.25,D/2-.3);
+const custQSlot=k=>new T.Vector3(-2.2,.25,-.7+.55+k*.42);
+function stepCust(dt){
+  const s=H[day],svc=1.6+Math.min(4,s.rx/20);
+  custPh.forEach((p,i)=>{
+    if(!p.visible)return;
+    const st=custState[i];
+    if(st.state==='out'){st.t-=dt;if(st.t<=0){p.position.set(custDoor.x,p.position.y,custDoor.z);st.state='in';}return;}
+    if(st.state==='in'){const tgt=custQSlot(st.slot),d=new T.Vector3(tgt.x-p.position.x,0,tgt.z-p.position.z),L=d.length();
+      if(L<.06){st.state='queue';st.t=svc;p.position.x=tgt.x;p.position.z=tgt.z;}
+      else{d.normalize();const m=Math.min(L,dt*1.3);p.position.x+=d.x*m;p.position.z+=d.z*m;p.rotation.y=Math.atan2(d.x,d.z);}
+      return;}
+    if(st.state==='queue'){st.t-=dt;if(st.t<=0)st.state='leave';return;}
+    if(st.state==='leave'){const d=new T.Vector3(custDoor.x-p.position.x,0,custDoor.z-p.position.z),L=d.length();
+      if(L<.06){st.state='out';st.t=1+Math.random()*3;}
+      else{d.normalize();const m=Math.min(L,dt*1.3);p.position.x+=d.x*m;p.position.z+=d.z*m;p.rotation.y=Math.atan2(d.x,d.z);}
+      return;}
+  });
+}
 /* 3층 판단실 */
 let screenC, screenTx, screenMesh; const cards=[];
 (()=>{const g=FG[2],i=2;
@@ -656,6 +677,7 @@ function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.
   truck.position.x+=(truckTarget-truck.position.x)*(1-Math.pow(.02,dt));
   street.forEach(p=>{if(!p.visible)return;const u=p.userData;u.u+=dt*u.sp;if(u.u>=1){u.u=0;u.sx=(Math.random()<.5?-1:1)*(10+Math.random()*14);}
     const dx=-1.2,x=u.sx+(dx-u.sx)*Math.min(1,u.u/.92);const z=D/2+(u.u<.92?2.2:2.2-(u.u-.92)/.08*2);p.position.set(x,Math.abs(Math.sin(t*6+u.sx))*.05-.0,z);p.scale.setScalar(u.u>.97?Math.max(.01,(1-u.u)/.03):1);p.rotation.y=dx>u.sx?Math.PI/2:-Math.PI/2;});
+  stepCust(dt);
   custPh.forEach((p,i)=>{if(p.visible)p.position.y=.25+Math.abs(Math.sin(t*1.5+i))*.03;});
   if(phA)phA.position.x=-5.0+Math.sin(t*.6)*.5; if(phB)phB.position.x=-2.2+Math.sin(t*.4)*.35;
   cards.forEach(c=>{const up=c.userData.up||0;c.position.y+=((.75+.12+.45+up)-c.position.y)*.1;});
