@@ -258,6 +258,12 @@ const HOURW=[8,14,14,12,5,9,10,10,11,7];
 let hour=540;
 function hourShare(h){const i=h-9,sum=HOURW.reduce((a,b)=>a+b,0);return i>=0&&i<HOURW.length?HOURW[i]/sum:0;}
 function hourClockStr(){const h=Math.floor(hour/60),m=hour%60;return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');}
+function congestionLine(){
+  const s=H[day],h=Math.floor(hour/60),arr=s.rx*hourShare(h),SVC=3,work=arr*SVC,rho=work/60;
+  const wait=rho>=1?30:Math.min(30,rho/(1-rho)*SVC);
+  const lv=rho<.5?'여유':rho<.75?'보통':rho<.9?'혼잡':'매우 혼잡';
+  return `<div class="sec"><h4>이 시각 혼잡도 <span class="badge">가정</span></h4><p>${h}시대 가정 도착 ${arr.toFixed(1)}건/시간 · 가동률 ${rho.toFixed(2)} → <b>${lv}</b> · 예상 대기 ${wait.toFixed(0)}분</p><p class="mut" style="font-size:11px">상담 1건 ${SVC}분 가정 · 시간대 분배는 근거 없음(G02)</p></div>`;
+}
 function drawHourBars(){
   const s=H[day],el=document.getElementById('hbars');if(!el)return;
   const cur=Math.floor(hour/60)-9,peak=s.rx*Math.max(...HOURW)/HOURW.reduce((a,b)=>a+b,0);
@@ -532,7 +538,7 @@ function renderPanel(){
       <div class="sec"><h4>먼저 해 보세요</h4><ul class="plain"><li>아래 <b>재생</b>을 눌러 하루가 지나가는 모습 보기</li><li><b>3층</b>을 눌러 결정 카드 보기</li><li><b>층 분리</b>로 단면 펼치기</li></ul></div>`+stateLine();}
     else if(selected.type==='floor'){const f=FINFO[selected.i];h=`<h3>${f.t}</h3>${FLOORS[selected.i].locked?'<span class="badge warn">2차 · 잠김</span>':''}<p>${f.d}</p>
       <div class="sec"><h4>이 장면을 만드는 데이터 <span class="mut" style="text-transform:none;font-weight:400">(제안)</span></h4><ul class="bind">${f.b.map(x=>`<li>${x.replace(/^([\w_.]+)/,'<code>$1</code>')}</li>`).join('')}</ul></div>
-      <div class="sec"><h4>근거</h4>${refsHtml(f.r)}</div>${evHtml()}${stateLine()}`;}
+      <div class="sec"><h4>근거</h4>${refsHtml(f.r)}</div>${evHtml()}${stateLine()}${selected.i===1?congestionLine():''}`;}
     else if(selected.type==='obj'){const o=OBJ[selected.key];h=`<h3>${o.t}</h3><p>${o.d}</p>${objDyn(selected.key)}
       <div class="sec"><h4>연결되는 데이터 <span class="mut" style="text-transform:none;font-weight:400">(제안)</span></h4><ul class="bind">${o.b.map(x=>`<li>${x.replace(/^([\w_.]+)/,'<code>$1</code>')}</li>`).join('')}</ul></div>
       <div class="sec"><h4>근거</h4>${refsHtml(o.r)}</div>${evHtml()}`;}
