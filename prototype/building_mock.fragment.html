@@ -113,6 +113,10 @@ ul.plain li{margin:2px 0}
   .tools{flex-direction:row;flex-wrap:wrap;left:10px;right:auto;top:auto;bottom:34px}
   .hint{display:none}
 }
+.bars{display:flex;gap:3px;align-items:flex-end;height:46px;margin-top:4px}
+.bars div{flex:1;background:var(--line);border-radius:2px 2px 0 0;position:relative;min-height:2px}
+.bars div.now{background:var(--accent)}
+.bars span{position:absolute;bottom:-16px;left:0;right:0;text-align:center;font-size:10px;color:var(--muted)}
 </style>
 
 <div class="app">
@@ -160,6 +164,11 @@ ul.plain li{margin:2px 0}
         <button class="btn" id="bStep">하루 ▸</button>
         <label>속도 <select id="speed" class="btn"><option value="1">1×</option><option value="2" selected>2×</option><option value="4">4×</option></select></label>
       </div>
+      <div class="ctl" style="margin-top:8px">
+        <label>시각 <input type="range" id="pHour" min="540" max="1140" step="5" value="540"><b id="vHour" class="mono">09:00</b></label>
+        <span class="mut" style="font-size:11px">하루 처방을 시간대 모양으로 나눈 가정 분배 · 근거 없음</span>
+      </div>
+      <div class="bars" id="hbars"></div>
       <div class="ctl" style="margin-top:8px">
         <label>감기·독감 유행 <input type="range" id="pFlu" min="0" max="100" value="80"><b id="vFlu">80</b></label>
       </div>
@@ -244,6 +253,19 @@ const OBJ = {
 };
 /* ───────── 시뮬레이션(가상) ───────── */
 const WD=['일','월','화','수','목','금','토'];
+/* 하루 처방을 시간대 모양으로 보여주기 위한 가정 분배. 합계는 그날 H[day].rx에 맞추고, 모양 자체는 근거 발언 없음(G02 대상). */
+const HOURW=[8,14,14,12,5,9,10,10,11,7];
+let hour=540;
+function hourShare(h){const i=h-9,sum=HOURW.reduce((a,b)=>a+b,0);return i>=0&&i<HOURW.length?HOURW[i]/sum:0;}
+function hourClockStr(){const h=Math.floor(hour/60),m=hour%60;return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');}
+function drawHourBars(){
+  const s=H[day],el=document.getElementById('hbars');if(!el)return;
+  const cur=Math.floor(hour/60)-9,peak=s.rx*Math.max(...HOURW)/HOURW.reduce((a,b)=>a+b,0);
+  let html='';
+  for(let h=9;h<19;h++){const v=s.rx*hourShare(h);
+    html+=`<div class="${h-9===cur?'now':''}" style="height:${Math.max(4,Math.min(100,peak?v/peak*100:0))}%" title="${h}시대 가정 분배 · 처방 약 ${v.toFixed(1)}건"><span>${h}</span></div>`;}
+  el.innerHTML=html;
+}
 function simulate(P){
   const out=[]; let stock=60, cash=P.cash?900000:2400000, pend=0, prevOrder=0;
   const COST=2800, PRICE=4300, RES=P.cash?500000:300000;
@@ -576,7 +598,7 @@ function placeLabels(){const r=stage.getBoundingClientRect();
     if(l.el.classList.contains('c')&&goal.r<6)l.el.style.display='none'; else l.el.style.display=hide?'none':'';
     l.el.style.left=((v3.x+1)/2*r.width)+'px';l.el.style.top=((1-v3.y)/2*r.height)+'px';});}
 function renderHud(){const s=H[day];document.getElementById('hud').innerHTML=
-  `<div class="chip"><span>날짜</span><b>${dlabel(s)}</b></div><div class="chip"><span>호흡기 지수</span><b>${s.resp}</b></div><div class="chip"><span>처방</span><b>${s.rx}건</b></div>
+  `<div class="chip"><span>날짜</span><b>${dlabel(s)}</b></div><div class="chip"><span>시각</span><b>${hourClockStr()}</b></div><div class="chip"><span>호흡기 지수</span><b>${s.resp}</b></div><div class="chip"><span>처방</span><b>${s.rx}건</b></div>
    <div class="chip ${s.dos<1.5?'bad':''}"><span>감기약 재고일수</span><b>${s.dos.toFixed(1)}일</b></div><div class="chip"><span>현금</span><b>${fmtKRW(s.cash)}</b></div>${s.so>0?`<div class="chip bad"><span>오늘 품절</span><b>${s.so}개</b></div>`:''}`;}
 function renderTl(){const el=document.getElementById('tl');el.innerHTML=H.map((s,i)=>`<button class="${i===day?'on':''}${s.so>0?' so':''}" data-d="${i}" title="${dlabel(s)} · ${s.opts[s.ci].k}">${s.dt.getDate()}<br><span style="color:var(--muted)">${WD[s.wd]}</span><i style="background:${kcol(s)}"></i></button>`).join('');
   el.querySelectorAll('button').forEach(b=>b.onclick=()=>{day=+b.dataset.d;playing=false;setPlayBtn();onDay();});}
@@ -611,7 +633,7 @@ function applyDay(){
   truckTarget=s.recv>0?9:48; const nl=s.recv>0?Math.max(1,Math.round(6*Math.min(1,s.recv/60))):0;loads.forEach((b,k)=>b.visible=k<nl);
   const partial=s.recv>0&&s.fillPct<.99;cab.material=mat(partial?0xd4881f:0x3f9aa0);
   cards.forEach((c,k)=>{const o=s.opts[k];c.material.color.set(k===s.ci?0x0f9b8c:o.ok?0x8a8f98:0x7a4b47);c.material.opacity=o.ok||k===s.ci?1:.55;c.userData.up=k===s.ci?.35:0;});
-  drawScreen();refreshLabelText();renderHud();renderTl();renderPanel();
+  drawScreen();refreshLabelText();renderHud();renderTl();renderPanel();drawHourBars();
 }
 let truckTarget=48;
 function onDay(){applyDay();}
@@ -649,6 +671,7 @@ document.getElementById('tools').onclick=e=>{const b=e.target.closest('button');
 function recompute(){P.flu=+document.getElementById('pFlu').value;P.ent=document.getElementById('pEnt').checked;P.short=document.getElementById('pShort').checked;P.cash=document.getElementById('pCash').checked;
   document.getElementById('vFlu').textContent=P.flu;H=simulate(P);applyDay();}
 ['pFlu','pEnt','pShort','pCash'].forEach(id=>document.getElementById(id).addEventListener('input',recompute));
+document.getElementById('pHour').addEventListener('input',e=>{hour=+e.target.value;document.getElementById('vHour').textContent=hourClockStr();drawHourBars();renderHud();});
 function preset(f,e,s,c){document.getElementById('pFlu').value=f;document.getElementById('pEnt').checked=e;document.getElementById('pShort').checked=s;document.getElementById('pCash').checked=c;recompute();}
 document.getElementById('bPreset1').onclick=()=>preset(80,true,true,true);
 document.getElementById('bPreset0').onclick=()=>preset(25,false,false,false);
