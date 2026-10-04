@@ -113,6 +113,12 @@ ul.plain li{margin:2px 0}
   .tools{flex-direction:row;flex-wrap:wrap;left:10px;right:auto;top:auto;bottom:34px}
   .hint{display:none}
 }
+.lg{position:absolute;right:10px;bottom:8px;max-width:270px;font-size:11px;line-height:1.5;background:rgba(255,255,255,.9);color:#1f2a2a;border:1px solid rgba(0,0,0,.15);border-radius:6px;padding:6px 9px}
+.lg b{display:block;font-size:11px;margin-top:2px}
+.lg i{display:inline-block;vertical-align:middle;margin-right:4px}
+.lg i.gr{width:70px;height:9px;border-radius:2px}
+.lg i.sw{width:10px;height:10px;border-radius:50%;margin-left:6px}
+.lg i.sw:first-child{margin-left:0}
 </style>
 
 <div class="app">
@@ -129,6 +135,7 @@ ul.plain li{margin:2px 0}
       <div id="stage">
         <div id="labels"></div>
         <div class="hud" id="hud"></div>
+        <div class="lg" id="lg"></div>
         <div class="tools" id="tools">
           <button data-v="all">전체 보기</button>
           <button data-v="front">정면</button>
@@ -136,6 +143,7 @@ ul.plain li{margin:2px 0}
           <button data-v="top">위에서</button>
           <button data-v="explode" id="bExplode">층 분리</button>
           <button data-v="labels" id="bLabels">라벨</button>
+          <button data-v="color" id="bColor2F">진열 색: 판매 비중(가중치)</button>
         </div>
         <div class="hint">드래그 회전 · 휠/핀치 줌 · 우클릭·Shift 이동 · 층 클릭 → 줌인 · 물건 클릭 → 상세 · 빈 곳 더블클릭 → 전체</div>
       </div>
@@ -240,7 +248,8 @@ const OBJ = {
  screen:{t:'벽 스크린',d:'오른쪽 판단 탭과 같은 결정 카드를 벽에 띄운 것입니다.',b:['결정 카드 JSON → 스크린'],r:['R02'],z:7},
  truck:{t:'도매 트럭',d:'공급 데이터에서 오는 입고량. 입고율이 낮으면 적재량이 줄고 주황색이 됩니다. 입고가 없는 날은 오지 않습니다.',b:['supply_daily.supplied_qty → 적재량·도착 여부'],r:['R04'],z:9},
  exent:{t:'기존 이비인후과 (건너편)',d:'휴진 설정을 켜면 셔터가 내려오고 간판이 붉어집니다. 이 휴진이 같은 건물 신규 의원의 혼잡으로 이어집니다.',b:['calendar 휴진 → 셔터'],r:['R08','E003'],z:9},
- mon:{t:'관제 모니터',d:'데이터 출처, 근거 등급, 검증 결과를 모은 화면. 오른쪽 ‘신뢰’ 탭으로 이어집니다.',b:['data_sources, virtual_params, validate.py'],r:['G02','G04'],z:6}
+ mon:{t:'관제 모니터',d:'데이터 출처, 근거 등급, 검증 결과를 모은 화면. 오른쪽 ‘신뢰’ 탭으로 이어집니다.',b:['data_sources, virtual_params, validate.py'],r:['G02','G04'],z:6},
+ sofa:{t:'대기 소파',d:'조제를 기다리는 자리. 옆에 안마봉을 두어 만져보다 사게 하는 진열이 인터뷰에 나옵니다.',b:['L56 진열 구역 "대기 소파 옆"'],r:['R06'],z:4}
 };
 /* ───────── 시뮬레이션(가상) ───────── */
 const WD=['일','월','화','수','목','금','토'];
@@ -368,8 +377,7 @@ const shelfMeshes=[]; const custPh=[], entPh=[]; let phA,phB;
     const fills=[];for(let k=0;k<3;k++){const f=box(gg,w*.9,h*.24,dp*1.05,0x6aa86f,0,.15+k*h*.3,0,{m:new T.MeshStandardMaterial({color:0x6aa86f,roughness:.7})});reg(f,key,i);fills.push(f);}
     gg.userData.fills=fills; gg.userData.h=h; shelfMeshes.push({key,gg,fills});return gg;};
   mkShelf('cold',-4.4,1.2,2.2,.6,1.7); mkShelf('cold',-4.4,2.6,2.2,.6,1.7);
-  mkShelf('pas',-6.55,.2,.55,2,1.6,0); mkShelf('vit',-6.55,2.1,.55,1,.9,0); mkShelf('dig',-6.55,3.2,.55,1,1.4,0);
-  for(let k=0;k<2;k++) box(g,.55,.4,.55,0x8a6d4a,-1.3+k*.8,.25,3.2); // 대기 의자
+  reg(box(g,1.2,.45,.6,0x7fb5ae,-1.3,.25,3.3),'sofa',i); // 대기 소파
   box(g,1.5,2.3,.08,0x6aa5c0,-1.4,.25,D/2-.04,{mo:{transparent:true,opacity:.35}});
   for(let k=0;k<6;k++){const p=person([0xd9534f,0x5b8def,0xe0a030,0x58a55c,0xa06cc4,0x555b66][k],1);p.visible=false;g.add(p);custPh.push(p);}
   // ENT
@@ -381,6 +389,71 @@ const shelfMeshes=[]; const custPh=[], entPh=[]; let phA,phB;
     box(g,.6,.4,.5,0x7a8a98,1.2+col*.8,.25,-.2+row*.8);}
   box(g,1.4,2.3,.08,0x6aa5c0,5,.25,D/2-.04,{mo:{transparent:true,opacity:.35}});
 })();
+/* 2층 진열구역(L56·L57, data/floor12.json): 위치는 인터뷰에 없어 임의 배치
+   — floor12.html과 같은 가정, 좌표만 이 건물 치수(W=14,D=8,FH=3.1)에 맞게 재배치했다. */
+const HY2F={'하단':.35,'하단(아이 눈높이)':.35,'중단':.8,'손 닿는 높이':.75,'눈높이':1.25,'상단':1.7};
+const ZONES2F={
+ '카운터 뒤 일반약장':{x:-6.7,z:3.3,ax:'x',len:3.2,n:[0,1],H:2},
+ '카운터 앞 진열대':{x:-2.3,z:.6,ax:'z',len:1.3,n:[-1,0],H:1.6},
+ '계산대 옆':{x:-1.3,z:-.2,ax:'x',len:.7,n:[0,1],H:1.6},
+ '계산대 옆 냉장 쇼케이스':{x:-1.3,z:.3,ax:'z',len:1,n:[1,0],H:1.8},
+ '벽면 진열대 A':{x:-6.7,z:-.6,ax:'x',len:1.4,n:[0,1],H:2},
+ '벽면 진열대 B':{x:-6.7,z:.4,ax:'x',len:1.3,n:[0,1],H:2},
+ '벽면 진열대 C':{x:-6.7,z:1.4,ax:'x',len:1.2,n:[0,1],H:2},
+ '벽면 진열대 D':{x:-6.7,z:2.4,ax:'x',len:1,n:[0,1],H:2},
+ '입구 쪽 진열대':{x:-2.0,z:2.6,ax:'z',len:1.1,n:[-1,0],H:1.6},
+ '어린이 코너(입구 쪽 하단)':{x:-1.2,z:2.0,ax:'z',len:.9,n:[-1,0],H:.75},
+ '대기 소파 옆':{x:-2.5,z:3.1,ax:'x',len:.5,n:[0,1],H:1.1}
+};
+const TYPEC2F={'일반의약품':0x0f9b8c,'건강기능식품':0x8b5cf6,'의약외품':0xd4881f,'기타 잡화':0x9aa3a8};
+const ITEM_CMODE_LABEL2F=['판매 비중(가중치)','마진율','구분'];
+const lerpC2F=(a,b,t)=>new T.Color(a).lerp(new T.Color(b),Math.max(0,Math.min(1,t)));
+const itemMesh2F={}, itemData2F={}; let itemCMode=0, itemMaxWeight2F=1;
+function buildItems2F(items){
+  const g=FG[1];
+  Object.keys(ZONES2F).forEach(name=>{
+    const Z=ZONES2F[name], isX=Z.ax==='x';
+    reg(box(g,isX?Z.len:.1,Z.H,isX?.1:Z.len,0x8a7a5c,isX?Z.x+Z.len/2:Z.x,.2,isX?Z.z:Z.z+Z.len/2),'zone:'+name,1);
+    const zoneItems=items.filter(it=>it.zone_ko===name);
+    OBJ['zone:'+name]={t:name,d:'가상데이터 L56의 진열 구역입니다. 상자 폭은 페이스 수, 높이는 진열 높이입니다.',
+      b:zoneItems.map(it=>it.name_ko+' · '+it.shelf_height_ko+' · '+it.faces+'페이스'),r:['R06','G02'],z:4.5};
+    const cur={};
+    zoneItems.forEach(it=>{
+      const w=it.faces*.2, c=cur[it.shelf_height_ko]||0; cur[it.shelf_height_ko]=c+w+.04;
+      const a=(isX?Z.x:Z.z)+.05+c+w/2;
+      const m=box(g,isX?w:.26,.34,isX?.26:w,0xffffff,isX?a:Z.x+Z.n[0]*.2,.2+(HY2F[it.shelf_height_ko]||1)-.17,isX?Z.z+Z.n[1]*.2:a,{m:new T.MeshStandardMaterial({color:0xffffff})});
+      reg(m,'item:'+it.code,1); itemMesh2F[it.code]=m;
+      OBJ['item:'+it.code]={t:it.name_ko,d:it.department_ko+' · '+it.category_ko+'. 계절성: '+it.season_ko+'.',
+        b:['L56 진열: '+it.zone_ko+' · '+it.shelf_height_ko+' · '+it.faces+'페이스',
+           'L57 판매가 '+it.price_krw.toLocaleString('ko-KR')+'원 · 마진율 '+it.margin_pct+'%'],
+        r:['R06','G02'],z:3.2};
+    });
+  });
+  updateItemColors2F();
+}
+function updateItemColors2F(){
+  Object.keys(itemMesh2F).forEach(code=>{
+    const it=itemData2F[code], me=itemMesh2F[code];
+    me.material.color.copy(itemCMode===0?lerpC2F(0xefe9d8,0x0b6b61,it.sales_weight/itemMaxWeight2F)
+      :itemCMode===1?lerpC2F(0xf3e6c4,0xb5391f,(it.margin_pct-25)/20)
+      :new T.Color(TYPEC2F[it.department_ko]||0x9aa3a8));
+  });
+  const btn=document.getElementById('bColor2F'); if(btn) btn.textContent='진열 색: '+ITEM_CMODE_LABEL2F[itemCMode];
+  renderItemLegend2F();
+}
+function renderItemLegend2F(){
+  const el=document.getElementById('lg'); if(!el) return;
+  const sc=itemCMode===0?'<i class="gr" style="background:linear-gradient(90deg,#efe9d8,#0b6b61)"></i>L56 판매 비중 가중치 낮음 → 높음'
+    :itemCMode===1?'<i class="gr" style="background:linear-gradient(90deg,#f3e6c4,#b5391f)"></i>마진율 25% → 45%'
+    :'<i class="sw" style="background:#0f9b8c"></i>일반의약품<i class="sw" style="background:#8b5cf6"></i>건강기능식품<i class="sw" style="background:#d4881f"></i>의약외품<i class="sw" style="background:#9aa3a8"></i>기타';
+  el.innerHTML='<b>진열 색 · '+ITEM_CMODE_LABEL2F[itemCMode]+'</b><div>'+sc+'</div>'+
+    (itemCMode===0?'<p style="margin:4px 0 0;font-size:10px;color:#66706f">정적 L56 가중치입니다. 오늘 실제 판매 비중(실시간)은 외부환경 조작을 이식한 뒤 연결합니다 — 가정 <span class="mut">(G02)</span></p>':'');
+}
+fetch('../data/floor12.json').then(r=>r.json()).then(data=>{
+  data.items.forEach(it=>{itemData2F[it.code]=it;});
+  itemMaxWeight2F=Math.max(...data.items.map(it=>it.sales_weight));
+  buildItems2F(data.items);
+}).catch(err=>console.error('data/floor12.json 로드 실패(로컬 서버로 열어야 fetch가 됩니다):',err));
 /* 3층 판단실 */
 let screenC, screenTx, screenMesh; const cards=[];
 (()=>{const g=FG[2],i=2;
@@ -645,7 +718,8 @@ function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.
 document.getElementById('tools').onclick=e=>{const b=e.target.closest('button');if(!b)return;const v=b.dataset.v;
   if(VIEWS[v]){selected=null;VIEWS[v]();renderNav();renderPanel();}
   else if(v==='explode'){explodeGoal=explodeGoal?0:1;b.classList.toggle('on',!!explodeGoal);if(explodeGoal)fly(new T.Vector3(0,12,0),52,.55,1.2);else VIEWS.all();}
-  else if(v==='labels'){showLabels=!showLabels;b.classList.toggle('on',showLabels);}};
+  else if(v==='labels'){showLabels=!showLabels;b.classList.toggle('on',showLabels);}
+  else if(v==='color'){itemCMode=(itemCMode+1)%3;updateItemColors2F();}};
 function recompute(){P.flu=+document.getElementById('pFlu').value;P.ent=document.getElementById('pEnt').checked;P.short=document.getElementById('pShort').checked;P.cash=document.getElementById('pCash').checked;
   document.getElementById('vFlu').textContent=P.flu;H=simulate(P);applyDay();}
 ['pFlu','pEnt','pShort','pCash'].forEach(id=>document.getElementById(id).addEventListener('input',recompute));
