@@ -113,11 +113,6 @@ ul.plain li{margin:2px 0}
   .tools{flex-direction:row;flex-wrap:wrap;left:10px;right:auto;top:auto;bottom:34px}
   .hint{display:none}
 }
-.bars{display:flex;gap:3px;align-items:flex-end;height:46px;margin-top:4px}
-.bars div{flex:1;background:var(--line);border-radius:2px 2px 0 0;position:relative;min-height:2px}
-.bars div.now{background:var(--accent)}
-.bars span{position:absolute;bottom:-16px;left:0;right:0;text-align:center;font-size:10px;color:var(--muted)}
-input.k{width:56px;padding:2px 5px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--fg);font:inherit}
 </style>
 
 <div class="app">
@@ -166,21 +161,12 @@ input.k{width:56px;padding:2px 5px;border:1px solid var(--line);border-radius:6p
         <label>속도 <select id="speed" class="btn"><option value="1">1×</option><option value="2" selected>2×</option><option value="4">4×</option></select></label>
       </div>
       <div class="ctl" style="margin-top:8px">
-        <label>시각 <input type="range" id="pHour" min="540" max="1140" step="5" value="540"><b id="vHour" class="mono">09:00</b></label>
-        <span class="mut" style="font-size:11px">하루 처방을 시간대 모양으로 나눈 가정 분배 · 근거 없음</span>
-      </div>
-      <div class="bars" id="hbars"></div>
-      <div class="ctl" style="margin-top:8px">
         <label>감기·독감 유행 <input type="range" id="pFlu" min="0" max="100" value="80"><b id="vFlu">80</b></label>
       </div>
       <div class="ctl" style="margin-top:6px">
-        <label><input type="checkbox" id="pEnt" checked> 기존 이비인후과 휴진(수·토) ×<input class="k" type="number" id="kEx" min="0.5" max="3" step="0.1" value="1"></label>
+        <label><input type="checkbox" id="pEnt" checked> 기존 이비인후과 휴진(수·토)</label>
         <label><input type="checkbox" id="pShort" checked> 도매 입고 부족</label>
         <label><input type="checkbox" id="pCash" checked> 신규약국 현금 제약</label>
-      </div>
-      <div class="ctl" style="margin-top:6px">
-        <label><input type="checkbox" id="pWx"> 날씨 나쁨(비·눈) ×<input class="k" type="number" id="kWx" min="0.3" max="1.5" step="0.05" value="0.85"></label>
-        <span class="mut" style="font-size:11px">두 배율 모두 근거 없는 임시 가정(방향만 E025·R08이 뒷받침)</span>
       </div>
       <div class="ctl" style="margin-top:8px">
         <button class="btn" id="bPreset1">슬라이스 1 시나리오</button>
@@ -258,25 +244,6 @@ const OBJ = {
 };
 /* ───────── 시뮬레이션(가상) ───────── */
 const WD=['일','월','화','수','목','금','토'];
-/* 하루 처방을 시간대 모양으로 보여주기 위한 가정 분배. 합계는 그날 H[day].rx에 맞추고, 모양 자체는 근거 발언 없음(G02 대상). */
-const HOURW=[8,14,14,12,5,9,10,10,11,7];
-let hour=540;
-function hourShare(h){const i=h-9,sum=HOURW.reduce((a,b)=>a+b,0);return i>=0&&i<HOURW.length?HOURW[i]/sum:0;}
-function hourClockStr(){const h=Math.floor(hour/60),m=hour%60;return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');}
-function congestionLine(){
-  const s=H[day],h=Math.floor(hour/60),arr=s.rx*hourShare(h),SVC=3,work=arr*SVC,rho=work/60;
-  const wait=rho>=1?30:Math.min(30,rho/(1-rho)*SVC);
-  const lv=rho<.5?'여유':rho<.75?'보통':rho<.9?'혼잡':'매우 혼잡';
-  return `<div class="sec"><h4>이 시각 혼잡도 <span class="badge">가정</span></h4><p>${h}시대 가정 도착 ${arr.toFixed(1)}건/시간 · 가동률 ${rho.toFixed(2)} → <b>${lv}</b> · 예상 대기 ${wait.toFixed(0)}분</p><p class="mut" style="font-size:11px">상담 1건 ${SVC}분 가정 · 시간대 분배는 근거 없음(G02)</p></div>`;
-}
-function drawHourBars(){
-  const s=H[day],el=document.getElementById('hbars');if(!el)return;
-  const cur=Math.floor(hour/60)-9,peak=s.rx*Math.max(...HOURW)/HOURW.reduce((a,b)=>a+b,0);
-  let html='';
-  for(let h=9;h<19;h++){const v=s.rx*hourShare(h);
-    html+=`<div class="${h-9===cur?'now':''}" style="height:${Math.max(4,Math.min(100,peak?v/peak*100:0))}%" title="${h}시대 가정 분배 · 처방 약 ${v.toFixed(1)}건"><span>${h}</span></div>`;}
-  el.innerHTML=html;
-}
 function simulate(P){
   const out=[]; let stock=60, cash=P.cash?900000:2400000, pend=0, prevOrder=0;
   const COST=2800, PRICE=4300, RES=P.cash?500000:300000;
@@ -284,9 +251,7 @@ function simulate(P){
   const info=d=>{const dt=new Date(base);dt.setDate(base.getDate()+d);const wd=dt.getDay();
     const closed=P.ent&&(wd===3||wd===6);
     const resp=Math.round(25+P.flu*0.65*Math.min(1,(d+1)/7));
-    let demand=Math.round(14+resp*0.45+(closed?9*(P.exK||1):0));
-    if(P.wx)demand=Math.round(demand*(P.wxK||1));
-    return {dt,wd,closed,resp,demand};};
+    return {dt,wd,closed,resp,demand:Math.round(14+resp*0.45+(closed?9:0))};};
   const fillAt=d=>(P.short&&d>=3&&d<=8)?0.4:1;
   for(let d=0;d<14;d++){
     const I=info(d);
@@ -315,7 +280,7 @@ function simulate(P){
   }
   return out;
 }
-const P={flu:80,ent:true,short:true,cash:true,exK:1,wx:false,wxK:.85};
+const P={flu:80,ent:true,short:true,cash:true};
 let H=simulate(P), HB=simulate({flu:0,ent:false,short:false,cash:false});
 let day=0, playing=false, tAcc=0;
 const fmtKRW=n=>Math.round(n/1000).toLocaleString('ko-KR')+'천원';
@@ -416,27 +381,6 @@ const shelfMeshes=[]; const custPh=[], entPh=[]; let phA,phB;
     box(g,.6,.4,.5,0x7a8a98,1.2+col*.8,.25,-.2+row*.8);}
   box(g,1.4,2.3,.08,0x6aa5c0,5,.25,D/2-.04,{mo:{transparent:true,opacity:.35}});
 })();
-/* 2층 손님 보행 경로: 문(-1.4,D/2 근처) → 카운터 앞 대기열 → 문. custPh 풀(6명)을 그대로 재사용한다. */
-const custState=custPh.map((p,k)=>({state:'out',t:Math.random()*3,slot:k%3}));
-const custDoor=new T.Vector3(-1.4,.25,D/2-.3);
-const custQSlot=k=>new T.Vector3(-2.2,.25,-.7+.55+k*.42);
-function stepCust(dt){
-  const s=H[day],svc=1.6+Math.min(4,s.rx/20);
-  custPh.forEach((p,i)=>{
-    if(!p.visible)return;
-    const st=custState[i];
-    if(st.state==='out'){st.t-=dt;if(st.t<=0){p.position.set(custDoor.x,p.position.y,custDoor.z);st.state='in';}return;}
-    if(st.state==='in'){const tgt=custQSlot(st.slot),d=new T.Vector3(tgt.x-p.position.x,0,tgt.z-p.position.z),L=d.length();
-      if(L<.06){st.state='queue';st.t=svc;p.position.x=tgt.x;p.position.z=tgt.z;}
-      else{d.normalize();const m=Math.min(L,dt*1.3);p.position.x+=d.x*m;p.position.z+=d.z*m;p.rotation.y=Math.atan2(d.x,d.z);}
-      return;}
-    if(st.state==='queue'){st.t-=dt;if(st.t<=0)st.state='leave';return;}
-    if(st.state==='leave'){const d=new T.Vector3(custDoor.x-p.position.x,0,custDoor.z-p.position.z),L=d.length();
-      if(L<.06){st.state='out';st.t=1+Math.random()*3;}
-      else{d.normalize();const m=Math.min(L,dt*1.3);p.position.x+=d.x*m;p.position.z+=d.z*m;p.rotation.y=Math.atan2(d.x,d.z);}
-      return;}
-  });
-}
 /* 3층 판단실 */
 let screenC, screenTx, screenMesh; const cards=[];
 (()=>{const g=FG[2],i=2;
@@ -545,7 +489,7 @@ function renderPanel(){
       <div class="sec"><h4>먼저 해 보세요</h4><ul class="plain"><li>아래 <b>재생</b>을 눌러 하루가 지나가는 모습 보기</li><li><b>3층</b>을 눌러 결정 카드 보기</li><li><b>층 분리</b>로 단면 펼치기</li></ul></div>`+stateLine();}
     else if(selected.type==='floor'){const f=FINFO[selected.i];h=`<h3>${f.t}</h3>${FLOORS[selected.i].locked?'<span class="badge warn">2차 · 잠김</span>':''}<p>${f.d}</p>
       <div class="sec"><h4>이 장면을 만드는 데이터 <span class="mut" style="text-transform:none;font-weight:400">(제안)</span></h4><ul class="bind">${f.b.map(x=>`<li>${x.replace(/^([\w_.]+)/,'<code>$1</code>')}</li>`).join('')}</ul></div>
-      <div class="sec"><h4>근거</h4>${refsHtml(f.r)}</div>${evHtml()}${stateLine()}${selected.i===1?congestionLine():''}`;}
+      <div class="sec"><h4>근거</h4>${refsHtml(f.r)}</div>${evHtml()}${stateLine()}`;}
     else if(selected.type==='obj'){const o=OBJ[selected.key];h=`<h3>${o.t}</h3><p>${o.d}</p>${objDyn(selected.key)}
       <div class="sec"><h4>연결되는 데이터 <span class="mut" style="text-transform:none;font-weight:400">(제안)</span></h4><ul class="bind">${o.b.map(x=>`<li>${x.replace(/^([\w_.]+)/,'<code>$1</code>')}</li>`).join('')}</ul></div>
       <div class="sec"><h4>근거</h4>${refsHtml(o.r)}</div>${evHtml()}`;}
@@ -632,7 +576,7 @@ function placeLabels(){const r=stage.getBoundingClientRect();
     if(l.el.classList.contains('c')&&goal.r<6)l.el.style.display='none'; else l.el.style.display=hide?'none':'';
     l.el.style.left=((v3.x+1)/2*r.width)+'px';l.el.style.top=((1-v3.y)/2*r.height)+'px';});}
 function renderHud(){const s=H[day];document.getElementById('hud').innerHTML=
-  `<div class="chip"><span>날짜</span><b>${dlabel(s)}</b></div><div class="chip"><span>시각</span><b>${hourClockStr()}</b></div><div class="chip"><span>호흡기 지수</span><b>${s.resp}</b></div><div class="chip"><span>처방</span><b>${s.rx}건</b></div>
+  `<div class="chip"><span>날짜</span><b>${dlabel(s)}</b></div><div class="chip"><span>호흡기 지수</span><b>${s.resp}</b></div><div class="chip"><span>처방</span><b>${s.rx}건</b></div>
    <div class="chip ${s.dos<1.5?'bad':''}"><span>감기약 재고일수</span><b>${s.dos.toFixed(1)}일</b></div><div class="chip"><span>현금</span><b>${fmtKRW(s.cash)}</b></div>${s.so>0?`<div class="chip bad"><span>오늘 품절</span><b>${s.so}개</b></div>`:''}`;}
 function renderTl(){const el=document.getElementById('tl');el.innerHTML=H.map((s,i)=>`<button class="${i===day?'on':''}${s.so>0?' so':''}" data-d="${i}" title="${dlabel(s)} · ${s.opts[s.ci].k}">${s.dt.getDate()}<br><span style="color:var(--muted)">${WD[s.wd]}</span><i style="background:${kcol(s)}"></i></button>`).join('');
   el.querySelectorAll('button').forEach(b=>b.onclick=()=>{day=+b.dataset.d;playing=false;setPlayBtn();onDay();});}
@@ -667,7 +611,7 @@ function applyDay(){
   truckTarget=s.recv>0?9:48; const nl=s.recv>0?Math.max(1,Math.round(6*Math.min(1,s.recv/60))):0;loads.forEach((b,k)=>b.visible=k<nl);
   const partial=s.recv>0&&s.fillPct<.99;cab.material=mat(partial?0xd4881f:0x3f9aa0);
   cards.forEach((c,k)=>{const o=s.opts[k];c.material.color.set(k===s.ci?0x0f9b8c:o.ok?0x8a8f98:0x7a4b47);c.material.opacity=o.ok||k===s.ci?1:.55;c.userData.up=k===s.ci?.35:0;});
-  drawScreen();refreshLabelText();renderHud();renderTl();renderPanel();drawHourBars();
+  drawScreen();refreshLabelText();renderHud();renderTl();renderPanel();
 }
 let truckTarget=48;
 function onDay(){applyDay();}
@@ -690,7 +634,6 @@ function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.
   truck.position.x+=(truckTarget-truck.position.x)*(1-Math.pow(.02,dt));
   street.forEach(p=>{if(!p.visible)return;const u=p.userData;u.u+=dt*u.sp;if(u.u>=1){u.u=0;u.sx=(Math.random()<.5?-1:1)*(10+Math.random()*14);}
     const dx=-1.2,x=u.sx+(dx-u.sx)*Math.min(1,u.u/.92);const z=D/2+(u.u<.92?2.2:2.2-(u.u-.92)/.08*2);p.position.set(x,Math.abs(Math.sin(t*6+u.sx))*.05-.0,z);p.scale.setScalar(u.u>.97?Math.max(.01,(1-u.u)/.03):1);p.rotation.y=dx>u.sx?Math.PI/2:-Math.PI/2;});
-  stepCust(dt);
   custPh.forEach((p,i)=>{if(p.visible)p.position.y=.25+Math.abs(Math.sin(t*1.5+i))*.03;});
   if(phA)phA.position.x=-5.0+Math.sin(t*.6)*.5; if(phB)phB.position.x=-2.2+Math.sin(t*.4)*.35;
   cards.forEach(c=>{const up=c.userData.up||0;c.position.y+=((.75+.12+.45+up)-c.position.y)*.1;});
@@ -704,10 +647,8 @@ document.getElementById('tools').onclick=e=>{const b=e.target.closest('button');
   else if(v==='explode'){explodeGoal=explodeGoal?0:1;b.classList.toggle('on',!!explodeGoal);if(explodeGoal)fly(new T.Vector3(0,12,0),52,.55,1.2);else VIEWS.all();}
   else if(v==='labels'){showLabels=!showLabels;b.classList.toggle('on',showLabels);}};
 function recompute(){P.flu=+document.getElementById('pFlu').value;P.ent=document.getElementById('pEnt').checked;P.short=document.getElementById('pShort').checked;P.cash=document.getElementById('pCash').checked;
-  P.exK=+document.getElementById('kEx').value||1;P.wx=document.getElementById('pWx').checked;P.wxK=+document.getElementById('kWx').value||1;
   document.getElementById('vFlu').textContent=P.flu;H=simulate(P);applyDay();}
-['pFlu','pEnt','pShort','pCash','pWx','kEx','kWx'].forEach(id=>document.getElementById(id).addEventListener('input',recompute));
-document.getElementById('pHour').addEventListener('input',e=>{hour=+e.target.value;document.getElementById('vHour').textContent=hourClockStr();drawHourBars();renderHud();});
+['pFlu','pEnt','pShort','pCash'].forEach(id=>document.getElementById(id).addEventListener('input',recompute));
 function preset(f,e,s,c){document.getElementById('pFlu').value=f;document.getElementById('pEnt').checked=e;document.getElementById('pShort').checked=s;document.getElementById('pCash').checked=c;recompute();}
 document.getElementById('bPreset1').onclick=()=>preset(80,true,true,true);
 document.getElementById('bPreset0').onclick=()=>preset(25,false,false,false);
