@@ -1,0 +1,450 @@
+﻿link_id,from_id,to_id,link_type,derived_from
+LK0001,I01,E005,case_cites_claim,cases.근거 ID
+LK0002,I01,E006,case_cites_claim,cases.근거 ID
+LK0003,I01,E007,case_cites_claim,cases.근거 ID
+LK0004,I01,E008,case_cites_claim,cases.근거 ID
+LK0005,I01,E009,case_cites_claim,cases.근거 ID
+LK0006,I01,E010,case_cites_claim,cases.근거 ID
+LK0007,I01,E011,case_cites_claim,cases.근거 ID
+LK0008,I02,E015,case_cites_claim,cases.근거 ID
+LK0009,I02,E016,case_cites_claim,cases.근거 ID
+LK0010,I03,E017,case_cites_claim,cases.근거 ID
+LK0011,I03,E018,case_cites_claim,cases.근거 ID
+LK0012,I03,E019,case_cites_claim,cases.근거 ID
+LK0013,I03,E020,case_cites_claim,cases.근거 ID
+LK0014,I04,E023,case_cites_claim,cases.근거 ID
+LK0015,I04,E024,case_cites_claim,cases.근거 ID
+LK0016,I04,E025,case_cites_claim,cases.근거 ID
+LK0017,I04,E026,case_cites_claim,cases.근거 ID
+LK0018,I05,E028,case_cites_claim,cases.근거 ID
+LK0019,I05,E029,case_cites_claim,cases.근거 ID
+LK0020,I05,E030,case_cites_claim,cases.근거 ID
+LK0021,I05,E031,case_cites_claim,cases.근거 ID
+LK0022,I05,E032,case_cites_claim,cases.근거 ID
+LK0023,I06,E033,case_cites_claim,cases.근거 ID
+LK0024,I06,E034,case_cites_claim,cases.근거 ID
+LK0025,I06,E035,case_cites_claim,cases.근거 ID
+LK0026,I06,E036,case_cites_claim,cases.근거 ID
+LK0027,I06,E038,case_cites_claim,cases.근거 ID
+LK0028,I07,E039,case_cites_claim,cases.근거 ID
+LK0029,I07,E040,case_cites_claim,cases.근거 ID
+LK0030,I08,E047,case_cites_claim,cases.근거 ID
+LK0031,I08,E048,case_cites_claim,cases.근거 ID
+LK0032,I09,E049,case_cites_claim,cases.근거 ID
+LK0033,I09,E050,case_cites_claim,cases.근거 ID
+LK0034,I09,E051,case_cites_claim,cases.근거 ID
+LK0035,I09,E052,case_cites_claim,cases.근거 ID
+LK0036,I10,E053,case_cites_claim,cases.근거 ID
+LK0037,I11,E056,case_cites_claim,cases.근거 ID
+LK0038,I11,E057,case_cites_claim,cases.근거 ID
+LK0039,I11,E058,case_cites_claim,cases.근거 ID
+LK0040,I12,E060,case_cites_claim,cases.근거 ID
+LK0041,I12,E061,case_cites_claim,cases.근거 ID
+LK0042,I12,E062,case_cites_claim,cases.근거 ID
+LK0043,I13,E065,case_cites_claim,cases.근거 ID
+LK0044,I14,E073,case_cites_claim,cases.근거 ID
+LK0045,I14,E074,case_cites_claim,cases.근거 ID
+LK0046,I14,E075,case_cites_claim,cases.근거 ID
+LK0047,I15,E079,case_cites_claim,cases.근거 ID
+LK0048,I15,E080,case_cites_claim,cases.근거 ID
+LK0049,I15,E081,case_cites_claim,cases.근거 ID
+LK0050,I15,E082,case_cites_claim,cases.근거 ID
+LK0051,I16,E084,case_cites_claim,cases.근거 ID
+LK0052,I16,E085,case_cites_claim,cases.근거 ID
+LK0053,I16,E086,case_cites_claim,cases.근거 ID
+LK0054,I16,E087,case_cites_claim,cases.근거 ID
+LK0055,I16,E088,case_cites_claim,cases.근거 ID
+LK0056,I16,E090,case_cites_claim,cases.근거 ID
+LK0057,I17,E093,case_cites_claim,cases.근거 ID
+LK0058,I17,E094,case_cites_claim,cases.근거 ID
+LK0059,I18,E096,case_cites_claim,cases.근거 ID
+LK0060,I18,E097,case_cites_claim,cases.근거 ID
+LK0061,I19,E098,case_cites_claim,cases.근거 ID
+LK0062,I01,R05,case_illustrates_rule,cases.연결 규칙
+LK0063,I01,R06,case_illustrates_rule,cases.연결 규칙
+LK0064,I02,R06,case_illustrates_rule,cases.연결 규칙
+LK0065,I03,R06,case_illustrates_rule,cases.연결 규칙
+LK0066,I04,R08,case_illustrates_rule,cases.연결 규칙
+LK0067,I05,R01,case_illustrates_rule,cases.연결 규칙
+LK0068,I05,R02,case_illustrates_rule,cases.연결 규칙
+LK0069,I06,R03,case_illustrates_rule,cases.연결 규칙
+LK0070,I06,R04,case_illustrates_rule,cases.연결 규칙
+LK0071,I07,R03,case_illustrates_rule,cases.연결 규칙
+LK0072,I08,R15,case_illustrates_rule,cases.연결 규칙
+LK0073,I09,R07,case_illustrates_rule,cases.연결 규칙
+LK0074,I10,R07,case_illustrates_rule,cases.연결 규칙
+LK0075,I11,R09,case_illustrates_rule,cases.연결 규칙
+LK0076,I12,R13,case_illustrates_rule,cases.연결 규칙
+LK0077,I13,R10,case_illustrates_rule,cases.연결 규칙
+LK0078,I15,R11,case_illustrates_rule,cases.연결 규칙
+LK0079,I16,R12,case_illustrates_rule,cases.연결 규칙
+LK0080,I16,R14,case_illustrates_rule,cases.연결 규칙
+LK0081,I17,R17,case_illustrates_rule,cases.연결 규칙
+LK0082,I17,R18,case_illustrates_rule,cases.연결 규칙
+LK0083,I18,R15,case_illustrates_rule,cases.연결 규칙
+LK0084,E006,R05,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0085,E007,R05,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0086,E008,R05,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0087,E009,R06,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0088,E010,R06,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0089,E011,R06,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0090,E012,R06,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0091,E025,R08,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0092,E026,R08,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0093,E027,R08,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0094,E029,R02,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0095,E030,R01,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0096,E031,R01,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0097,E034,R03,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0098,E035,R03,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0099,E036,R03,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0100,E037,R02,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0101,E037,R03,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0102,E038,R04,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0103,E045,R15,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0104,E045,R16,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0105,E046,R15,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0106,E047,R15,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0107,E048,R15,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0108,E049,R07,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0109,E050,R07,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0110,E051,R07,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0111,E053,R07,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0112,E056,R09,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0113,E057,R09,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0114,E057,R10,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0115,E058,R09,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0116,E060,R13,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0117,E061,R13,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0118,E062,R13,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0119,E065,R10,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0120,E079,R11,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0121,E080,R11,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0122,E081,R11,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0123,E084,R12,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0124,E085,R12,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0125,E086,R14,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0126,E087,R14,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0127,E088,R14,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0128,E093,R17,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0129,E094,R18,claim_supports_rule,claims.연결 항목;rules.근거 ID
+LK0130,E001,P002,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0131,E002,P001,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0132,E002,P010,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0133,E002,P011,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0134,E002,P012,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0135,E003,P012,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0136,E003,X002,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0137,E004,P012,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0138,E005,P006,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0139,E006,D007,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0140,E006,X010,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0141,E007,D007,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0142,E007,P008,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0143,E008,D003,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0144,E008,D007,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0145,E008,S023,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0146,E009,D007,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0147,E009,P010,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0148,E009,S016,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0149,E010,D007,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0150,E010,P018,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0151,E010,S016,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0152,E011,S016,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0153,E012,P020,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0154,E013,P001,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0155,E013,P014,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0156,E014,P011,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0157,E015,L001,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0158,E015,L009,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0159,E015,P015,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0160,E015,X011,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0161,E016,S007,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0162,E017,L002,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0163,E017,L009,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0164,E017,P010,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0165,E018,L002,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0166,E018,X012,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0167,E019,L002,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0168,E019,P013,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0169,E019,P014,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0170,E020,C018,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0171,E022,P016,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0172,E023,X004,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0173,E024,X004,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0174,E025,X003,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0175,E026,P016,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0176,E026,X001,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0177,E026,X002,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0178,E028,S001,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0179,E029,D006,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0180,E029,S008,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0181,E030,D005,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0182,E030,S001,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0183,E030,S002,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0184,E031,D005,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0185,E031,S002,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0186,E031,S005,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0187,E032,D001,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0188,E032,L006,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0189,E033,D001,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0190,E033,X005,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0191,E033,X006,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0192,E034,C001,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0193,E034,C002,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0194,E034,D002,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0195,E034,D016,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0196,E034,S011,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0197,E035,C006,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0198,E035,C008,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0199,E038,C003,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0200,E038,C005,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0201,E038,D002,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0202,E039,L007,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0203,E042,C014,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0204,E042,S001,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0205,E042,S004,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0206,E043,C014,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0207,E044,C009,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0208,E045,C010,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0209,E045,X014,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0210,E046,C010,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0211,E048,C009,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0212,E048,D010,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0213,E049,S017,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0214,E050,L003,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0215,E050,S017,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0216,E051,L003,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0217,E051,L004,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0218,E051,L009,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0219,E052,D004,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0220,E053,L005,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0221,E053,S017,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0222,E054,C017,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0223,E055,S022,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0224,E056,C017,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0225,E056,D008,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0226,E057,D008,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0227,E057,S022,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0228,E059,P022,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0229,E060,C013,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0230,E061,C013,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0231,E062,C013,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0232,E064,C015,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0233,E064,X006,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0234,E065,D009,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0235,E068,C006,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0236,E068,C007,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0237,E069,P006,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0238,E071,C011,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0239,E071,D016,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0240,E073,P008,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0241,E075,P008,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0242,E077,C012,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0243,E077,S019,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0244,E078,C012,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0245,E079,D003,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0246,E079,S023,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0247,E079,X013,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0248,E080,L008,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0249,E080,S023,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0250,E081,C016,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0251,E081,D003,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0252,E081,D016,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0253,E081,L008,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0254,E084,C016,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0255,E084,D004,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0256,E084,D016,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0257,E084,X009,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0258,E085,C016,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0259,E085,D004,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0260,E085,L010,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0261,E086,D010,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0262,E086,D011,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0263,E087,D010,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0264,E087,D011,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0265,E088,P018,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0266,E088,S007,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0267,E088,S013,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0268,E089,P018,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0269,E090,L011,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0270,E093,D013,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0271,E093,S020,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0272,E094,S020,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0273,E094,X008,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0274,E096,S019,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0275,E096,X001,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0276,E096,X008,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0277,E098,L012,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0278,E098,S021,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0279,U001,P004,claim_supports_variable,claims.연결 항목;variables.근거 ID
+LK0280,G01,E007,guardrail_cites_claim,guardrails.근거
+LK0281,G01,E039,guardrail_cites_claim,guardrails.근거
+LK0282,G01,E073,guardrail_cites_claim,guardrails.근거
+LK0283,G01,E074,guardrail_cites_claim,guardrails.근거
+LK0284,G01,E075,guardrail_cites_claim,guardrails.근거
+LK0285,G02,E029,guardrail_cites_claim,guardrails.근거
+LK0286,G02,E037,guardrail_cites_claim,guardrails.근거
+LK0287,G02,E088,guardrail_cites_claim,guardrails.근거
+LK0288,G03,E020,guardrail_cites_claim,guardrails.근거
+LK0289,G03,E044,guardrail_cites_claim,guardrails.근거
+LK0290,G03,E078,guardrail_cites_claim,guardrails.근거
+LK0291,G03,E082,guardrail_cites_claim,guardrails.근거
+LK0292,G04,E051,guardrail_cites_claim,guardrails.근거
+LK0293,G04,E053,guardrail_cites_claim,guardrails.근거
+LK0294,G04,E085,guardrail_cites_claim,guardrails.근거
+LK0295,G05,E063,guardrail_cites_claim,guardrails.근거
+LK0296,G05,E090,guardrail_cites_claim,guardrails.근거
+LK0297,G05,E098,guardrail_cites_claim,guardrails.근거
+LK0298,G06,E075,guardrail_cites_claim,guardrails.근거
+LK0299,G06,E085,guardrail_cites_claim,guardrails.근거
+LK0300,G07,E005,guardrail_cites_claim,guardrails.근거
+LK0301,G07,U001,guardrail_cites_claim,guardrails.근거
+LK0302,PF01,E001,profile_cites_claim,persona_profile.근거·사례
+LK0303,PF01,E002,profile_cites_claim,persona_profile.근거·사례
+LK0304,PF01,U001,profile_cites_claim,persona_profile.근거·사례
+LK0305,PF02,E002,profile_cites_claim,persona_profile.근거·사례
+LK0306,PF02,E003,profile_cites_claim,persona_profile.근거·사례
+LK0307,PF02,E004,profile_cites_claim,persona_profile.근거·사례
+LK0308,PF02,E014,profile_cites_claim,persona_profile.근거·사례
+LK0309,PF03,E012,profile_cites_claim,persona_profile.근거·사례
+LK0310,PF03,E013,profile_cites_claim,persona_profile.근거·사례
+LK0311,PF03,E015,profile_cites_claim,persona_profile.근거·사례
+LK0312,PF03,E018,profile_cites_claim,persona_profile.근거·사례
+LK0313,PF03,E019,profile_cites_claim,persona_profile.근거·사례
+LK0314,PF04,E009,profile_cites_claim,persona_profile.근거·사례
+LK0315,PF04,E010,profile_cites_claim,persona_profile.근거·사례
+LK0316,PF04,E011,profile_cites_claim,persona_profile.근거·사례
+LK0317,PF04,E088,profile_cites_claim,persona_profile.근거·사례
+LK0318,PF05,E033,profile_cites_claim,persona_profile.근거·사례
+LK0319,PF05,E034,profile_cites_claim,persona_profile.근거·사례
+LK0320,PF05,E035,profile_cites_claim,persona_profile.근거·사례
+LK0321,PF05,E038,profile_cites_claim,persona_profile.근거·사례
+LK0322,PF06,E006,profile_cites_claim,persona_profile.근거·사례
+LK0323,PF06,E007,profile_cites_claim,persona_profile.근거·사례
+LK0324,PF06,E030,profile_cites_claim,persona_profile.근거·사례
+LK0325,PF06,E031,profile_cites_claim,persona_profile.근거·사례
+LK0326,PF07,E029,profile_cites_claim,persona_profile.근거·사례
+LK0327,PF08,E006,profile_cites_claim,persona_profile.근거·사례
+LK0328,PF08,E008,profile_cites_claim,persona_profile.근거·사례
+LK0329,PF08,E066,profile_cites_claim,persona_profile.근거·사례
+LK0330,PF08,E067,profile_cites_claim,persona_profile.근거·사례
+LK0331,PF08,E081,profile_cites_claim,persona_profile.근거·사례
+LK0332,PF08,E084,profile_cites_claim,persona_profile.근거·사례
+LK0333,PF09,E093,profile_cites_claim,persona_profile.근거·사례
+LK0334,PF09,E094,profile_cites_claim,persona_profile.근거·사례
+LK0335,PF10,E055,profile_cites_claim,persona_profile.근거·사례
+LK0336,PF10,E056,profile_cites_claim,persona_profile.근거·사례
+LK0337,PF10,E057,profile_cites_claim,persona_profile.근거·사례
+LK0338,PF10,E061,profile_cites_claim,persona_profile.근거·사례
+LK0339,PF10,E065,profile_cites_claim,persona_profile.근거·사례
+LK0340,PF11,E086,profile_cites_claim,persona_profile.근거·사례
+LK0341,PF11,E087,profile_cites_claim,persona_profile.근거·사례
+LK0342,PF11,E088,profile_cites_claim,persona_profile.근거·사례
+LK0343,PF13,E090,profile_cites_claim,persona_profile.근거·사례
+LK0344,PF14,E002,profile_cites_claim,persona_profile.fact(변수의 근거)
+LK0345,PF14,E013,profile_cites_claim,persona_profile.fact(변수의 근거)
+LK0346,PF15,E001,profile_cites_claim,persona_profile.fact(변수의 근거)
+LK0347,PF16,E001,profile_cites_claim,persona_profile.fact(변수의 근거)
+LK0348,PF17,U001,profile_cites_claim,persona_profile.fact(변수의 근거)
+LK0349,PF18,E088,profile_cites_claim,persona_profile.fact(변수의 근거)
+LK0350,PF01,P001,profile_uses_variable,persona_profile.연결 변수
+LK0351,PF01,P002,profile_uses_variable,persona_profile.연결 변수
+LK0352,PF01,P004,profile_uses_variable,persona_profile.연결 변수
+LK0353,PF02,P010,profile_uses_variable,persona_profile.연결 변수
+LK0354,PF02,P011,profile_uses_variable,persona_profile.연결 변수
+LK0355,PF02,P012,profile_uses_variable,persona_profile.연결 변수
+LK0356,PF03,P013,profile_uses_variable,persona_profile.연결 변수
+LK0357,PF03,P014,profile_uses_variable,persona_profile.연결 변수
+LK0358,PF03,P015,profile_uses_variable,persona_profile.연결 변수
+LK0359,PF03,P020,profile_uses_variable,persona_profile.연결 변수
+LK0360,PF04,P018,profile_uses_variable,persona_profile.연결 변수
+LK0361,PF04,S013,profile_uses_variable,persona_profile.연결 변수
+LK0362,PF04,S016,profile_uses_variable,persona_profile.연결 변수
+LK0363,PF05,C001,profile_uses_variable,persona_profile.연결 변수
+LK0364,PF05,C003,profile_uses_variable,persona_profile.연결 변수
+LK0365,PF05,C006,profile_uses_variable,persona_profile.연결 변수
+LK0366,PF05,C008,profile_uses_variable,persona_profile.연결 변수
+LK0367,PF06,D005,profile_uses_variable,persona_profile.연결 변수
+LK0368,PF06,D007,profile_uses_variable,persona_profile.연결 변수
+LK0369,PF06,S001,profile_uses_variable,persona_profile.연결 변수
+LK0370,PF06,S002,profile_uses_variable,persona_profile.연결 변수
+LK0371,PF06,S005,profile_uses_variable,persona_profile.연결 변수
+LK0372,PF07,D006,profile_uses_variable,persona_profile.연결 변수
+LK0373,PF07,S008,profile_uses_variable,persona_profile.연결 변수
+LK0374,PF08,D003,profile_uses_variable,persona_profile.연결 변수
+LK0375,PF08,D004,profile_uses_variable,persona_profile.연결 변수
+LK0376,PF08,D007,profile_uses_variable,persona_profile.연결 변수
+LK0377,PF08,X009,profile_uses_variable,persona_profile.연결 변수
+LK0378,PF09,D013,profile_uses_variable,persona_profile.연결 변수
+LK0379,PF09,S020,profile_uses_variable,persona_profile.연결 변수
+LK0380,PF10,C013,profile_uses_variable,persona_profile.연결 변수
+LK0381,PF10,D008,profile_uses_variable,persona_profile.연결 변수
+LK0382,PF10,D009,profile_uses_variable,persona_profile.연결 변수
+LK0383,PF10,S022,profile_uses_variable,persona_profile.연결 변수
+LK0384,PF11,D010,profile_uses_variable,persona_profile.연결 변수
+LK0385,PF11,D011,profile_uses_variable,persona_profile.연결 변수
+LK0386,PF12,L001,profile_uses_variable,persona_profile.연결 변수
+LK0387,PF12,L002,profile_uses_variable,persona_profile.연결 변수
+LK0388,PF12,L003,profile_uses_variable,persona_profile.연결 변수
+LK0389,PF12,L004,profile_uses_variable,persona_profile.연결 변수
+LK0390,PF12,L005,profile_uses_variable,persona_profile.연결 변수
+LK0391,PF12,L006,profile_uses_variable,persona_profile.연결 변수
+LK0392,PF12,L008,profile_uses_variable,persona_profile.연결 변수
+LK0393,PF12,L009,profile_uses_variable,persona_profile.연결 변수
+LK0394,PF12,L010,profile_uses_variable,persona_profile.연결 변수
+LK0395,PF13,L007,profile_uses_variable,persona_profile.연결 변수
+LK0396,PF13,L011,profile_uses_variable,persona_profile.연결 변수
+LK0397,PF13,P008,profile_uses_variable,persona_profile.연결 변수
+LK0398,PF14,P001,profile_uses_variable,persona_profile.fact
+LK0399,PF15,P002,profile_uses_variable,persona_profile.fact
+LK0400,PF16,P002,profile_uses_variable,persona_profile.fact
+LK0401,PF17,P004,profile_uses_variable,persona_profile.fact
+LK0402,PF18,S013,profile_uses_variable,persona_profile.fact
+LK0403,R01,D005,rule_uses_variable,rules.연결 변수
+LK0404,R01,S001,rule_uses_variable,rules.연결 변수
+LK0405,R01,S002,rule_uses_variable,rules.연결 변수
+LK0406,R01,S005,rule_uses_variable,rules.연결 변수
+LK0407,R02,D006,rule_uses_variable,rules.연결 변수
+LK0408,R02,S008,rule_uses_variable,rules.연결 변수
+LK0409,R03,C001,rule_uses_variable,rules.연결 변수
+LK0410,R03,C006,rule_uses_variable,rules.연결 변수
+LK0411,R03,D002,rule_uses_variable,rules.연결 변수
+LK0412,R03,S011,rule_uses_variable,rules.연결 변수
+LK0413,R04,C003,rule_uses_variable,rules.연결 변수
+LK0414,R04,C005,rule_uses_variable,rules.연결 변수
+LK0415,R05,D007,rule_uses_variable,rules.연결 변수
+LK0416,R05,P008,rule_uses_variable,rules.연결 변수
+LK0417,R05,S016,rule_uses_variable,rules.연결 변수
+LK0418,R06,P010,rule_uses_variable,rules.연결 변수
+LK0419,R06,P018,rule_uses_variable,rules.연결 변수
+LK0420,R06,P020,rule_uses_variable,rules.연결 변수
+LK0421,R06,S016,rule_uses_variable,rules.연결 변수
+LK0422,R07,L003,rule_uses_variable,rules.연결 변수
+LK0423,R07,L004,rule_uses_variable,rules.연결 변수
+LK0424,R07,L005,rule_uses_variable,rules.연결 변수
+LK0425,R07,S017,rule_uses_variable,rules.연결 변수
+LK0426,R08,X001,rule_uses_variable,rules.연결 변수
+LK0427,R08,X002,rule_uses_variable,rules.연결 변수
+LK0428,R08,X003,rule_uses_variable,rules.연결 변수
+LK0429,R09,C017,rule_uses_variable,rules.연결 변수
+LK0430,R09,D008,rule_uses_variable,rules.연결 변수
+LK0431,R09,S022,rule_uses_variable,rules.연결 변수
+LK0432,R10,D009,rule_uses_variable,rules.연결 변수
+LK0433,R11,D003,rule_uses_variable,rules.연결 변수
+LK0434,R11,D004,rule_uses_variable,rules.연결 변수
+LK0435,R11,L008,rule_uses_variable,rules.연결 변수
+LK0436,R11,S023,rule_uses_variable,rules.연결 변수
+LK0437,R12,D004,rule_uses_variable,rules.연결 변수
+LK0438,R12,L010,rule_uses_variable,rules.연결 변수
+LK0439,R12,X009,rule_uses_variable,rules.연결 변수
+LK0440,R13,C013,rule_uses_variable,rules.연결 변수
+LK0441,R14,D010,rule_uses_variable,rules.연결 변수
+LK0442,R14,D011,rule_uses_variable,rules.연결 변수
+LK0443,R15,C009,rule_uses_variable,rules.연결 변수
+LK0444,R15,C010,rule_uses_variable,rules.연결 변수
+LK0445,R16,X014,rule_uses_variable,rules.연결 변수
+LK0446,R17,D013,rule_uses_variable,rules.연결 변수
+LK0447,R17,S019,rule_uses_variable,rules.연결 변수
+LK0448,R17,S020,rule_uses_variable,rules.연결 변수
+LK0449,R18,S020,rule_uses_variable,rules.연결 변수

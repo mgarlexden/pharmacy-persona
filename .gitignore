@@ -1,0 +1,22 @@
+# 외부 데이터 (fetch.py 가 다시 받음)
+fetched/
+
+# 약사 응답 원본 (저장소에 올리지 않음)
+validation_responses/
+responses_raw/
+
+# 의존성·빌드
+node_modules/
+dist/
+__pycache__/
+*.pyc
+.venv/
+
+# 환경변수·키
+.env
+.env.*
+
+# OS·편집기
+.DS_Store
+Thumbs.db
+.vscode/

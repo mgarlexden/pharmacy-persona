@@ -1,0 +1,45 @@
+﻿param_id,label_ko,value_text,unit,value_origin,source_kind_ko,support_grade,grade_reason_ko,basis_ko,used_in,primary_data_id,variable_id,variable_link_status,profile_ref,action,source_file,source_sheet,generated_at
+VP01,시뮬 기간,2026-01-01~2026-12-31,,decision,결정,,팀 결정값,팀 결정(1년),전체,,,,,keep,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP02,영업일,293,일,derived,파생,A,2026 공휴일 22일(L17)과 일치 확인,L17 공휴일 + 영업시간 가정(평일·토 영업),전체,DT_L17,X001,candidate,,keep,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP03,약국 평균 연매출,"12억 6,559만",원,measured,실측(참고용),A,국세청 공표 통계(L01),L01 국세청 귀속 2024,L46 검증,DT_L01,P018,candidate,,keep,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP04,연매출 중앙값 근처,8억,원,measured,실측(참고용),B,분포를 '8억 근처'로 근사해 읽음,L01: 8억 = 전국 50% 이내,L46 검증,DT_L01,P018,candidate,,keep,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP05,개설약사 평균 사업소득,1억 116만,원/년,measured,실측(참고용),A,국세청 공표 통계(L02),"L02 2024 귀속 27,640명",L49 검증,DT_L02,C001,candidate,,keep,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP06,약국 진료비 중 약품비 비중,0.7704,비율,measured,실측(참고용),A,심평원 공표 통계(L03) 직접 계산,L03: 24.00조 중 조제행위료 5.51조,L45 보정,DT_L03,P018,candidate,,keep,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP07,약국 수,25497,곳,measured,실측,A,건보공단 2025-12-31 기준값(L04),건보공단 2025-12-31 (L04의 검증 기준값),L45 근거,,,,,keep,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP08,3일분 조제료,7020,원,measured,실측,A,수가 점수 × 환산지수(L05),L05: 점수 66.52 × 환산지수 105.5,L45,DT_L05,P018,candidate,,keep,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP09,일수별 조제료(5·7·15·30·31+일),"7,700 · 8,400 · 9,700 · 11,600 · 12,900",원,assumption,가정,B,3일분 실측값 기준 가산 근사. L05 원표로 교체 필요,일수 가산 근사 → L05로 교체 필요,L45,,P018,candidate,,replace_with_real,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP10,내과 평일 기본 처방건수,38,건/일,assumption,가정,B,전국 평균 83건/일의 80%를 두 과로 나눔(비율은 가정),전국 평균 약국 하루 약 83건의 80% 수준을 두 과로 나눔,L45,,P018,candidate,,keep,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP11,이비인후과 평일 기본 처방건수,32,건/일,assumption,가정,B,위와 동일,위와 같음(연평균 호흡기지수 1.0 기준),L45,,P018,candidate,,keep,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP12,요일계수(월~토),1.20 · 1.00 · 0.97 · 0.98 · 1.02 · 0.70,배,assumption,가정,C,근거 자료 없음. 일반적 관찰에 의존,"주말 다음 월요일 몰림, 토 반일 진료",L45,,X001,candidate,,validate_with_pharmacist,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP13,연휴 후 / 연휴 전 계수,1.25 / 1.12,배,assumption,가정,C,근거 자료 없음,"연휴 동안 밀린 진료, 연휴 전 장기처방",L45,,X001,candidate,,validate_with_pharmacist,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP14,수요일 이비인후과 계수,0.6,배,assumption,실측 기반 가정,C,의원 1곳의 진료시간 예시 1건에 근거,L35 예시: 수요일 14:00 시작(오전 휴진),L45·L55,DT_L35,X002,candidate,,validate_with_pharmacist,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP15,호흡기지수 1월/8월,2.3,배,measured,실측(참고용),B,서울 진해거담제 금액 비로 계산한 대리지표. 약국 단위 아님,"L10 진해거담제 서울 2025-01 1억 688만 → 2025-08 4,566만",공통달력,DT_L10,X005,candidate,,keep,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP16,인플루엔자 고정점,"5/15 해제(9.1), 36주 25.3",명/1000,measured,실측,A,"질병관리청 공표 수치(L11, 참고용 지표의 고정점)",L11,공통달력,DT_L11,X005,candidate,,keep,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP17,본인부담률,0.3,비율,assumption,가정,B,법정 비율이나 연령·정액 구간을 무시한 단순화,약국 외래 본인부담 30% 단일 적용(연령·정액 구간 무시),L45·L49,,C001,candidate,,keep,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP18,일반약 워크인 구매자,12.5,명/평일,interview,인터뷰,B,인터뷰 10~15명/일의 중앙값. 개업 3주차 관찰,하루 일반약 구매자 10~15명,L47,,S013,candidate,pharmacy.otc_buyers_per_day,keep,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP19,처방환자 추가구매율,0.18,비율,assumption,가정,C,근거 없음,,L47,,S013,candidate,,validate_with_pharmacist,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP20,1인 구매 수량,1 + Poisson(0.6),개,assumption,가정,C,근거 없음,X009 단일·복수 요청,L47,,X009,candidate,,validate_with_pharmacist,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP21,대표 일반약 가격,"타이레놀 3,186 · 게보린 3,617 · 판콜에스 2,993 · 인사돌플러스 33,027",원,measured,실측,A,일반의약품 판매가 조사의 대표 품목 가격(L13),L13 2026-08,L47·L56·L57,DT_L13,S023,candidate,,keep,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP22,씨잘정·동화록소닌정 상한금액,208 · 125,원/정,measured,실측,A,보건복지부 약가 고시(L12),L12 2026.10.1판,L48·L57,DT_L12,S023,candidate,,keep,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP23,전문약 목표 재고일수 / 일반약,8 / 9,일,assumption,가정,B,인터뷰의 '주 단위 발주'에서 환산,인터뷰: 주 단위 발주,L48,,S008,candidate,,keep,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP24,긴급 발주 기준 잔여일수,1.5,일,assumption,가정,B,인터뷰의 '오늘·내일 버틸지' 판단에서 환산,인터뷰: 오늘·내일 버틸지,L48,,S008,candidate,,keep,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP25,전산 오차 발생 확률(전문/일반),12% / 6%,하루·품목,assumption,가정,C,근거 없음,S004·C014,L48·L54,,S004,candidate,,validate_with_pharmacist,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP26,카드 결제 비율,0.85,비율,assumption,가정,C,근거 없음,,L49,,C001,candidate,,validate_with_pharmacist,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP27,카드 수수료,0.0115,비율,measured,실측,A,금융위원회 우대수수료율(L08),L08 연매출 5억~10억 신용 1.15%,L49,DT_L08,C001,candidate,,keep,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP28,임대료,2640000,원/월,derived,파생,B,서울 단가 × 전국 중앙값 면적의 조합,"L06 서울 평균 소규모 1층 52.78천원/㎡ × 가상 약국 면적 50㎡(L39 전국 중앙값). L06 비고 범위(43㎡ 기준 87만~227만원)의 상단 단가이고, 동네 상권 단가(불광역 37.99·잠실 35.99천원)를 쓰면 약 180만~190만원",L49,DT_L06,C001,candidate,,keep,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP29,정규 직원 / 파트 인건비,"2,400,000 / 1,000,000",원/월,assumption,가정,B,최저임금 × 근로시간 + 4대보험 계산,"2026 최저임금 10,320원 × 209h + 사업주 4대보험",L49,,C001,candidate,,keep,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP30,기타 운영비,1200000,원/월,assumption,가정,C,항목별 근거 없음,약포지·소모품·세무기장·보험·통신,L49,,C001,candidate,,validate_with_pharmacist,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP31,대표 인출,8000000,원/월,assumption,가정,B,평균 사업소득 ÷ 12 수준으로 맞춤,L02 평균 사업소득 ÷ 12 수준,L49,DT_L02,C001,candidate,,keep,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP32,시작 현금,30000000,원,assumption,가정,C,근거 없음. 시나리오 변수로 다룸,,L49,,S011,candidate,,scenario_variable,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP33,공단 지급 시차,14,일,assumption,가정,C,주간 청구 후 입금이라는 일반 설명뿐,주간 청구 후 입금,L49,,C001,candidate,,validate_with_pharmacist,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP34,금융비용 할인 상한,1개월 1.8% · 2개월 1.2% · 3개월 0.6%,비율,measured,실측(법령),A,약사법 시행규칙 별표 2(L09),L09 약사법 시행규칙 별표 2,L50,DT_L09,C002,candidate,,keep,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP35,거래처별 적용 할인율,A 1.2% · B 0.6% · C 1.5%,비율,assumption,가정,B,법정 상한 이내라는 범위만 근거,L09 상한 이내,L50,DT_L09,C002,candidate,,validate_with_pharmacist,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP36,반품 환급률,A 100%/80%/0 · B 80%/0/0 · C 미반품,유효기간 6개월+/3~6/3 미만,assumption,인터뷰 기반 가정,B,인터뷰의 '미반품·임박품 제한·80% 환급' 발언에서 구성,인터뷰: 미반품·임박품 제한·80% 환급,L51,,C003,candidate,,keep,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP37,기본 결품률,A 1.5% · B 2.5% · C 1% (+유행기 최대 4%p),비율,assumption,가정,C,근거 없음,X005 → X006,L52,,X006,candidate,,validate_with_pharmacist,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP38,영업면적,"50㎡, 1층",,measured,실측(참고용),B,"전국 중앙값 50㎡. 단, 가상 약국 1층과 인터뷰 약국 2층이 충돌",L39 전국 중앙값 50㎡,L53,DT_L39,C006,candidate,pharmacy.floor,regenerate_with_profile,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP39,공간 용량,약장 720칸 · 초과적재 40박스 · 진열 480페이스 · 창고 60박스 · 냉장 300L,,assumption,가정,C,근거 없음,,L53,,C006,candidate,,validate_with_pharmacist,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP40,DUR 경고율 / 심사 조정률,3% / 0.5%,비율,assumption,가정,C,근거 없음,,L54,,P022,candidate,,validate_with_pharmacist,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP41,서비스 시간(처방·일반약·문의),3.0 · 1.5 · 1.0,분/건,assumption,가정,C,근거 없음,,L55,,S019,candidate,,validate_with_pharmacist,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP42,일반약 마진율,일반약 25~35% · 건기식 45% · 의약외품 35~40% · 잡화 45%,비율,assumption,가정,C,업계 통념 수준,,L57,,S023,candidate,,validate_with_pharmacist,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP43,장비 연 고장률,ATC 2 · 포장기 3 · 카드단말 1 · PC 2,회/년,assumption,가정,C,인터뷰에서 고장·수리 사실만 확인. 빈도는 근거 없음,인터뷰: 장비 고장과 수리,L58,,S021,candidate,,validate_with_pharmacist,virtual_dummy.xlsx,파라미터,2026-10-05T01:15
+VP44,난수 시드,20261004,,decision,재현,,재현용 설정값,generate_virtual_data.py,전체,,,,,keep,virtual_dummy.xlsx,파라미터,2026-10-05T01:15

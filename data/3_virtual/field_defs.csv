@@ -1,0 +1,96 @@
+﻿table_name,column_en,column_ko,data_type,unit,is_primary_key,min_value,max_value,example,description_ko,role,source_file,source_sheet,generated_at
+calendar,date,날짜,날짜(YYYY-MM-DD),,Y,,,2026-07-02,,input,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+calendar,weekday_ko,요일,문자,,,,,목,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+calendar,month,월,정수,,,1,12,7,,input,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+calendar,iso_week,ISO주차,정수,,,1,53,27,,input,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+calendar,holiday_name,공휴일명,문자,,,,,현충일,,input,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+calendar,is_open,영업여부,Y/N,,,,,Y,,input,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+calendar,open_type,영업구분,문자,,,,,평일,,input,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+calendar,open_hours,영업시간(h),정수,h,,0,10,10,,input,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+calendar,holiday_adjacency,연휴 전후,문자,,,,,연휴 전 마지막 영업일,,input,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+calendar,ent_closed,이비인후과 휴진,Y/N,,,,,N,,input,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+calendar,influenza_ili_per_1000,"인플루엔자 의사환자분율(가상, 1000명당)",실수,1000명당,,4.8,62,5.2,가상값,input,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+calendar,respiratory_index,호흡기 처방지수(연평균=1),실수,,,0.427,2.162,0.438,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+calendar,pharmacy_id,약국 ID,문자,,,,,PH_DUMMY_01,이 행이 속한 약국. 가상 약국은 PH_DUMMY_01,input,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+rx_daily,date,날짜,날짜(YYYY-MM-DD),,Y,,,2026-07-02,,input,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+rx_daily,rx_count_internal,내과 처방건수,정수,건,,0,72,25,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+rx_daily,rx_count_ent,이비인후과 처방건수,정수,건,,0,105,10,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+rx_daily,rx_count_total,처방건수 합계,정수,건,,0,140,35,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+rx_daily,avg_rx_days,평균 처방일수,실수,,,0,27.5,17.7,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+rx_daily,dispensing_fee_total_krw,조제료 합계(원),정수,원,,0,1178760,329540,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+rx_daily,drug_cost_total_krw,약품비 합계(원),정수,원,,0,4113000,1324660,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+rx_daily,rx_total_krw,처방 총액(원),정수,원,,0,5291760,1654200,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+rx_daily,dispensing_fee_per_rx_krw,건당 조제료(원),정수,원,,0,10711,9415,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+rx_daily,rx_total_per_rx_krw,건당 처방총액(원),정수,원,,0,69214,47263,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+rx_daily,copay_krw,본인부담금(원),정수,원,,0,1587530,496260,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+rx_daily,insurer_paid_krw,공단부담금(원),정수,원,,0,3704230,1157940,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+rx_daily,pharmacy_id,약국 ID,문자,,,,,PH_DUMMY_01,이 행이 속한 약국. 가상 약국은 PH_DUMMY_01,input,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+otc_hourly,date,날짜,날짜(YYYY-MM-DD),,Y,,,2026-07-03,,input,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+otc_hourly,hour_band,시간대,문자,,Y,,,09:00-10:00,,input,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+otc_hourly,walkin_buyers,방문 구매자(워크인),정수,,,0,8,0,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+otc_hourly,rx_addon_buyers,처방환자 추가구매자,정수,,,0,9,4,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+otc_hourly,buyers_total,구매자 합계,정수,,,0,13,4,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+otc_hourly,units_sold,판매수량(개),정수,개,,0,22,5,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+otc_hourly,sales_krw,판매금액(원),정수,원,,0,179572,47872,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+otc_hourly,cold_units,감기약 수량,정수,,,0,8,0,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+otc_hourly,analgesic_patch_units,해열진통·파스 수량,정수,,,0,7,3,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+otc_hourly,digestive_units,소화기 수량,정수,,,0,7,0,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+otc_hourly,supplement_units,건기식·비타민 수량,정수,,,0,5,1,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+otc_hourly,other_units,기타 수량,정수,,,0,9,1,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+otc_hourly,stockout_lost_units,품절로 못 판 수량,정수,,,0,1,0,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+otc_hourly,pharmacy_id,약국 ID,문자,,,,,PH_DUMMY_01,이 행이 속한 약국. 가상 약국은 PH_DUMMY_01,input,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+inventory_daily,date,날짜,날짜(YYYY-MM-DD),,Y,,,2026-07-02,,input,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+inventory_daily,product_id,품목코드,문자,,Y,,,R007,,input,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+inventory_daily,opening_physical_stock,기초 실물재고,정수,,,0,4192,3191,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+inventory_daily,receipts,입고,정수,,,0,4000,0,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+inventory_daily,usage_sales_units,사용·판매량,정수,,,0,1284,108,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+inventory_daily,stockout_units,결품 수량(재고 부족분),정수,품목 단위(entity_product.unit),,0,507,0,재고 부족분,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+inventory_daily,closing_physical_stock,기말 실물재고,정수,,,0,4192,3083,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+inventory_daily,closing_system_stock,기말 전산재고,정수,,,0,4197,3083,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+inventory_daily,system_physical_gap,전산-실물 오차,정수,,,-100,90,0,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+inventory_daily,avg_daily_use_7d,최근7일 일평균 사용,실수,,,0,710.4,350.0,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+inventory_daily,days_of_supply,잔여일수(일),실수,일,,0,70,10.5,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+inventory_daily,order_qty,발주 수량,정수,,,0,4500,0,,input,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+inventory_daily,order_type,발주 구분,문자,,,,,정기(주간),,input,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+inventory_daily,supplied_qty,실제 공급 수량,정수,,,0,4000,0,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+inventory_daily,month_end_count,월말 실사,Y/N,,,,,Y,빈칸 = N(해당 없음 또는 아니오),derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+inventory_daily,supply_shortage_period,공급부족 기간,Y/N,,,,,Y,빈칸 = N(해당 없음 또는 아니오),derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+inventory_daily,pharmacy_id,약국 ID,문자,,,,,PH_DUMMY_01,이 행이 속한 약국. 가상 약국은 PH_DUMMY_01,input,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+cash_daily,date,날짜,날짜(YYYY-MM-DD),,Y,,,2026-07-02,,input,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+cash_daily,opening_cash_krw,기초 현금(원),정수,원,,21524330,132167090,32970960.0,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+cash_daily,cash_receipts_krw,현금 수입(원),정수,원,,0,290650,107440.0,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+cash_daily,card_deposits_net_krw,"카드 입금(원, 수수료 차감)",정수,원,,0,3684850,672940.0,카드 수수료 차감 후,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+cash_daily,insurer_deposits_krw,공단 지급 입금(원),정수,원,,0,14284800,0.0,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+cash_daily,wholesale_payments_krw,"도매 결제 지출(원, 할인 후)",정수,원,,0,63749460,0.0,금융비용 할인 후,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+cash_daily,fixed_costs_krw,고정비 지출(원),정수,원,,0,8000000,0.0,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+cash_daily,fixed_cost_detail,고정비 내역,문자,,,,,임대료,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+cash_daily,closing_cash_krw,기말 현금(원),정수,원,,21524330,132167090,33751340.0,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+cash_daily,unpaid_wholesale_krw,미지급 도매대금 합계(원),정수,원,,54324850,144494900,63701560.0,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+cash_daily,purchase_burden_ratio,구매대금 부담률(미지급÷월평균매출),실수,비율,,0.77,2.04,0.9,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+cash_daily,cash_runway_days,현금 여력일수(기말현금÷30일 평균지출),실수,일,,6.3,384.8,16.2,기말현금 ÷ 최근 30일 평균지출. 월말 결제 직전에 크게 튐(최대 384.8),derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+cash_daily,is_negative,마이너스 여부,Y/N,,,,,,빈칸 = N(해당 없음 또는 아니오),derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+cash_daily,pharmacy_id,약국 ID,문자,,,,,PH_DUMMY_01,이 행이 속한 약국. 가상 약국은 PH_DUMMY_01,input,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+payment_daily,date,날짜,날짜(YYYY-MM-DD),,Y,,,2026-07-02,,input,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+payment_daily,vendor_id,거래처,문자,,Y,,,B 지역 의약품도매,,input,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+payment_daily,payment_terms,결제 조건,문자,,,,,월 마감 → 익익월 말일 결제,,input,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+payment_daily,finance_discount_band,금융비용 할인 구간,문자,,,,,3개월 이내 (상한 0.6%),,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+payment_daily,discount_rate_pct,적용 할인율(%),실수,%,,0.6,1.5,0.6,,input,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+payment_daily,purchases_krw,당일 매입액(원),정수,원,,0,10463690,99350,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+payment_daily,returns_refund_krw,당일 반품 환급(원),정수,원,,0,210270,0,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+payment_daily,payment_target,결제 대상,문자,,,,,2026-06 매입분,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+payment_daily,payment_gross_krw,"결제액(할인 전, 원)",정수,원,,0,53519650,0,할인 전,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+payment_daily,finance_discount_krw,금융비용 할인액(원),정수,원,,0,642240,0,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+payment_daily,payment_net_krw,실 지급액(원),정수,원,,0,52877410,0,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+payment_daily,unpaid_balance_krw,미지급 잔액(원),정수,원,,186250,100488540,22358460,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+payment_daily,pharmacy_id,약국 ID,문자,,,,,PH_DUMMY_01,이 행이 속한 약국. 가상 약국은 PH_DUMMY_01,input,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+supply_daily,date,날짜,날짜(YYYY-MM-DD),,Y,,,2026-07-02,,input,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+supply_daily,vendor_id,거래처,문자,,Y,,,B 지역 의약품도매,,input,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+supply_daily,delivery_terms,배송 조건,문자,,,,,"하루 1회, 월~금",,input,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+supply_daily,order_cutoff,주문 마감,문자,,,,,15:00,,input,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+supply_daily,min_order_krw,최소 주문금액(원),정수,원,,0,300000,100000,,input,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+supply_daily,same_day_delivery,당일 배송 가능,Y/N,,,,,Y,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+supply_daily,order_lines,주문 라인 수,정수,,,0,62,6,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+supply_daily,stockout_lines,결품 라인 수,정수,,,0,4,0,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+supply_daily,stockout_rate,결품률,실수,비율,,0,0.5,0.0,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+supply_daily,shortage_items,공급부족 품목(취급 품목 중),문자,,,,,아세트아미노펜 현탁액(소아용) 공급률 40%,,derived,virtual_dummy.xlsx,필드정의,2026-10-05T01:15
+supply_daily,pharmacy_id,약국 ID,문자,,,,,PH_DUMMY_01,이 행이 속한 약국. 가상 약국은 PH_DUMMY_01,input,virtual_dummy.xlsx,필드정의,2026-10-05T01:15

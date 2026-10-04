@@ -1,0 +1,108 @@
+﻿key_id,label_ko,key_type,canonical_format,data_id,matched_text
+K_ADDR,주소,address,도로명/지번 주소 문자열,DT_L04,주소
+K_ADDR,주소,address,도로명/지번 주소 문자열,DT_L21,주소
+K_ADDR,주소,address,도로명/지번 주소 문자열,DT_L22,주소
+K_ADDR,주소,address,도로명/지번 주소 문자열,DT_L29,주소
+K_ADDR,주소,address,도로명/지번 주소 문자열,DT_L30,주소
+K_ADDR,주소,address,도로명/지번 주소 문자열,DT_L35,주소
+K_ADDR,주소,address,도로명/지번 주소 문자열,DT_L37,주소
+K_ADDR,주소,address,도로명/지번 주소 문자열,DT_L39,주소
+K_ADDR,주소,address,도로명/지번 주소 문자열,DT_L40,주소
+K_ADDR,주소,address,도로명/지번 주소 문자열,DT_L41,주소
+K_ADDR,주소,address,도로명/지번 주소 문자열,DT_L44,주소
+K_ADMDONG,행정동,region,행정동코드 8자리,DT_L06,행정동
+K_ADMDONG,행정동,region,행정동코드 8자리,DT_L24,행정동
+K_ADMDONG,행정동,region,행정동코드 8자리,DT_L25,행정동
+K_ADMDONG,행정동,region,행정동코드 8자리,DT_L26,행정동
+K_ADMDONG,행정동,region,행정동코드 8자리,DT_L27,행정동
+K_ADMDONG,행정동,region,행정동코드 8자리,DT_L31,행정동
+K_ADMDONG,행정동,region,행정동코드 8자리,DT_L32,행정동
+K_ADMDONG,행정동,region,행정동코드 8자리,DT_L42,행정동
+K_ADMDONG,행정동,region,행정동코드 8자리,DT_L60,행정동
+K_ADMDONG,행정동,region,행정동코드 8자리,DT_L61,행정동
+K_ADMDONG,행정동,region,행정동코드 8자리,DT_L62,행정동
+K_ATC,약효·성분 분류,product,"ATC 또는 약효분류 3자리, 주성분코드 9자리",DT_L10,약효분류
+K_ATC,약효·성분 분류,product,"ATC 또는 약효분류 3자리, 주성분코드 9자리",DT_L15,ATC
+K_BJD,법정동,region,법정동코드 10자리,DT_L28,법정동
+K_COMPLEX,아파트 단지,entity,단지코드,DT_L28,단지코드
+K_COORD,좌표,address,WGS84 위경도,DT_L04,좌표
+K_COORD,좌표,address,WGS84 위경도,DT_L06,좌표
+K_COORD,좌표,address,WGS84 위경도,DT_L13,좌표
+K_COORD,좌표,address,WGS84 위경도,DT_L18,위경도
+K_COORD,좌표,address,WGS84 위경도,DT_L20,좌표
+K_COORD,좌표,address,WGS84 위경도,DT_L21,좌표
+K_COORD,좌표,address,WGS84 위경도,DT_L22,좌표
+K_COORD,좌표,address,WGS84 위경도,DT_L23,좌표
+K_COORD,좌표,address,WGS84 위경도,DT_L24,좌표
+K_COORD,좌표,address,WGS84 위경도,DT_L25,좌표
+K_COORD,좌표,address,WGS84 위경도,DT_L27,좌표
+K_COORD,좌표,address,WGS84 위경도,DT_L28,좌표
+K_COORD,좌표,address,WGS84 위경도,DT_L29,좌표
+K_COORD,좌표,address,WGS84 위경도,DT_L32,좌표
+K_COORD,좌표,address,WGS84 위경도,DT_L33,좌표
+K_COORD,좌표,address,WGS84 위경도,DT_L35,좌표
+K_COORD,좌표,address,WGS84 위경도,DT_L39,좌표
+K_COORD,좌표,address,WGS84 위경도,DT_L42,좌표
+K_DATE,날짜·기간,time,YYYY-MM-DD / 연도 / ISO주차,DT_L11,절기
+K_DATE,날짜·기간,time,YYYY-MM-DD / 연도 / ISO주차,DT_L17,날짜
+K_DATE,날짜·기간,time,YYYY-MM-DD / 연도 / ISO주차,DT_L45,날짜
+K_DATE,날짜·기간,time,YYYY-MM-DD / 연도 / ISO주차,DT_L46,날짜
+K_DATE,날짜·기간,time,YYYY-MM-DD / 연도 / ISO주차,DT_L47,날짜
+K_DATE,날짜·기간,time,YYYY-MM-DD / 연도 / ISO주차,DT_L48,날짜
+K_DATE,날짜·기간,time,YYYY-MM-DD / 연도 / ISO주차,DT_L49,날짜
+K_DATE,날짜·기간,time,YYYY-MM-DD / 연도 / ISO주차,DT_L50,날짜
+K_DATE,날짜·기간,time,YYYY-MM-DD / 연도 / ISO주차,DT_L51,날짜
+K_DATE,날짜·기간,time,YYYY-MM-DD / 연도 / ISO주차,DT_L52,날짜
+K_DATE,날짜·기간,time,YYYY-MM-DD / 연도 / ISO주차,DT_L53,날짜
+K_DATE,날짜·기간,time,YYYY-MM-DD / 연도 / ISO주차,DT_L54,날짜
+K_DATE,날짜·기간,time,YYYY-MM-DD / 연도 / ISO주차,DT_L55,날짜
+K_DATE,날짜·기간,time,YYYY-MM-DD / 연도 / ISO주차,DT_L58,날짜
+K_EDI,보험/표준 코드,product,보험코드 9자리 / 표준코드 13자리,DT_L12,보험코드
+K_EDI,보험/표준 코드,product,보험코드 9자리 / 표준코드 13자리,DT_L14,표준코드
+K_EDI,보험/표준 코드,product,보험코드 9자리 / 표준코드 13자리,DT_L15,보험코드
+K_FEECODE,수가코드,product,Z1000 등,DT_L05,수가코드
+K_INDUSTRY,업종,category,업종명 / 업종코드,DT_L01,업종
+K_INDUSTRY,업종,category,업종명 / 업종코드,DT_L02,업종
+K_INDUSTRY,업종,category,업종명 / 업종코드,DT_L31,업종
+K_ITEMSEQ,품목기준코드,product,식약처 ITEM_SEQ,DT_L12,품목기준코드
+K_ITEMSEQ,품목기준코드,product,식약처 ITEM_SEQ,DT_L14,품목기준코드
+K_ITEMSEQ,품목기준코드,product,식약처 ITEM_SEQ,DT_L15,품목기준코드
+K_MNGNO,관리번호,entity,인허가 관리번호(MNG_NO),DT_L04,관리번호
+K_MNGNO,관리번호,entity,인허가 관리번호(MNG_NO),DT_L22,관리번호
+K_MNGNO,관리번호,entity,인허가 관리번호(MNG_NO),DT_L24,관리번호
+K_MNGNO,관리번호,entity,인허가 관리번호(MNG_NO),DT_L39,관리번호
+K_MNGNO,관리번호,entity,인허가 관리번호(MNG_NO),DT_L41,관리번호
+K_MNGNO,관리번호,entity,인허가 관리번호(MNG_NO),DT_L44,관리번호
+K_PNU,필지,entity,필지고유번호(PNU),DT_L29,PNU
+K_SCHOOL,학교·학원 코드,entity,학교코드 / 학원지정번호,DT_L21,학교 코드
+K_SCHOOL,학교·학원 코드,entity,학교코드 / 학원지정번호,DT_L30,학교 코드
+K_SIDO,시도,region,행정표준코드 2자리(서울=11) 또는 시도명,DT_L01,시도
+K_SIDO,시도,region,행정표준코드 2자리(서울=11) 또는 시도명,DT_L02,시도
+K_SIDO,시도,region,행정표준코드 2자리(서울=11) 또는 시도명,DT_L03,시도
+K_SIDO,시도,region,행정표준코드 2자리(서울=11) 또는 시도명,DT_L07,시도
+K_SIDO,시도,region,행정표준코드 2자리(서울=11) 또는 시도명,DT_L11,시도
+K_SIGUNGU,시군구,region,행정표준코드 5자리,DT_L03,시군구
+K_SIGUNGU,시군구,region,행정표준코드 5자리,DT_L04,시군구
+K_SIGUNGU,시군구,region,행정표준코드 5자리,DT_L06,시군구
+K_SIGUNGU,시군구,region,행정표준코드 5자리,DT_L10,시군구
+K_SIGUNGU,시군구,region,행정표준코드 5자리,DT_L26,시군구
+K_STATION,관측 지점,entity,기상 지점번호 / 측정소명 / 특보구역,DT_L18,지점번호
+K_STATION,관측 지점,entity,기상 지점번호 / 측정소명 / 특보구역,DT_L19,특보구역
+K_STATION,관측 지점,entity,기상 지점번호 / 측정소명 / 특보구역,DT_L20,측정소
+K_STOREID,상가업소번호,entity,소상공인진흥공단 bizesId,DT_L25,상가업소번호
+K_STOREID,상가업소번호,entity,소상공인진흥공단 bizesId,DT_L27,상가업소번호
+K_STOREID,상가업소번호,entity,소상공인진흥공단 bizesId,DT_L42,상가업소번호
+K_TRADEAREA,상권,region,상권코드,DT_L06,상권코드
+K_YKIHO,요양기관기호,entity,심평원 요양기관기호(암호화본 포함),DT_L13,요양기관기호
+K_YKIHO,요양기관기호,entity,심평원 요양기관기호(암호화본 포함),DT_L23,요양기관기호
+K_YKIHO,요양기관기호,entity,심평원 요양기관기호(암호화본 포함),DT_L33,요양기관기호
+K_YKIHO,요양기관기호,entity,심평원 요양기관기호(암호화본 포함),DT_L34,요양기관기호
+K_YKIHO,요양기관기호,entity,심평원 요양기관기호(암호화본 포함),DT_L35,hpid
+K_YKIHO,요양기관기호,entity,심평원 요양기관기호(암호화본 포함),DT_L37,요양기관기호
+K_YKIHO,요양기관기호,entity,심평원 요양기관기호(암호화본 포함),DT_L38,요양기관기호
+K_YKIHO,요양기관기호,entity,심평원 요양기관기호(암호화본 포함),DT_L40,hpid
+K_YKIHO,요양기관기호,entity,심평원 요양기관기호(암호화본 포함),DT_L41,요양기관기호
+K_YKIHO,요양기관기호,entity,심평원 요양기관기호(암호화본 포함),DT_L43,요양기관기호
+K_YKIHO,요양기관기호,entity,심평원 요양기관기호(암호화본 포함),DT_L44,요양기관기호
+K_YKIHO,요양기관기호,entity,심평원 요양기관기호(암호화본 포함),DT_L60,요양기관기호
+K_YKIHO,요양기관기호,entity,심평원 요양기관기호(암호화본 포함),DT_L61,요양기관기호
