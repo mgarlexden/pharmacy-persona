@@ -1,0 +1,13 @@
+{
+  "_note": "모델 이름과 단가는 여기서만 바꾼다. 단가를 비워 두면 비용 대신 토큰 수만 보여 준다. 단가는 Anthropic 가격 페이지에서 직접 확인해 채운다 (확인되지 않은 값을 넣지 않는다).",
+  "models": {
+    "dev": "claude-haiku-4-5-20251001",
+    "run": "claude-sonnet-5-5"
+  },
+  "prices_per_million_usd": {
+    "_example": { "input": 0, "output": 0, "cache_write": 0, "cache_read": 0, "batch_discount": 0.5 }
+  },
+  "max_tokens": 900,
+  "sync_concurrency": 4,
+  "batch_poll_seconds": 20
+}

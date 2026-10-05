@@ -15,6 +15,7 @@ __pycache__/
 # 환경변수·키
 .env
 .env.*
+!.env.example
 
 # OS·편집기
 .DS_Store

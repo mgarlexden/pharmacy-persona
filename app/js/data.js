@@ -1,0 +1,275 @@
+// CSV 읽기, 카드·예시·니즈 정의. 근거 문구는 data/1_interview/*.csv 에서 읽은 실제 내용만 쓴다.
+
+export function parseCSV(text) {
+  if (text.charCodeAt(0) === 0xfeff) text = text.slice(1);
+  const rows = [];
+  let row = [], field = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (q) {
+      if (ch === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; } else q = false;
+      } else field += ch;
+    } else if (ch === '"') q = true;
+    else if (ch === ',') { row.push(field); field = ''; }
+    else if (ch === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+    else if (ch !== '\r') field += ch;
+  }
+  if (field.length || row.length) { row.push(field); rows.push(row); }
+  const head = rows.shift() || [];
+  return rows.filter((r) => r.length > 1).map((r) => Object.fromEntries(head.map((h, i) => [h, r[i] ?? ''])));
+}
+
+const FILES = {
+  claims: 'claims.csv', rules: 'rules.csv', cases: 'cases.csv', guardrails: 'guardrails.csv', profile: 'persona_profile.csv', variables: 'variables.csv',
+};
+
+export const DB = { claims: [], rules: [], cases: [], guardrails: [], profile: [], variables: [], byId: new Map(), ok: false };
+
+export async function loadData() {
+  const entries = await Promise.all(Object.entries(FILES).map(async ([k, f]) => {
+    const res = await fetch(`../data/1_interview/${f}`);
+    if (!res.ok) throw new Error(`${f} ${res.status}`);
+    return [k, parseCSV(await res.text())];
+  }));
+  entries.forEach(([k, rows]) => { DB[k] = rows; });
+  DB.claims.forEach((r) => DB.byId.set(r.claim_id, { kind: '발언', id: r.claim_id, title: r.topic_ko, quote: r.quote_ko, summary: r.summary_ko, type: r.record_type, where: r.source_location, applies: r.applies_to }));
+  DB.rules.forEach((r) => DB.byId.set(r.rule_id, { kind: '규칙', id: r.rule_id, title: r.title_ko, summary: r.judgement_ko, note: r.reading_note_ko, situation: r.situation_ko, type: r.statement_type }));
+  DB.cases.forEach((r) => DB.byId.set(r.case_id, { kind: '사례', id: r.case_id, title: r.title_ko, summary: r.outcome_ko, note: r.learning_ko, situation: r.situation_ko, type: r.record_type, applies: r.applies_to }));
+  DB.guardrails.forEach((r) => DB.byId.set(r.guardrail_id, { kind: '가드레일', id: r.guardrail_id, title: r.rule_ko, summary: r.handling_ko, note: r.distinguish_ko, situation: r.applies_at, type: r.check_type }));
+  DB.ok = true;
+  return DB;
+}
+
+export const lookup = (id) => DB.byId.get(id) || null;
+
+// ---------- 시나리오 카드 (모든 수치는 가정) ----------
+const mk = (cash, arrival, extra = {}) => ({ cash, arrival, book: 8, physical: 8, ageH: 12, prior: false, ...extra });
+export const D1 = '2026-10-07';
+export const D2 = '2026-10-08';
+
+// 화면에는 id 를 보이지 않는다. id 는 저장 기록과 자체 점검에만 쓰는 내부 키다.
+// 각 카드: title(한 줄 상황), story(약사에게 읽어 줄 장면), test(이 카드로 확인하려는 것),
+// support(인터뷰 근거의 정도: direct 직접 / partial 일부 / none 없음), basis(근거 ID 와 연결 이유), invented(가정으로 정한 부분)
+export const CARDS = [
+  {
+    id: 'C01', title: '오늘은 버티지만 내일이 걱정되는 아침', short: '기본 장면',
+    story: '자주 나가는 약이 전산상 8팩 남았습니다. 하루 5팩 정도 나가니 오늘은 버티지만 내일은 모자랄 수 있습니다. 통장에는 6만원뿐이고, 도매상은 지금 주문하면 내일 아침에 가져다줍니다.',
+    test: '가장 기본이 되는 장면입니다. "오늘·내일을 버틸 수 있는가"와 "현금 부담" 사이에서 약사가 몇 팩을 주문하는지 봅니다. 다른 카드는 모두 이 장면에서 조건 하나만 바꾼 것입니다.',
+    support: 'direct',
+    basis: [
+      { ids: ['R02', 'E029'], why: '남은 약으로 오늘·내일을 감당할지 약사가 직접 판단한다고 말했습니다.' },
+      { ids: ['R03', 'E034'], why: '개업 초기라 약값 지출과 현금 부담을 함께 고려한다고 말했습니다.' },
+      { ids: ['E032', 'I05'], why: '실제로 재고가 아슬아슬했던 경험이 있다고 답했습니다.' },
+    ],
+    invented: '품목, 8팩, 하루 5팩, 현금 6만원, 팩당 1만원, 다음 날 입고는 모두 계산을 위한 가정입니다.',
+    tags: ['현금 6만원', '내일 입고'], cond: mk(60000, D1),
+  },
+  {
+    id: 'C02', title: '주문해도 모레에야 들어오는 날', short: '입고가 늦은 날',
+    story: '기본 장면과 같습니다. 다만 도매상이 이번에는 이틀 뒤(모레 아침)에야 가져다줄 수 있다고 합니다. 그 사이 내일 하루는 손님을 다 받지 못할 수 있습니다.',
+    test: '입고가 하루 늦어지는 것만 바꿨습니다. 약사가 "입고 전에 비는 하루"를 고려해 주문량을 바꾸는지 봅니다.',
+    support: 'partial',
+    basis: [
+      { ids: ['E033', 'I06'], why: '유행기에는 주문처가 품절되어 보충이 막힐 수 있다고 말했습니다. 공급이 늦어지는 상황 자체는 인터뷰에 나옵니다.' },
+      { ids: ['R02', 'E029'], why: '오늘·내일을 버틸지 판단하는 방식은 기본 장면과 같습니다.' },
+    ],
+    invented: '"이틀 뒤 입고"라는 구체적인 납기는 인터뷰에 없는 가정입니다.',
+    tags: ['현금 6만원', '모레 입고'], cond: mk(60000, D2),
+  },
+  {
+    id: 'C03', title: '현금이 넉넉한 날', short: '현금이 넉넉한 날',
+    story: '기본 장면과 같습니다. 다만 통장에 60만원이 있어 당장 돈 걱정은 덜합니다.',
+    test: '현금만 바꿨습니다. 기본 장면과 비교해 "현금 부담이 주문량을 줄이는가"를 따로 떼어 봅니다. 현금이 넉넉한 경우를 약사가 직접 말한 적은 없어서, 이 카드에서는 약사 답이 특히 중요합니다.',
+    support: 'none',
+    basis: [
+      { ids: ['E034'], why: '인터뷰는 "현금이 부족할 때"의 부담만 말했습니다. 이 카드는 그 반대 경우를 만들어 비교하는 대조용입니다.' },
+    ],
+    invented: '현금 60만원은 가정이며, 현금이 많을 때의 판단 기준은 인터뷰에 없습니다.',
+    tags: ['현금 60만원', '내일 입고'], cond: mk(600000, D1),
+  },
+  {
+    id: 'C04', title: '현금은 넉넉하지만 입고가 늦은 날', short: '현금 넉넉 + 입고 늦음',
+    story: '통장에 60만원이 있고, 도매상은 모레 아침에야 가져다줄 수 있습니다.',
+    test: '"입고가 늦은 날"에서 현금만, "현금이 넉넉한 날"에서 입고만 바꾼 카드입니다. 두 조건이 각각 판단을 어떻게 바꾸는지 짝지어 비교할 때 씁니다.',
+    support: 'none',
+    basis: [
+      { ids: ['E033', 'E034'], why: '공급 지연과 현금 부담은 각각 인터뷰에 나오지만, 둘이 이렇게 겹친 상황은 나오지 않습니다.' },
+    ],
+    invented: '현금 60만원과 이틀 뒤 입고는 모두 가정입니다.',
+    tags: ['현금 60만원', '모레 입고'], cond: mk(600000, D2),
+  },
+  {
+    id: 'C05', title: '전산에는 8팩, 실제 선반은 확인 전', short: '전산과 실물이 다를 수 있는 날',
+    story: '전산에는 8팩이 있다고 나오지만 사흘 전 기록입니다. 그동안 출고를 다 입력하지 못했을 수 있습니다. 선반을 직접 보기 전에는 실제로 몇 팩인지 모릅니다.',
+    test: '약사가 "확인해 보겠다"고 말로만 하는지, 실제로 선반부터 확인하는지 봅니다. 이 카드에서는 "실물 확인" 버튼을 누르기 전까지 실제 재고가 숨겨져 있습니다.',
+    support: 'direct',
+    basis: [
+      { ids: ['R01', 'E030'], why: '자주 나가는 약은 전산보다 보관 장소를 눈으로 확인하는 편이 빠르다고 말했습니다.' },
+      { ids: ['E042', 'E043'], why: '모든 출고를 정확히 입력하기 어려워 전산과 실물의 오차가 쌓인다고 말했습니다.' },
+    ],
+    invented: '실제 재고 3팩과 72시간 전 기록은 가정입니다.',
+    tags: ['현금 6만원', '내일 입고', '전산·실물 차이'], cond: mk(60000, D1, { physical: 3, ageH: 72 }),
+  },
+  {
+    id: 'C06', title: '어제 넣은 주문 5팩이 아직 안 온 날', short: '이미 주문해 둔 것이 있는 날',
+    story: '기본 장면과 같습니다. 다만 어제 이미 5팩을 주문해 두었고, 그 물건이 내일 아침에 들어올 예정입니다.',
+    test: '이미 넣어 둔 주문을 계산에 넣고 추가 주문을 줄이는지 봅니다. 전산 재고만 보고 판단하면 중복 주문이 생길 수 있습니다.',
+    support: 'partial',
+    basis: [
+      { ids: ['E064'], why: '여러 거래처에 흩어진 공급 정보를 한눈에 보기 어렵다고 말했습니다. 이미 넣은 주문을 놓치기 쉬운 이유와 연결됩니다.' },
+      { ids: ['R02', 'E029'], why: '오늘·내일을 버틸지 판단하는 방식은 기본 장면과 같습니다.' },
+    ],
+    invented: '기존 주문 5팩과 그 입고일은 가정입니다. 이런 상황에서 어떻게 했는지는 인터뷰에 직접 나오지 않습니다.',
+    tags: ['현금 6만원', '내일 입고', '기존 주문 5팩'], cond: mk(60000, D1, { prior: true }),
+  },
+];
+
+export const SUPPORT = {
+  direct: { cls: 'interview', label: '인터뷰의 판단 방식을 쓴 장면' },
+  partial: { cls: 'unknown', label: '인터뷰의 일부 요소만 쓴 장면' },
+  none: { cls: 'hyp', label: '인터뷰에 없는 대조용 장면' },
+};
+
+export const cardById = (id) => CARDS.find((c) => c.id === id);
+
+export const PAIRS = [
+  { a: 'C01', b: 'C03', changed: '현금만 변경' },
+  { a: 'C02', b: 'C04', changed: '현금만 변경' },
+  { a: 'C01', b: 'C02', changed: '입고일만 변경' },
+  { a: 'C03', b: 'C04', changed: '입고일만 변경' },
+];
+
+// 평가용 카드(인터뷰 밖 인접 상황) 후보: 인터뷰가 이미 다룬 범위와 대조한 뒤 확정한다. 지금은 선택할 수 없다.
+export const KIND2_CANDIDATES = [
+  '긴 연휴 전 발주', '유효기간 임박 · 보관 공간 부족', '반품 불가 신제품 입점 제안', '인근 신규 약국 개업',
+];
+
+// 팀 참조팩 verification.json 의 보고값 (미충족, 기말재고, 구매약정). 우리 JS 계산과 맞는지 자체 점검에 쓴다.
+export const EXPECTED = {
+  C01: { Q_0: [7, 0, 0], Q_5: [2, 0, 50000], Q_10: [0, 3, 100000] },
+  C02: { Q_0: [7, 0, 0], Q_5: [2, 0, 50000], Q_10: [2, 5, 100000] },
+  C03: { Q_0: [7, 0, 0], Q_5: [2, 0, 50000], Q_10: [0, 3, 100000] },
+  C04: { Q_0: [7, 0, 0], Q_5: [2, 0, 50000], Q_10: [2, 5, 100000] },
+  C05: { Q_0: [12, 0, 0], Q_5: [7, 0, 50000], Q_10: [2, 0, 100000] },
+  C06: { Q_0: [2, 0, 0], Q_5: [0, 3, 50000], Q_10: [0, 8, 100000] },
+};
+
+// ---------- 예시 응답 (실제 모델이 아니다) ----------
+// 설명을 위해 사람이 미리 쓴 샘플이다. 약사의 답도, B1/P0 의 출력도 아니다. 근거 ID 는 실제 CSV 에 있는 것만 쓴다.
+const CLAIM_STOCK = { ids: ['R01', 'E030'], claim: '자주 쓰는 품목은 전산보다 보관 장소를 눈으로 확인하는 편이 빠르다는 근거', inference: true };
+const CLAIM_COVER = { ids: ['R02', 'E029'], claim: '남은 양으로 오늘과 내일을 버틸지 사람이 판단한다는 근거', inference: true };
+const CLAIM_CASH = { ids: ['R03', 'E034'], claim: '개업 초기에는 구매대금과 현금 부담을 함께 고려한다는 근거', inference: true };
+const CLAIM_RETURN = { ids: ['R04', 'E038'], claim: '반품을 쉽게 되돌릴 수 있는 선택으로 보지 않는다는 근거', inference: true };
+
+export const SAMPLES = {
+  C01: [{ kind: 'commit_choice', q: 'Q_5', reason: '남은 약으로 오늘은 버티지만 내일은 어려울 수 있어 부족을 피하려 합니다. 다만 개업 초기 자금 부담과 반품이 쉽지 않다는 점 때문에 가장 많은 수량은 고르지 않았습니다.', claims: [CLAIM_COVER, CLAIM_CASH, CLAIM_RETURN], missing: ['실제 수요 추이', '실물 재고'] }],
+  C02: [{ kind: 'commit_choice', q: 'Q_5', reason: '입고가 늦어져 일부 부족은 피하기 어렵다고 봅니다. 그래도 자금 부담과 반품 곤란을 고려해 중간 수량을 골랐습니다.', claims: [CLAIM_COVER, CLAIM_CASH, CLAIM_RETURN], missing: ['입고 지연 가능성', '실물 재고'] }],
+  C03: [{ kind: 'commit_choice', q: 'Q_5', reason: '현금이 늘어난 상황은 인터뷰에 근거가 없어 추론입니다. 반품 곤란은 그대로라 같은 수량을 골랐습니다.', claims: [CLAIM_COVER, CLAIM_RETURN], missing: ['현금 여유가 있을 때의 기준(인터뷰 근거 없음)'] }],
+  C04: [{ kind: 'commit_choice', q: 'Q_5', reason: '현금이 늘어난 상황은 인터뷰에 근거가 없어 추론입니다. 입고가 늦는 점은 수량으로 되돌릴 수 없다고 봅니다.', claims: [CLAIM_COVER, CLAIM_RETURN], missing: ['현금 여유가 있을 때의 기준(인터뷰 근거 없음)'] }],
+  C05: [
+    { kind: 'check_physical_stock', q: null, reason: '전산 기록이 72시간 전 값이라 먼저 실물을 확인하겠습니다.', claims: [CLAIM_STOCK, { ids: ['E042'], claim: '시간이 지나며 전산과 실물 재고 오차가 누적될 수 있다는 근거', inference: false }], missing: ['현재 실물 수량'] },
+    { kind: 'commit_choice', q: 'Q_10', reason: '실물이 전산보다 훨씬 적은 것을 확인했으니 부족을 피하는 쪽으로 고릅니다. 자금 부담은 후불 한도 안이라 감수합니다.', claims: [CLAIM_COVER, CLAIM_CASH], missing: ['실제 수요 추이'] },
+  ],
+  C06: [{ kind: 'commit_choice', q: 'Q_0', reason: '내일 들어오는 기존 주문 5팩을 고려하면 당장 추가 주문 없이도 버틸 수 있다고 봅니다. 자금 부담과 반품 곤란을 함께 고려했습니다.', claims: [CLAIM_COVER, CLAIM_CASH, CLAIM_RETURN], missing: ['기존 주문의 입고 확정 여부'] }],
+};
+
+// 판단 단계에서 고를 수 있는 근거 후보 (CSV 에서 제목·문구를 읽어 보여 준다)
+export const EVIDENCE_PICKS = ['R01', 'R02', 'R03', 'R04', 'E030', 'E029', 'E034', 'E038', 'E042', 'E035', 'E037'];
+
+// ---------- 3D 장면 속 물건 설명 ----------
+export const OBJ_INFO = {
+  pharmacy: { title: '약국 (2층)', tag: '인터뷰', body: '인터뷰 약국은 2층에 있고, 1층에는 정형외과, 같은 층에는 이비인후과가 있습니다. 개업 약 3주차입니다.', refs: ['E001', 'E002', 'E013'] },
+  stock: { title: '재고 선반 · 가상 단일 품목', tag: '가상', body: '반투명 상자는 전산 기록(관측값), 불투명 상자는 실물입니다. 실물은 "실물 확인"을 한 뒤에, 또는 결과 재생 중에 보입니다. 품목과 수량은 모두 가정입니다.', refs: ['E030', 'E042'] },
+  persona: { title: '응답자 약사 (파란 인물)', tag: '인터뷰', body: '인터뷰에 응한 약사 1명입니다. 눌러서 프로필을 봅니다.', refs: ['U001', 'G07'] },
+  counter: { title: '카운터 · 다른 약사', tag: '인터뷰', body: '파란 인물이 응답자 1인입니다. 회색 반투명 인물은 다른 약사로, 응답자가 아니므로 이 사람의 판단·성향은 확정하지 않습니다. 약사 2인 운영은 사용자 보완입니다.', refs: ['U001', 'G07'] },
+  sofa: { title: '소파 · 안마봉', tag: '인터뷰', body: '안마봉을 소파 근처에 두었고 보유분이 모두 팔렸다는 사례입니다. 이번 발주 장면에는 쓰이지 않는 배경입니다.', refs: ['E053', 'I10'] },
+  ent: { title: '이비인후과 (2층, 같은 건물)', tag: '인터뷰', body: '같은 건물 신규 의원입니다. 인터뷰에서 확인된 사실이며, 이번 장면의 수요에는 반영하지 않았습니다.', refs: ['E002'] },
+  ortho: { title: '정형외과 (1층)', tag: '인터뷰', body: '같은 건물 1층 정형외과입니다. 환자 유입이 기대보다 적었다는 사례가 있습니다.', refs: ['E002', 'I03'] },
+  across: { title: '건너편 기존 이비인후과', tag: '미반영', body: '기존 이비인후과가 쉬는 날 같은 건물 신규 의원이 붐빈다는 관찰입니다. 휴진 주체의 해석이 확정되지 않아 현재 시뮬레이션에는 반영하지 않습니다.', refs: ['E025', 'I04'] },
+  truck: { title: '도매 트럭 · 입고', tag: '가상', body: '주문한 약이 도착하는 날에 트럭이 건물 앞에 서고, 입고 후에 재고 선반이 채워집니다. 입고일과 단가는 가정입니다.', refs: [] },
+  customers: { title: '손님 · 수요', tag: '가상', body: '하루 수요 5팩을 손님 5명으로 표현했습니다. 초록은 판매된 수요, 빨강은 재고가 없어 못 판 수요입니다. 못 판 수요는 다음 날로 이월하지 않습니다.', refs: [] },
+  judge: { title: '3층 발주 판단실 (개념 층)', tag: '개념', body: '실제 건물에는 없는 층입니다. 관측값을 보고 조회·선택·근거를 정하는 판단 과정을 건물 안에 비유한 공간입니다.', refs: [] },
+  roof: { title: '옥상 관제실 (개념 층)', tag: '개념', body: '실제 건물에는 없는 공간입니다. 근거, 검증 상태, 범위 문구를 확인하는 자리를 비유합니다.', refs: ['G02', 'G04', 'G07'] },
+};
+
+// 3D 라벨 (장면에 겹쳐 보이는 짧은 이름)
+export const SCENE_LABELS = [
+  { key: 'pharmacy', text: '약국 · 2F', cls: 'real', at: [-2.6, 3.0, 4.3] },
+  { key: 'ent', text: '이비인후과 · 2F', cls: 'real', at: [3.8, 3.0, 4.3] },
+  { key: 'ortho', text: '정형외과 · 1F', cls: 'real', at: [2.5, 0.1, 4.3] },
+  { key: 'persona', text: '응답자 약사', cls: 'real', at: [-3.2, 4.65, 0.1] },
+  { key: 'stock', text: '재고 선반 (가상)', cls: 'virtual', at: [-4.6, 5.45, -3.3] },
+  { key: 'judge', text: '3F 판단실 (개념)', cls: 'concept', at: [4.6, 8.9, 4.1] },
+  { key: 'roof', text: '옥상 관제실 (개념)', cls: 'concept', at: [0, 11.1, 0] },
+  { key: 'across', text: '건너편 기존 이비인후과 (미반영)', cls: 'muted', at: [-17, 6.6, 13] },
+  { key: 'truck', text: '도매 트럭 · 대기 (가상)', cls: 'virtual', at: [-13, 2.9, 9.3] },
+];
+
+// ---------- 니즈 카드 (근거는 CSV 의 실제 ID) ----------
+export const NEEDS = [
+  {
+    id: 'N1', title: '전산 재고를 믿기 어려워 실물을 직접 본다',
+    situation: '자주 쓰는 약은 전산 조회가 가능해도 보관 장소를 눈으로 보는 편이 빠르고, 시간이 지나면 전산과 실물의 오차가 쌓인다고 설명합니다.',
+    workaround: '실물 위치를 직접 확인합니다. 현재 전산에는 사전 재고부족 알림이 없다고 답했습니다.',
+    pain: '재고가 부족해질 시점을 사람이 판단해야 합니다.',
+    refs: ['E030', 'E042', 'E028', 'E029', 'E063', 'E059'],
+    frequency: '미확인', ax: '전산과 실물의 차이, 소진 속도를 함께 보여 주는 도구가 도움이 될 수 있다는 가설입니다.',
+    conditions: ['기존 전산은 민간 유료 프로그램을 쓰고 있음(E059). 교체·연동 부담은 미확인.'],
+  },
+  {
+    id: 'N2', title: '많이 사 두자니 현금이, 적게 사자니 결품이 걱정이다',
+    situation: '유행기에는 주문처 자체가 품절될 수 있고, 수익이 나기 전이라 약값을 무한정 늘릴 수 없다고 설명합니다.',
+    workaround: '남은 양으로 오늘·내일을 버틸지 사람이 판단합니다.',
+    pain: '결품 손해와 구매대금 부담이 서로 맞바뀝니다.',
+    refs: ['E033', 'E034', 'R03', 'I06'],
+    frequency: '미확인', ax: '수요와 결제 일정을 함께 놓고 발주 규모를 비교해 보는 도구가 도움이 될 수 있다는 가설입니다.',
+    conditions: ['I06은 설명용 가정 사례입니다. 실제 경험이 아닙니다.'],
+  },
+  {
+    id: 'N3', title: '반품이 자유롭지 않아 유효기간과 공간이 부담이다',
+    situation: '임박품 미반품, 반품 거절, 부분 환급 등 조건이 다양하고, 의약품에는 유효기간과 보관 공간의 제약이 있다고 설명합니다.',
+    workaround: '반품을 쉽게 되돌릴 수 있는 선택으로 보지 않고 주문합니다.',
+    pain: '과잉 재고가 손실로 이어질 수 있습니다.',
+    refs: ['E038', 'E035', 'R04'],
+    frequency: '미확인', ax: '유효기간과 반품 조건을 한눈에 보게 하는 도구가 도움이 될 수 있다는 가설입니다.',
+    conditions: ['거래처마다 반품 조건이 다르다는 점은 확인됨. 구체적인 거래 구조는 미확인.'],
+  },
+  {
+    id: 'N4', title: '운영 이력이 짧아 수요를 예측하기 어렵다',
+    situation: '개업 초기라 수요가 많고 적은 날을 안정적으로 예측하기 어렵고, 충분한 운영 이력이 없다고 설명합니다.',
+    workaround: '인터뷰에서 확인된 대처 방식은 없습니다. 재고가 부족해질 뻔한 경험이 있다고 답했습니다.',
+    pain: '이력이 쌓이기 전에는 참고할 기준이 부족합니다.',
+    refs: ['E027', 'E037', 'E032'],
+    frequency: '미확인', ax: '이력이 쌓이기 전에 참고할 외부 수요 기준을 제공하는 방법이 있다는 가설입니다. 공공·민간 데이터는 장면 입력일 뿐 이 사람의 판단 근거가 아닙니다.',
+    conditions: ['개업 초기라는 상태에서 나온 어려움일 수 있어, 시간이 지나면 달라질 수 있습니다.'],
+  },
+  {
+    id: 'N5', title: '제안에 대한 반응: 수용·거부 조건',
+    kind: 'suggestion',
+    situation: '인터뷰어가 제안한 기능에 대한 반응입니다. 자동 상담 메모는 동의를 전제로 해야 한다는 우려를, 방문자 순위는 효용에 의문을 보였습니다.',
+    workaround: '해당 없음(제안에 대한 반응).',
+    pain: '자발적으로 말한 어려움이 아니므로 수요 증거로는 약합니다.',
+    refs: ['I12', 'I13'],
+    frequency: '해당 없음', ax: '수요의 증거가 아니라, 도입할 때 지켜야 할 조건으로 읽습니다.',
+    conditions: ['수집 방식, 목적, 보관에 대한 동의가 수용 조건입니다.', '분석 정보의 실무 목적이 분명해야 효용을 인정합니다.'],
+  },
+];
+
+// ---------- LLM(에이전트)이 하면 안 되는 것 ----------
+export const DONTS = [
+  ['숨은 실물 재고, 미래 수요, 선택별 결과, 정답에 접근하거나 요청하기', '정보 누출입니다. 모델에는 관측값만 줍니다.'],
+  ['인터뷰·CSV에 없는 수량·비율·임계치를 만들기 (예: "1.5일 미만이면 긴급", "8~9일분")', 'G02. 이 값들은 가정입니다.'],
+  ['규칙 사이의 우선순위를 임의로 완성하기', '인터뷰로 정해지지 않은 순서를 성향으로 확정하게 됩니다.'],
+  ['시뮬레이션 출력을 사실로 말하거나 근거(claims)로 되먹이기', 'G04.'],
+  ['약사 2인의 합의·권한·성향을 확정하기', 'G07. 응답자는 1명입니다.'],
+  ['과거 직장·타약국 경험을 현재 약국의 판단으로 단정하기', 'G01.'],
+  ['계획·의견("하려 한다", "좋을 수 있다")을 실행·결과("했다", "효과가 났다")로 서술하기', 'G06.'],
+  ['의료·법률 발언을 자동 규칙으로 쓰거나 진단을 단정하기', 'G03.'],
+  ['근거 ID를 지어내거나, 존재만 하는 ID를 주장에 붙이기', 'ID가 있어도 그 주장을 지원하는지는 별도 확인이 필요합니다. 실제 CSV 문구만 인용합니다.'],
+  ['자기 설명을 "내부 사고과정"으로 표시하거나 수치 확신도·확률을 만들기', '모델 설명은 실제 영향 요인을 빠뜨릴 수 있습니다. 증거는 조회 기록입니다.'],
+  ['니즈·AX 여지를 확인된 사실처럼 쓰기, 니즈를 묻기 전에 해결책을 제시하기', '해결책 편향이 생깁니다.'],
+  ['인터뷰 약사를 소상공인·동네 약국 일반으로 일반화하기', '현재 근거는 인터뷰 1건입니다.'],
+  ['가상 수치를 "가상" 표시 없이 쓰기', 'G02.'],
+  ['팀원·인터뷰 대상자의 실명을 산출물에 쓰기', '인터뷰 전사본의 화자 표기에 실명이 있으므로 특히 주의합니다.'],
+];
