@@ -445,30 +445,23 @@ FLOORS.forEach((f,i)=>{
 const shelfMeshes=[]; const custPh=[], entPh=[]; let phA,phB;
 (()=>{const g=FG[1],i=1;
   box(g,.14,FH-.25,D,0xd4cdbd,-.5,.25,0).userData.fi=1; // 칸막이
-  // 조제실
-  box(g,3.5,.04,2.9,0xdbe7ee,-5.1,.25,-2.45,{mo:{}});
-  const gp={transparent:true,opacity:.28,color:0x9fd0e0};
-  const dg=new T.Mesh(new T.BoxGeometry(3.5,1.9,.06),new T.MeshStandardMaterial({color:0x9fd0e0,transparent:true,opacity:.28,depthWrite:false}));dg.position.set(-5.1,.25+.95,-.95);g.add(dg);reg(dg,'dispense',i);
-  const dg2=new T.Mesh(new T.BoxGeometry(.06,1.9,2.9),new T.MeshStandardMaterial({color:0x9fd0e0,transparent:true,opacity:.28,depthWrite:false}));dg2.position.set(-3.35,.25+.95,-2.45);g.add(dg2);reg(dg2,'dispense',i);
-  reg(box(g,3,.9,.7,0xe5ddc9,-5.2,.25,-1.5),'dispense',i); // 조제대
-  reg(box(g,.5,.35,.4,0x2a3340,-5.9,1.15,-1.5),'dispense',i);
-  for(let k=0;k<4;k++) reg(box(g,.7,2.1,.5,0xb6a68a,-6.4+k*.78,.25,-3.65),'dispense',i); // 약장
+  // 조제실 — floor12.html 치수(글라스 벽 2장 + 조제대)로 재구성. 약장·소형장비는
+  // floor12에 없는 팀 전용 디테일이라 걷어냈다(결정: "현재 가구를 걷어내고 floor12
+  // 치수로 새로 짠다"). 위치는 팀 건물 기존 조제실 자리를 그대로 썼다.
+  reg(box(g,3.8,1.75,.12,0xbfd3d6,-5.1,.25,-.95,{mo:{transparent:true,opacity:.55}}),'dispense',i);
+  reg(box(g,.12,1.75,2.9,0xbfd3d6,-3.35,.25,-2.45,{mo:{transparent:true,opacity:.55}}),'dispense',i);
+  reg(box(g,3.5,.9,.6,0xcdd6d8,-5.2,.25,-1.5),'dispense',i); // 조제대(floor12 치수)
   phA=person(0x2f6fb5,1.15); phA.position.set(-5.0,.25,-2.2); g.add(phA); reg(phA.children[0],'phA',i); reg(phA.children[1],'phA',i);
-  // 카운터
-  reg(box(g,2.5,1,.65,0xc6a77a,-2.2,.25,-.7),'counter',i); box(g,2.6,.06,.75,0x5a4a35,-2.2,1.25,-.7);
+  // 카운터 — floor12.html 치수(3.4×1×.6, 색 0xb98d5a)로 교체
+  reg(box(g,3.4,1,.6,0xb98d5a,-2.2,.25,-.7),'counter',i);
   phB=person(0xffffff,1.15); phB.position.set(-2.2,.25,-1.7); g.add(phB); reg(phB.children[0],'phB',i); reg(phB.children[1],'phB',i);
   phB.children[0].material=mat(0xf4f4f4);
-  // 진열대
-  const mkShelf=(key,x,z,w,dp,h,ry)=>{const gg=new T.Group();gg.position.set(x,.25,z);gg.rotation.y=ry||0;g.add(gg);
-    const frame=box(gg,w,h,dp,0xcdbf9f,0,0,0);reg(frame,key,i);
-    const fills=[];for(let k=0;k<3;k++){const f=box(gg,w*.9,h*.24,dp*1.05,0x6aa86f,0,.15+k*h*.3,0,{m:new T.MeshStandardMaterial({color:0x6aa86f,roughness:.7})});reg(f,key,i);fills.push(f);}
-    gg.userData.fills=fills; gg.userData.h=h; shelfMeshes.push({key,gg,fills});return gg;};
-  mkShelf('cold',-4.4,1.2,2.2,.6,1.7); mkShelf('cold',-4.4,2.6,2.2,.6,1.7);
   reg(box(g,1.2,.45,.6,0x7fb5ae,-1.3,.25,3.3),'sofa',i); // 대기 소파
   box(g,1.5,2.3,.08,0x6aa5c0,-1.4,.25,D/2-.04,{mo:{transparent:true,opacity:.35}});
   for(let k=0;k<6;k++){const p=person([0xd9534f,0x5b8def,0xe0a030,0x58a55c,0xa06cc4,0x555b66][k],1);p.visible=false;g.add(p);custPh.push(p);}
-  // ENT
-  const ed=box(g,2.4,.9,.7,0x9bb8c9,3.2,.25,1.8); reg(ed,'ent',i); box(g,2.5,.05,.8,0x5a7a8c,3.2,1.15,1.8);
+  // ENT — 접수대는 floor12.html 치수(2.4×1×.7, 색 0x7fb5ae)로 교체. 진료창·파티션
+  // 사인은 floor12에 없는 팀 전용 디테일이라 그대로 둔다.
+  const ed=box(g,2.4,1,.7,0x7fb5ae,3.2,.25,1.8); reg(ed,'ent',i);
   const ex=box(g,2.6,.5,.9,0xcfd6df,5.2,.25,-2.6); reg(ex,'ent',i);
   reg(box(g,2.4,.55,.1,0x4d7f99,3.4,1.9,-3.82),'ent',i);
   const dr=person(0xdfe6ea,1.1); dr.position.set(5.2,.75,-2.6); g.add(dr);
@@ -510,6 +503,7 @@ function buildItems2F(items){
       const a=(isX?Z.x:Z.z)+.05+c+w/2;
       const m=box(g,isX?w:.26,.34,isX?.26:w,0xffffff,isX?a:Z.x+Z.n[0]*.2,.2+(HY2F[it.shelf_height_ko]||1)-.17,isX?Z.z+Z.n[1]*.2:a,{m:new T.MeshStandardMaterial({color:0xffffff})});
       reg(m,'item:'+it.code,1); itemMesh2F[it.code]=m;
+      if(it.code==='O003') shelfMeshes.push({key:'cold',gg:null,fills:[m]}); // 3층 발주판단의 재고색은 이 실제 품목 메시가 받는다(추상 선반 대신)
       OBJ['item:'+it.code]={t:it.name_ko,d:it.department_ko+' · '+it.category_ko+'. 계절성: '+it.season_ko+'.',
         b:['L56 진열: '+it.zone_ko+' · '+it.shelf_height_ko+' · '+it.faces+'페이스',
            'L57 판매가 '+it.price_krw.toLocaleString('ko-KR')+'원 · 마진율 '+it.margin_pct+'%'],
@@ -543,6 +537,7 @@ fetch('../data/floor12.json').then(r=>r.json()).then(data=>{
   f12Days=data.days;
   F12S.di=f12Idx('2026-10-06');
   f12SyncCtl(); f12RenderStats();
+  applyDay(); // O003 품목 메시가 방금 'cold'로 등록됐으니, 지금 H[day] 기준으로 바로 색칠한다
 }).catch(err=>console.error('data/floor12.json 로드 실패(로컬 서버로 열어야 fetch가 됩니다):',err));
 /* ─────────────────────────────────────────────────────────────
    F12: 1~2층(floor12.html 이식분) 전용 모듈 네임스페이스.
