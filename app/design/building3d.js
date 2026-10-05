@@ -525,8 +525,8 @@ export function createScene(container, opts = {}) {
       wantPos.copy(FP.eye);
       wantLook.set(Math.sin(FP.yaw) * Math.cos(FP.pitch), Math.sin(FP.pitch), Math.cos(FP.yaw) * Math.cos(FP.pitch)).add(FP.eye);
     } else {
-      // 화면이 가로로 좁을수록 뒤로 물러나 건물 좌우가 잘리지 않게 한다 (기준 비율 1.9)
-      const r = cur.r * clamp(1.9 / camera.aspect, 1, 2.2);
+      // 세로 기준으로 맞추고, 화면 비율이 1.5보다 좁을 때만 뒤로 물러나 건물 좌우가 잘리지 않게 한다
+      const r = cur.r * clamp(1.5 / camera.aspect, 0.95, 2.4);
       const s = Math.sin(cur.ph);
       wantPos.set(cur.t.x + r * s * Math.sin(cur.th), cur.t.y + r * Math.cos(cur.ph), cur.t.z + r * s * Math.cos(cur.th));
       wantLook.copy(cur.t);
