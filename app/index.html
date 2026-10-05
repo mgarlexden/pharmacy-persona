@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>약국 페르소나 시뮬레이터</title>
-<meta name="description" content="인터뷰 약사 1인의 발주 판단을 상황을 바꿔 가며 재현하고, 약사 본인의 답과 비교하는 시뮬레이터 초안">
+<meta name="description" content="인터뷰 약사 1인의 발주 판단을 AI 페르소나가 재현하고, 약사 본인의 답과 비교하는 시뮬레이터 초안">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='4' y='2' width='16' height='20' rx='3' fill='none' stroke='%230066cc' stroke-width='2'/%3E%3Cpath d='M9 22v-4h6v4M12 7v6M9 10h6' fill='none' stroke='%230066cc' stroke-width='2'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="css/styles.css">
@@ -35,6 +35,14 @@
   </defs>
 </svg>
 
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-box" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7M12 11v10"/></g></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  </defs>
+</svg>
+
 <a class="skip" href="#main">본문으로 건너뛰기</a>
 <div id="app-banner" class="banner" role="alert" hidden></div>
 
@@ -48,18 +56,18 @@
       <a href="#/" data-route="home">홈</a>
       <a href="#/guide" data-route="guide">사용 가이드</a>
       <a href="#/simulate" data-route="simulate">시뮬레이터</a>
-      <a href="#/validate" data-route="validate">약사 답과 비교</a>
+      <a href="#/profile" data-route="profile">약사 프로필</a>
       <a href="#/runs" data-route="runs">실행 기록</a>
-      <a href="#/evidence" data-route="evidence">인터뷰 근거</a>
+      <a href="#/data" data-route="data">공공·가상 데이터</a>
       <a href="#/needs" data-route="needs">니즈</a>
+      <a href="#/ops" data-route="ops">운영 메모</a>
     </nav>
     <div class="hdr-actions">
-      <button class="btn btn-ghost btn-sm" id="btn-help" type="button"><svg width="18" height="18" aria-hidden="true"><use href="#i-help"/></svg><span>처음 안내</span></button>
       <button class="btn btn-ghost btn-sm icon-btn" id="btn-theme" type="button" aria-label="화면 테마 바꾸기" aria-pressed="false"><svg width="18" height="18" aria-hidden="true"><use id="theme-icon" href="#i-moon"/></svg></button>
     </div>
   </div>
   <div class="scope-bar" role="note">
-    <div class="container"><span>인터뷰 1건에 근거한 초안이며 <b>응답자 1인의 판단 범위만 대변</b>합니다.</span><span>화면의 수치는 모두 <span class="badge b-virtual">가상</span>이고, 시뮬레이션 결과는 사실로 저장하지 않습니다.</span></div>
+    <div class="container"><span>인터뷰 1건에 근거한 초안이며 <b>응답자 1인의 판단 범위만 대변</b>합니다.</span><span>값마다 <span class="badge b-public">공공</span> <span class="badge b-virtual">가상</span> <span class="badge b-hyp">가정</span> 표시가 붙습니다.</span></div>
   </div>
 </header>
 
@@ -68,77 +76,23 @@
 <!-- ================= 홈 ================= -->
 <section id="view-home" class="view" aria-labelledby="h-home">
   <div class="container hero">
-    <h1 id="h-home" tabindex="-1">개업 3주차 약사라면, 이 상황에서 어떻게 주문할까요?</h1>
-    <p class="lede">인터뷰한 약사 1명의 말을 근거로 만든 페르소나가 실제 약사와 얼마나 비슷하게 판단하는지 확인합니다. 상황은 코드가 만들고, 판단은 사람이나 AI가 하고, 정답은 실제 약사가 줍니다.</p>
+    <h1 id="h-home" tabindex="-1">개업 한 달 차 약사라면, 이 상황에서 어떻게 주문할까요?</h1>
+    <p class="lede">인터뷰한 약사 1명의 말을 근거로 판단하는 AI 페르소나를 만들고, 같은 상황에서 실제 약사와 얼마나 비슷하게 판단하는지 확인합니다.</p>
     <div class="cta-row">
       <a class="btn btn-primary btn-lg" href="#/simulate">시뮬레이터 열기</a>
-      <a class="btn btn-lg" href="#/guide">3분 사용 가이드</a>
-    </div>
-    <div class="scope-row">
-      <span class="badge b-interview">인터뷰 1건</span>
-      <span class="badge b-interview">약사 1인 재현도</span>
-      <span class="badge b-virtual">모든 수치 가상</span>
-      <span class="badge b-sample" id="badge-ai">AI 답 아직 없음</span>
+      <a class="btn btn-lg" href="#/guide">사용 가이드</a>
     </div>
   </div>
-  <div class="container">
-    <div class="hero-stage" id="hero-stage" role="group" aria-label="약국 건물 3D 장면. 끌어서 돌려 볼 수 있습니다."><div class="stage-fallback" id="hero-fallback" hidden>이 환경에서는 3D 장면을 표시할 수 없습니다. 시뮬레이터의 "장면 목록"에서 같은 내용을 글로 볼 수 있습니다.</div></div>
-    <p class="hero-cap xs muted">설명용으로 만든 건물 모형이며 실제 약국 사진이 아닙니다. 2층 왼쪽이 약국, 위의 점선 층은 실제로는 없는 개념 층입니다. 끌어서 돌려 보세요.</p>
-  </div>
-
   <div class="section">
     <div class="container">
-      <div class="section-head">
-        <h2>이렇게 진행합니다</h2>
-        <p class="muted">다섯 단계가 순서대로 이어집니다. 1~3단계는 시뮬레이터, 4단계는 비교 화면, 5단계는 니즈 화면에서 합니다.</p>
-      </div>
+      <div class="section-head"><h2>이렇게 진행합니다</h2></div>
       <ol class="flow">
-        <li><a href="#/simulate" data-step-link="1"><span class="n">1단계</span><b>상황 고르기</b><span class="small muted">약사에게 물어볼 "어느 날 아침의 약국 사정"을 고릅니다. 약사와 AI는 똑같은 정보만 봅니다.</span></a></li>
-        <li><a href="#/simulate" data-step-link="2"><span class="n">2단계</span><b>판단 내리기</b><span class="small muted">약사라면 어떻게 할지 고릅니다. 선반 확인, 주문량, 그렇게 고른 이유를 남깁니다.</span></a></li>
-        <li><a href="#/simulate" data-step-link="3"><span class="n">3단계</span><b>결과 미리보기</b><span class="small muted">그 선택으로 사흘 동안 재고가 어떻게 되는지 코드가 계산해 보여 줍니다. 참고용입니다.</span></a></li>
-        <li><a href="#/validate"><span class="n">4단계</span><b>약사 답과 비교</b><span class="small muted">실제 약사의 답을 먼저 받고, 그다음에 AI의 답을 열어 얼마나 비슷한지 기록합니다.</span></a></li>
-        <li><a href="#/needs"><span class="n">5단계</span><b>니즈 확인</b><span class="small muted">인터뷰에서 나온 어려움과 AX 여지를 가설로 정리해 약사에게 확인받습니다.</span></a></li>
+        <li><a href="#/simulate" data-go-sim="1"><span class="n">1단계</span><b>시나리오 고르기</b><span class="small muted">"어느 날 아침의 약국 사정"을 고릅니다. 재고, 통장 잔액, 입고일, 그날의 독감·연휴 같은 조건이 들어 있습니다.</span></a></li>
+        <li><a href="#/simulate" data-go-sim="2"><span class="n">2단계</span><b>AI 판단 따라가기</b><span class="small muted">약사의 눈으로 AI가 본 것, 먼저 한 행동, 최종 판단을 순서대로 보고, 어떤 인터뷰 내용을 근거로 했는지 확인합니다.</span></a></li>
+        <li><a href="#/simulate" data-go-sim="3"><span class="n">3단계</span><b>약사 답과 비교</b><span class="small muted">같은 시나리오를 실제 약사에게 물은 답을 AI 답과 나란히 놓고 어디가 같고 다른지 봅니다.</span></a></li>
+        <li><a href="#/simulate" data-go-sim="4"><span class="n">4단계</span><b>근거에 추가할지 정하기</b><span class="small muted">약사 답에서 인터뷰에 없던 판단 기준이 나오면 근거 후보로 올립니다. 페르소나가 다음에 참고합니다.</span></a></li>
+        <li><a href="#/simulate" data-go-sim="0"><span class="n">5단계</span><b>환경을 바꿔 보기</b><span class="small muted">독감, 기온, 비, 날짜를 바꾸면 하루 손님 수가 어떻게 달라지는지 3D로 봅니다.</span></a></li>
       </ol>
-    </div>
-  </div>
-
-  <div class="section" style="padding-top:0">
-    <div class="container grid-2">
-      <div class="panel">
-        <h2>이 화면으로 말할 수 있는 것</h2>
-        <ul class="yesno yes">
-          <li>인터뷰 약사 1명의 판단 방식과 제약을, 근거가 된 인터뷰 발언과 함께 보여 줍니다.</li>
-          <li>인터뷰에 없던 상황에서 AI 답과 약사 답이 얼마나 비슷한지 비교합니다.</li>
-          <li>가상 수치로 선택의 결과를 계산해 나란히 놓습니다.</li>
-          <li>어디에 어려움이 있어 보이는지 가설로 보여 줍니다.</li>
-        </ul>
-      </div>
-      <div class="panel">
-        <h2>이 화면으로 말할 수 없는 것</h2>
-        <ul class="yesno no">
-          <li>동네 약국이나 약국 소상공인 일반을 대변한다는 주장.</li>
-          <li>약사 2인(응답자 1명)의 합의나 성향.</li>
-          <li>실제 수요, 매출, 현금의 예측.</li>
-          <li>시뮬레이션으로 니즈나 AX 효과가 확인되었다는 주장.</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-
-  <div class="section" style="padding-top:0">
-    <div class="container">
-      <div class="section-head">
-        <h2>화면의 표시를 읽는 법</h2>
-        <p class="muted">같은 숫자라도 어디서 왔는지에 따라 믿을 수 있는 정도가 다릅니다. 화면의 값에는 아래 표시 중 하나가 붙습니다.</p>
-      </div>
-      <div class="panel legend">
-        <span class="badge b-interview">인터뷰</span><span>인터뷰에서 약사가 한 말에 근거한 내용. E034, R02 같은 근거 번호를 누르면 원문을 볼 수 있습니다.</span>
-        <span class="badge b-virtual">가상</span><span>계산을 위해 정한 가정값. 실제 약국의 값이 아닙니다.</span>
-        <span class="badge b-unknown">미확인</span><span>아직 확인하지 못한 값이나 상태. 선반을 보기 전의 실제 재고가 여기에 해당합니다.</span>
-        <span class="badge b-hyp">가설</span><span>해석에서 나온 추정. 약사가 확인하기 전에는 사실로 쓰지 않습니다.</span>
-        <span class="badge b-sample">예시</span><span>설명을 위해 미리 써 둔 샘플. 실제 AI의 출력도, 약사의 답도 아닙니다.</span>
-        <span class="badge b-concept">개념</span><span>실제 건물에는 없는 층이나 공간. 판단 과정을 건물에 비유한 것입니다.</span>
-      </div>
     </div>
   </div>
 </section>
@@ -147,336 +101,198 @@
 <section id="view-guide" class="view" aria-labelledby="h-guide" hidden>
   <div class="container">
     <div class="page-head">
-      <div class="row">
-        <div>
-          <h1 id="h-guide" tabindex="-1">사용 가이드</h1>
-          <p>처음 쓰는 사람이 헷갈리지 않도록 정리했습니다. 각 화면에도 그 화면에 필요한 설명이 붙어 있으니, 여기서는 전체 흐름과 규칙을 봅니다.</p>
-        </div>
-        <button class="btn" type="button" id="btn-help-2">처음 안내 다시 보기</button>
-      </div>
+      <h1 id="h-guide" tabindex="-1">사용 가이드</h1>
+      <p>처음 쓰는 분을 위한 짧은 안내입니다.</p>
     </div>
-    <div class="doc">
-      <nav class="doc-nav" aria-label="가이드 목차">
-        <a href="#g-summary">한눈에 보기</a>
-        <a href="#g-cards">상황 카드란</a>
-        <a href="#g-read">화면 읽는 법</a>
-        <a href="#g-steps">5단계 따라 하기</a>
-        <a href="#g-3day">왜 사흘을 계산하나</a>
-        <a href="#g-dont">AI가 하면 안 되는 것</a>
-        <a href="#g-human">사람이 지킬 것</a>
-        <a href="#g-terms">용어</a>
-        <a href="#g-faq">자주 묻는 질문</a>
-        <a href="#g-limits">알려진 한계</a>
-      </nav>
-      <div class="prose">
-        <section id="g-summary">
-          <h2>한눈에 보기</h2>
-          <p>이 서비스는 <b>인터뷰한 약사 1명의 판단을 AI가 얼마나 재현하는지</b> 확인하는 도구입니다. 같은 상황을 AI(페르소나)와 실제 약사에게 똑같이 보여 주고, 두 답을 나란히 놓고 비교합니다.</p>
-          <div class="callout">
-            <p><b>세 가지 역할</b></p>
-            <ul>
-              <li><b>코드</b>는 재고, 입고, 주문 금액을 계산합니다. 판단은 하지 않습니다.</li>
-              <li><b>페르소나(AI)</b>는 보이는 정보만 보고 선반 확인, 주문, 보류 중에서 고릅니다.</li>
-              <li><b>실제 약사</b>의 답이 정답입니다. AI 답을 보기 전에 자기 답을 먼저 줍니다.</li>
-            </ul>
+    <div class="guide">
+      <section class="g-card" id="g-terms">
+        <h2>먼저 알아 둘 말</h2>
+        <dl class="terms">
+          <dt>시나리오</dt><dd>약사와 AI에게 똑같이 보여 주는 "어느 날 아침의 약국 사정"입니다. 남은 재고, 통장 잔액, 도매상이 언제 가져다주는지가 들어 있고 "몇 팩 주문할까요?"를 묻습니다.</dd>
+          <dt>페르소나 (AI)</dt><dd>인터뷰한 약사의 말을 근거로 판단하는 AI입니다.</dd>
+          <dt>약사 답</dt><dd>같은 시나리오를 실제 약사에게 물어 받은 답입니다. 비교의 기준이 됩니다.</dd>
+          <dt>근거</dt><dd>인터뷰에서 약사가 한 말(E 번호), 그 말에서 읽은 판단 방식(R 번호), 실제로 있었던 일(I 번호)입니다. 번호를 누르면 원문이 열립니다.</dd>
+          <dt>정보 수준</dt><dd>AI에게 준 정보의 양입니다. <b>B1</b>은 인터뷰 없이, <b>P0</b>는 인터뷰 근거까지, <b>P1</b>은 그날 환경까지 줍니다. P1이 약사가 받는 정보와 같습니다.</dd>
+          <dt>표시</dt><dd><span class="badge b-public">공공</span> 공공기관 자료의 실제 값 · <span class="badge b-interview">인터뷰</span> 약사가 한 말 · <span class="badge b-virtual">가상</span> 팀이 만든 가상 약국 기록 · <span class="badge b-hyp">가정</span> 자료가 없어 정한 값</dd>
+        </dl>
+      </section>
+
+      <section class="g-card" id="g-how">
+        <h2>시뮬레이터 쓰는 법</h2>
+        <div class="how">
+          <div>
+            <h3>기본 보기 <span class="xs muted">처음 열리는 화면</span></h3>
+            <ol>
+              <li>오른쪽에서 <b>날짜</b>를 고릅니다. 그날의 공휴일, 독감, 날씨가 채워집니다.</li>
+              <li><b>독감·기온</b> 막대를 움직이거나 <b>비</b>를 켜 봅니다. 예상 손님 수가 바로 바뀝니다.</li>
+              <li>아래 <b>하루 재생</b>을 누르면 3D에서 손님이 들어옵니다. 옷 색은 어디서 왔는지를 뜻합니다.</li>
+            </ol>
           </div>
-          <p style="margin-top:12px">지금은 약사 1명의 근거만 있어서 "동네 약국 일반"을 말할 수 없습니다. 인터뷰가 늘어나면 유형으로 넓힙니다.</p>
-        </section>
-
-        <section id="g-cards">
-          <h2>상황 카드란</h2>
-          <p><b>상황 카드</b>는 약사와 AI에게 똑같이 보여 줄 "어느 날 아침의 약국 사정"입니다. 남은 재고, 통장 잔액, 도매상이 언제 가져다주는지 같은 정보가 들어 있고, 마지막에 "몇 팩을 주문하겠습니까?"를 묻습니다.</p>
-          <h3>왜 여러 장인가요</h3>
-          <p>한 장면만 물으면 약사가 <b>무엇 때문에</b> 그렇게 판단했는지 알 수 없습니다. 그래서 기본 장면 하나를 두고, 조건을 하나씩만 바꾼 카드를 만들었습니다. 예를 들어 "현금이 넉넉한 날"은 기본 장면에서 현금만 바꾼 것입니다. 두 카드의 답이 다르면 현금이 판단을 바꾼다고 볼 수 있습니다.</p>
-          <h3>카드의 근거는 어디서 왔나요</h3>
-          <p>카드마다 <b>인터뷰에 얼마나 나온 장면인지</b> 표시합니다. 시뮬레이터에서 카드를 고르면 근거가 된 인터뷰 발언 번호와 연결 이유, 가정으로 정한 부분이 함께 나옵니다.</p>
-          <div class="tbl-wrap"><table class="tbl">
-            <thead><tr><th>표시</th><th>뜻</th></tr></thead>
-            <tbody>
-              <tr><td><span class="badge b-interview">인터뷰의 판단 방식을 쓴 장면</span></td><td>이 상황 자체가 인터뷰에 나온 것은 아닙니다. 약사가 말한 판단 방식(예: 오늘·내일 버틸지 보기)을 그대로 쓰는 장면이며, 상황과 수치는 모두 만든 것입니다.</td></tr>
-              <tr><td><span class="badge b-unknown">인터뷰의 일부 요소만 쓴 장면</span></td><td>인터뷰에서 약사가 말한 요소 하나(예: 공급이 늦어질 수 있음)만 쓰고, 나머지 조건은 만든 것입니다.</td></tr>
-              <tr><td><span class="badge b-hyp">인터뷰에 없는 대조용 장면</span></td><td>비교를 위해 만든 장면입니다. 약사가 이런 경우를 말한 적은 없습니다.</td></tr>
-            </tbody>
-          </table></div>
-          <h3 style="margin-top:20px">연습용과 평가용</h3>
-          <p>지금 여섯 장은 모두 인터뷰가 다룬 요소(재고 확인, 현금 부담 등)로 만든 <b>연습용</b>입니다. AI가 인터뷰 내용을 그대로 따라 해도 맞힐 수 있어서, 재현도를 재는 데는 쓰지 않습니다. 재현도는 인터뷰에 없던 새 상황인 <b>평가용</b> 카드로 재야 하며, 아직 확정하지 않았습니다.</p>
-        </section>
-
-        <section id="g-read">
-          <h2>화면 읽는 법</h2>
-          <h3>표시</h3>
-          <p>값에는 <span class="badge b-interview">인터뷰</span> <span class="badge b-virtual">가상</span> <span class="badge b-unknown">미확인</span> <span class="badge b-hyp">가설</span> <span class="badge b-sample">예시</span> <span class="badge b-concept">개념</span> 중 하나가 붙습니다. 뜻은 홈 화면 아래에 있습니다. 색만으로 구분하지 않도록 글자가 항상 같이 있습니다.</p>
-          <h3>3D 장면</h3>
-          <ul>
-            <li><b>반투명 보라 상자</b>는 전산에 기록된 재고, <b>불투명 갈색 상자</b>는 실제 선반의 재고입니다.</li>
-            <li>실제 재고는 "실물 확인"을 누른 뒤나 결과를 재생할 때만 보입니다. 확인하기 전에는 약사도 AI도 모르는 값입니다.</li>
-            <li><b>초록 인물</b>은 약을 사 간 손님, <b>빨간 인물</b>은 재고가 없어 그냥 돌아간 손님입니다.</li>
-            <li><b>파란 인물</b>이 응답자 1인이고, 회색 반투명 인물은 다른 약사입니다. 다른 약사의 판단은 정하지 않습니다.</li>
-            <li><b>점선 층</b>(3층 판단실, 옥상 관제실)은 실제 건물에 없는 개념 층입니다.</li>
-            <li>물건을 누르면 설명과 근거가 나옵니다. 3D를 쓸 수 없으면 "장면 목록"에서 같은 내용을 글로 볼 수 있습니다.</li>
-          </ul>
-          <h3>3D 조작</h3>
-          <p>끌어서 회전, 휠이나 확대·축소 버튼으로 확대, 위쪽 버튼으로 약국·재고 선반·거리로 이동합니다. 3D 영역을 선택한 뒤 방향키로 회전하고 <kbd>+</kbd>, <kbd>-</kbd>로 확대할 수도 있습니다.</p>
-        </section>
-
-        <section id="g-steps">
-          <h2>5단계 따라 하기</h2>
-          <div class="tbl-wrap"><table class="tbl">
-            <thead><tr><th>단계</th><th>하는 일</th><th>남는 것</th></tr></thead>
-            <tbody>
-              <tr><td><b>1. 상황 고르기</b><br><span class="xs muted">시뮬레이터</span></td><td>상황 카드 하나를 고릅니다. 필요하면 조건 하나를 바꿔 봅니다. "약사와 AI가 보게 될 정보" 표가 두 쪽에 똑같이 주는 정보의 전부입니다.</td><td>정해진 상황</td></tr>
-              <tr><td><b>2. 판단 내리기</b><br><span class="xs muted">시뮬레이터</span></td><td>직접 판단하거나 예시 응답을 봅니다. 선반을 확인하고 싶으면 먼저 확인하고(기록이 남습니다), 주문량과 이유를 고릅니다.</td><td>조회 기록, 선택, 근거 번호</td></tr>
-              <tr><td><b>3. 결과 미리보기</b><br><span class="xs muted">시뮬레이터</span></td><td>선택을 적용해 사흘을 계산합니다. 같은 손님 수에서 보류·5팩·10팩을 나란히 놓고 봅니다. 참고용입니다.</td><td>비교표와 3D 재생</td></tr>
-              <tr><td><b>4. 약사 답과 비교</b><br><span class="xs muted">약사 답과 비교</span></td><td><b>약사 답을 먼저</b> 입력해 저장하면 AI 답이 열립니다. 첫 행동, 주문량, 우선 조건이 얼마나 겹치는지 기록합니다.</td><td>비교 기록, 근거 후보</td></tr>
-              <tr><td><b>5. 니즈 확인</b><br><span class="xs muted">니즈</span></td><td>인터뷰에서 약사가 직접 말한 어려움과 AX 여지를 봅니다. 해결책을 보여 주기 전에 어려움부터 확인합니다.</td><td>확인 상태</td></tr>
-            </tbody>
-          </table></div>
-        </section>
-
-        <section id="g-3day">
-          <h2>왜 사흘을 계산하나</h2>
-          <p>주문한 약은 하루나 이틀 뒤에 들어옵니다. 그래서 "지금 주문하지 않으면 그 사이 몇 명을 돌려보내는지"와 "많이 주문하면 들어온 뒤 얼마나 남는지"를 함께 보려면 최소 사흘이 필요합니다.</p>
-          <div class="callout warn">
-            <p><b>사흘 결과는 재현도를 재는 데 쓰지 않습니다.</b> 재현도는 같은 상황에서 약사와 AI가 <b>무엇을 골랐는지</b>만 비교합니다. 사흘 결과는 "이 선택이 어떤 무게를 갖는지" 이해하도록 돕는 참고 자료입니다. 약사에게 물을 때는 결과를 보여 주지 않습니다.</p>
+          <div>
+            <h3>시뮬레이션 <span class="xs muted">위쪽 토글</span></h3>
+            <ol>
+              <li><b>시나리오</b>를 고릅니다.</li>
+              <li><b>AI 판단</b>: 화면이 약사의 눈으로 바뀌고, AI가 본 것 → 먼저 한 행동 → 최종 판단이 차례로 재생됩니다.</li>
+              <li><b>약사 답 비교</b>: AI 답과 약사 답을 나란히 봅니다.</li>
+              <li><b>근거 결정</b>: 약사가 새로 한 말을 근거 후보로 올릴지 정합니다.</li>
+            </ol>
           </div>
-          <ul style="margin-top:12px">
-            <li>같은 행동이면 현금이 달라도 재고 결과는 같습니다. 이 계산은 후불이라 현금이 재고에 영향을 주지 않기 때문입니다. <b>현금이 선택을 바꾸는지는 약사와 AI의 답으로만 알 수 있습니다.</b></li>
-            <li><b>못 판 손님이 0명이라고 좋은 선택은 아닙니다.</b> 반품, 유효기간, 월 결제 부담은 계산에 없습니다. 인터뷰 약사는 이 부담 때문에 대량 주문을 꺼린다고 말했습니다.</li>
-          </ul>
-        </section>
+        </div>
+        <p class="small muted" style="margin:12px 0 0">3D는 끌어서 돌리고 휠로 확대합니다. 물건을 누르면 설명이 나옵니다. 왼쪽 위 <b>판단 품목</b>을 누르면 재고와 색 설명을 볼 수 있습니다.</p>
+      </section>
 
-        <section id="g-dont">
-          <h2>AI가 하면 안 되는 것</h2>
-          <p>AI를 연결하면 아래 14가지를 지키도록 설계합니다. G01~G07은 데이터에 들어 있는 주의 규칙입니다.</p>
-          <ol class="dont" id="dont-list"></ol>
-        </section>
-
-        <section id="g-human">
-          <h2>사람이 지킬 것</h2>
-          <ul>
-            <li>약사에게 <b>AI 답을 먼저 보여 주지 않습니다.</b> 약사 답을 먼저 받습니다.</li>
-            <li>후보에 없는 답도 받습니다. 오답으로 강제하지 않습니다.</li>
-            <li>약사 답을 근거로 추가하면 그 카드는 <b>연습용</b>이 됩니다. 재현도 확인에는 새 카드를 씁니다.</li>
-            <li>시뮬레이션 결과를 근거로 넣지 않습니다.</li>
-            <li>시간을 두고 같은 카드를 약사에게 다시 물어, 사람 쪽 일관성의 상한을 봅니다.</li>
-          </ul>
-        </section>
-
-        <section id="g-terms">
-          <h2>용어</h2>
-          <dl class="kv" style="grid-template-columns: 9em 1fr">
-            <dt>상황 카드</dt><dd>약사와 AI에게 똑같이 보여 주는 장면. 재고, 현금, 입고일 같은 조건으로 이루어집니다.</dd>
-            <dt>보이는 정보</dt><dd>약사와 AI가 판단에 쓸 수 있는 정보. 실제 재고(확인 전), 앞으로의 손님 수, 선택별 결과는 들어 있지 않습니다.</dd>
-            <dt>실물 확인</dt><dd>전산 기록이 아니라 선반을 직접 보는 행동. 확인하면 실제 재고가 공개되고 다시 판단합니다.</dd>
-            <dt>보류와 판단 유보</dt><dd><b>보류(0팩)</b>는 "주문하지 않기로 정함"이고, <b>판단 유보</b>는 "정보가 부족해 아직 정하지 않음"입니다.</dd>
-            <dt>후불 주문</dt><dd>지금 주문하고 대금은 나중(11/5)에 냅니다. 사흘 계산 안에서는 현금이 줄지 않습니다.</dd>
-            <dt>연습용 · 평가용</dt><dd>연습용은 인터뷰가 다룬 장면이라 재현도 측정에 쓰지 않습니다. 평가용은 인터뷰에 없던 새 장면입니다.</dd>
-            <dt>근거 후보</dt><dd>약사 답 중 인터뷰에 없던 내용. 팀이 검토한 뒤 원본 Excel에 추가해야 근거가 됩니다.</dd>
-            <dt>층 구조(B1, P0, P1, P2)</dt><dd>B1은 개인 근거 없는 일반 약사 AI, P0는 인터뷰 근거 추가, P1은 공공·민간 데이터를 장면에 추가, P2는 다른 약사 데이터 추가입니다. 섞지 않고 따로 비교합니다.</dd>
-          </dl>
-        </section>
-
-        <section id="g-faq" class="faq">
-          <h2>자주 묻는 질문</h2>
-          <details><summary>화면에 나오는 AI 답이 실제 AI인가요?</summary><p>아닙니다. 이 초안에는 모델 연결이 없습니다. "직접 판단"은 사용자가 AI 역할을 하는 것이고, "예시 응답"은 설명을 위해 미리 쓴 샘플입니다.</p></details>
-          <details><summary>못 판 손님이 0명이면 가장 좋은 선택인가요?</summary><p>아닙니다. 반품, 유효기간, 월 결제 부담은 계산에 들어 있지 않습니다. 그래서 결과 화면에 남은 재고 금액과 새 주문 금액을 같이 보여 줍니다.</p></details>
-          <details><summary>수치는 실제 약국의 값인가요?</summary><p>모두 계산을 위한 가정입니다. 품목, 수량, 단가, 현금, 입고일 어느 것도 실제 값이 아닙니다.</p></details>
-          <details><summary>왜 약사 답을 먼저 받나요?</summary><p>AI 답을 본 뒤의 답은 그 영향을 받습니다. 먼저 받아야 두 답을 따로 비교할 수 있습니다.</p></details>
-          <details><summary>다른 약사의 데이터를 왜 섞지 않나요?</summary><p>섞으면 인터뷰한 그 약사를 얼마나 닮았는지 평가할 수 없습니다. 별도 층(P2)으로 추가해서 기여를 따로 봅니다.</p></details>
-          <details><summary>입력한 내용은 어디에 저장되나요?</summary><p>이 브라우저에만 저장됩니다. 서버나 저장소에 올라가지 않고, 브라우저 데이터를 지우면 사라집니다. 비교 화면에서 파일로 내보낼 수 있습니다.</p></details>
-        </section>
-
-        <section id="g-limits">
-          <h2>알려진 한계</h2>
-          <ul>
-            <li>AI가 연결되어 있지 않습니다. 판단은 사용자가 직접 하거나 예시 응답으로 대신합니다.</li>
-            <li>평가용 카드가 아직 없습니다. 지금 카드는 모두 연습용입니다.</li>
-            <li>약 한 품목, 사흘의 작은 장면입니다. 여러 품목 사이의 예산 배분, 반품, 유효기간, 손님 수 변동은 계산하지 않습니다.</li>
-            <li>공공·민간 데이터(P1)와 다른 약사 데이터(P2)는 아직 연결하지 않았습니다.</li>
-            <li>재현의 통과 기준이 정해지지 않아, 비교 화면은 판정을 내리지 않고 기록만 보여 줍니다.</li>
-            <li>3D 장면은 설명용 모형입니다. 실제 약국의 배치나 크기가 아닙니다.</li>
-          </ul>
-        </section>
-      </div>
+      <section class="g-card faq" id="g-faq">
+        <h2>자주 묻는 질문</h2>
+        <details><summary>여기서 답을 직접 고를 수는 없나요?</summary><p>고르지 않습니다. 판단은 AI가 인터뷰를 근거로 하고, 기준이 되는 답은 실제 약사가 줍니다. 이 화면은 두 답을 비교하는 곳입니다.</p></details>
+        <details><summary>AI 답은 언제 만들어지나요?</summary><p>운영진이 시나리오와 인터뷰 근거를 AI에게 주고 미리 실행해 둔 결과입니다. 화면을 열 때마다 AI를 새로 부르지는 않습니다.</p></details>
+        <details><summary>하루 손님 100명은 어디서 나온 숫자인가요?</summary><p>인터뷰에서 약사가 "신규 약국 초기라면 하루 100건 정도로 잡아도 괜찮다"고 한 값입니다. 실제 평균은 아닙니다. 매출과 바로 연결되는 숫자라 정확한 값은 받지 않았습니다.</p></details>
+        <details><summary>독감 막대를 올리면 왜 손님이 늘어나나요?</summary><p>독감이 돌면 약국을 찾는 사람이 늘어난다고 보고 일정 비율로 늘렸습니다. 독감 수치는 실제 자료지만, 얼마나 늘어나는지는 정해진 자료가 없어 가정한 값입니다. 화면에 "가정"으로 표시됩니다.</p></details>
+        <details><summary>사흘 계산은 무엇인가요?</summary><p>주문한 약은 하루나 이틀 뒤에 들어옵니다. 그 사이 몇 명이 약을 못 사는지, 들어온 뒤 얼마나 남는지 보려고 사흘을 계산합니다. 참고용이고, AI와 약사 답을 비교할 때는 쓰지 않습니다.</p></details>
+        <details><summary>못 판 손님이 0명이면 좋은 선택인가요?</summary><p>그렇지 않습니다. 반품, 유효기간, 결제 부담은 계산에 없습니다. 인터뷰한 약사는 이런 부담 때문에 많이 사 두기를 꺼린다고 했습니다.</p></details>
+        <details><summary>근거에 추가한다는 건 무슨 뜻인가요?</summary><p>약사 답에서 인터뷰에 없던 판단 기준이 나오면, 운영진이 검토한 뒤 페르소나가 참고하는 자료에 넣습니다. AI 답은 넣지 않습니다.</p></details>
+        <details><summary>화면의 숫자는 실제 약국 값인가요?</summary><p>"공공" 표시가 붙은 값(공휴일, 독감, 날씨, 미세먼지, 주변 의원·약국 수)은 실제 자료입니다. 재고, 현금, 주문량, 시간대별 손님 분포는 가상입니다.</p></details>
+      </section>
     </div>
   </div>
 </section>
 
-<!-- ================= 시뮬레이터 (화면을 꽉 채우는 작업 공간) ================= -->
+<!-- ================= 시뮬레이터 ================= -->
 <section id="view-simulate" class="view" aria-labelledby="h-sim" hidden>
-  <div class="sim">
+  <div class="sim2" data-mode="basic">
     <div class="stage-col">
-      <div class="stage" id="stage" tabindex="0" role="group" aria-label="3D 약국 건물 장면. 방향키로 회전, 더하기와 빼기 키로 확대와 축소">
-        <div class="stage-tools">
-          <div class="tool-group" role="group" aria-label="보는 위치">
-            <button class="tool" type="button" data-view="overview">건물 전체</button>
-            <button class="tool" type="button" data-view="pharmacy">약국 안</button>
-            <button class="tool" type="button" data-view="pharmacist">약사 보기</button>
-            <button class="tool" type="button" data-view="stock">재고 선반</button>
-            <button class="tool" type="button" data-view="street">건물 앞 거리</button>
-            <button class="tool" type="button" data-view="judge">3층 판단실</button>
+      <div class="stage" id="stage" tabindex="0" role="group" aria-label="3D 약국 건물. 방향키로 회전, 더하기와 빼기 키로 확대">
+        <div class="st-top">
+          <details class="stock-dd" id="stock-dd">
+            <summary><svg width="16" height="16" aria-hidden="true"><use href="#i-box"/></svg>판단 품목 · 색 설명<svg class="chev" width="14" height="14" aria-hidden="true"><use href="#i-chev"/></svg></summary>
+            <div class="dd-body" id="dd-body"></div>
+          </details>
+          <div class="mode-seg" id="mode-seg" role="radiogroup" aria-label="보기 방식">
+            <label><input type="radio" name="simmode" value="basic" checked><span>기본 보기</span></label>
+            <label><input type="radio" name="simmode" value="sim"><span>시뮬레이션</span></label>
           </div>
-          <div class="tool-group" role="group" aria-label="확대와 표시">
-            <button class="tool" type="button" id="btn-zoom-in" aria-label="확대"><svg width="16" height="16" aria-hidden="true"><use href="#i-zoom-in"/></svg></button>
-            <button class="tool" type="button" id="btn-zoom-out" aria-label="축소"><svg width="16" height="16" aria-hidden="true"><use href="#i-zoom-out"/></svg></button>
-            <button class="tool" type="button" id="btn-labels" aria-pressed="true"><svg width="16" height="16" aria-hidden="true"><use href="#i-tag"/></svg>이름표</button>
-            <button class="tool" type="button" id="btn-engine" aria-pressed="false" title="계산용으로만 쓰는 숨은 값(확인 전 실제 재고)을 봅니다. 약사와 AI에게는 주지 않습니다."><svg width="16" height="16" aria-hidden="true"><use href="#i-eye"/></svg>숨은 값 보기</button>
-            <button class="tool" type="button" id="btn-objlist" aria-pressed="false" aria-controls="obj-card"><svg width="16" height="16" aria-hidden="true"><use href="#i-list"/></svg>장면 목록</button>
-            <button class="tool" type="button" id="btn-stagehelp" aria-pressed="false" aria-controls="stage-hint"><svg width="16" height="16" aria-hidden="true"><use href="#i-help"/></svg>보는 법</button>
-          </div>
-        </div>
-
-        <div class="stage-hint" id="stage-hint" hidden>
-          <h3>3D 장면 보는 법</h3>
-          <ul>
-            <li>2층 왼쪽이 약국, 오른쪽이 이비인후과, 1층이 정형외과입니다. 3층 판단실은 실제로는 없는 개념 층입니다.</li>
-            <li>약국 카운터 뒤 <b>재고 선반</b>에서 판단에 쓰는 약 한 품목을 보여 줍니다. 다른 진열 상품은 가상 데이터의 배치입니다.</li>
-            <li>판단을 마치면 아래 <b>재생</b>으로 사흘을 하루씩 봅니다. 손님은 재생할 때만 움직이고, 그날의 처방 건수·워크인 수(가상 데이터)를 따라 들어옵니다.</li>
-            <li>끌어서 돌리고, 휠로 확대합니다. 물건이나 인물을 누르면 설명이 나옵니다.</li>
-          </ul>
-          <button class="btn btn-sm" type="button" id="stage-hint-close">알겠습니다</button>
-        </div>
-
-        <div class="obj-card" id="obj-card" role="region" aria-label="장면 설명" hidden>
-          <button class="btn btn-ghost btn-sm icon-btn close" type="button" id="obj-close" aria-label="설명 닫기"><svg width="16" height="16" aria-hidden="true"><use href="#i-x"/></svg></button>
-          <div id="obj-detail" aria-live="polite"></div>
-          <div class="scene-list">
-            <p class="xs muted" style="margin:12px 0 6px">장면에 있는 것 (누르면 설명)</p>
-            <div class="objs" id="obj-list"></div>
-          </div>
-        </div>
-
-        <div class="obj-card profile-card" id="profile-card" role="region" aria-label="인터뷰 약사 프로필" hidden>
-          <button class="btn btn-ghost btn-sm icon-btn close" type="button" id="profile-close" aria-label="프로필 닫기"><svg width="16" height="16" aria-hidden="true"><use href="#i-x"/></svg></button>
-          <div id="profile-body"></div>
-        </div>
-
-        <section class="hud" id="hud" aria-labelledby="hud-title" hidden>
-          <header class="hud-head">
-            <div><span class="hud-kicker" id="hud-kicker">3층 판단실</span><h2 class="hud-title" id="hud-title">미션 고르기</h2></div>
-            <div class="hud-acts">
-              <button class="btn btn-ghost btn-sm" type="button" id="hud-fold" aria-expanded="true">접기</button>
-              <button class="btn btn-ghost btn-sm" type="button" id="hud-leave">건물로 나가기</button>
+          <div class="st-right">
+            <div class="tool-group" id="view-tools" role="group" aria-label="보는 위치와 확대">
+              <button class="tool" type="button" data-view="overview">건물</button>
+              <button class="tool" type="button" data-view="pharmacy">약국 안</button>
+              <button class="tool" type="button" data-view="street">거리</button>
+              <button class="tool icon" type="button" id="btn-zoom-in" aria-label="확대"><svg width="16" height="16" aria-hidden="true"><use href="#i-zoom-in"/></svg></button>
+              <button class="tool icon" type="button" id="btn-zoom-out" aria-label="축소"><svg width="16" height="16" aria-hidden="true"><use href="#i-zoom-out"/></svg></button>
+              <button class="tool" type="button" id="btn-labels" aria-pressed="true">이름표</button>
             </div>
-          </header>
-          <div id="panel"></div>
-        </section>
-        <button class="btn btn-sm hud-pill" type="button" id="hud-open" hidden>판단 창 열기</button>
+            <button class="tool" type="button" id="btn-sim-help">안내</button>
+          </div>
+        </div>
 
         <div class="fp-ui" id="fp-ui" hidden>
-          <span class="fp-tag"><svg width="14" height="14" aria-hidden="true"><use href="#i-eye"/></svg>약사 시점 · 1인칭</span>
-          <div class="seg" role="group" aria-label="보는 방향">
-            <button class="tool" type="button" data-look="front">카운터 전산 보기</button>
-            <button class="tool" type="button" data-look="shelf">재고 선반 보기</button>
-          </div>
-          <span class="fp-hint">끌어서 둘러보기</span>
+          <span class="fp-tag"><svg width="14" height="14" aria-hidden="true"><use href="#i-eye"/></svg>약사 시점</span>
+          <button class="tool" type="button" data-look="front" aria-pressed="true">카운터 전산</button>
+          <button class="tool" type="button" data-look="shelf" aria-pressed="false">재고 선반</button>
+        </div>
+        <div class="fp-caption" id="fp-caption" aria-live="polite" hidden></div>
+
+        <div class="obj-card" id="obj-card" role="region" aria-label="물건 설명" hidden>
+          <button class="btn btn-ghost btn-sm icon-btn close" type="button" id="obj-close" aria-label="설명 닫기"><svg width="16" height="16" aria-hidden="true"><use href="#i-x"/></svg></button>
+          <div id="obj-detail" aria-live="polite"></div>
         </div>
 
-        <div class="thoughts" id="thoughts" hidden aria-live="polite">
-          <div class="th-chips" id="th-chips"></div>
-          <div class="th-bubble" id="th-bubble"><span class="th-k" id="th-k"></span><b id="th-main"></b><p id="th-sub"></p>
-            <div class="th-nav"><button class="btn btn-ghost btn-sm" type="button" id="th-prev" aria-label="이전 생각">‹</button><span id="th-count"></span><button class="btn btn-ghost btn-sm" type="button" id="th-next" aria-label="다음 생각">›</button></div>
-            <i class="tail t1"></i><i class="tail t2"></i><i class="tail t3"></i>
-          </div>
-          <div class="th-plate" id="th-plate"></div>
+        <div class="basic-play" id="basic-play">
+          <button class="btn btn-primary btn-sm" type="button" id="btn-play"><svg width="16" height="16" aria-hidden="true"><use id="play-icon" href="#i-play"/></svg><span id="play-label">하루 재생</span></button>
+          <div class="seg small" id="speed-seg" role="radiogroup" aria-label="재생 속도"><label><input type="radio" name="speed" value="normal" checked><span>보통</span></label><label><input type="radio" name="speed" value="fast"><span>빠르게</span></label></div>
+          <span class="play-clock" id="play-clock" aria-live="off">재생 전</span>
+          <span class="play-count xs" id="play-count"></span>
         </div>
-
-        <div class="stage-legend" aria-hidden="true">
-          <b>재고 (이 품목)</b>
-          <span><i class="sw ghost"></i>전산 기록</span>
-          <span><i class="sw solid"></i>실제 선반</span>
-          <b>이 약을 찾은 손님</b>
-          <span><i class="sw" style="background:#5b8def"></i>사 감 (상자를 든 인물)</span>
-          <span><i class="sw" style="background:#9aa0a8;opacity:.45"></i>못 사고 감 (흐린 인물)</span>
-          <b>손님 흐름 · 옷 색 = 들어온 길</b>
-          <span><i class="sw" style="background:#0f9b8c"></i>같은 층 이비인후과</span>
-          <span><i class="sw" style="background:#d4881f"></i>1층 의원</span>
-          <span><i class="sw" style="background:#8b5cf6"></i>일반약 방문</span>
-          <span><i class="sw" style="background:#3b82f6"></i>문의만</span>
-          <b>나갈 때 발 아래 원 (가정)</b>
-          <span><i class="sw round" style="background:#2f8f4e"></i>만족</span>
-          <span><i class="sw round" style="background:#e0a100"></i>지연</span>
-          <span><i class="sw round" style="background:#d23b2a"></i>기다리다 이탈</span>
-          <span><i class="sw" style="background:#0f7f73"></i>응답자 약사 (초록 명찰)</span>
-        </div>
-        <p class="stage-status" id="stage-status" aria-live="polite">판단 시점 · 결과를 만들기 전입니다.</p>
-        <div class="stage-play" id="stage-play">
-          <button class="btn btn-sm icon-btn" type="button" id="btn-prev" aria-label="이전 날"><svg width="16" height="16" aria-hidden="true"><use href="#i-prev"/></svg></button>
-          <button class="btn btn-sm" type="button" id="btn-play"><svg width="16" height="16" aria-hidden="true"><use id="play-icon" href="#i-play"/></svg><span id="play-label">재생</span></button>
-          <button class="btn btn-sm icon-btn" type="button" id="btn-next" aria-label="다음 날"><svg width="16" height="16" aria-hidden="true"><use href="#i-next"/></svg></button>
-          <div class="daychips" id="daychips" role="group" aria-label="볼 시점 선택"></div>
-        </div>
-        <div class="stage-fallback" id="stage-fallback" hidden>이 환경에서는 3D 장면을 표시할 수 없습니다. "장면 목록"과 오른쪽 패널로 같은 내용을 확인할 수 있습니다.</div>
+        <div class="stage-fallback" id="stage-fallback" hidden>이 환경에서는 3D를 표시할 수 없습니다. 오른쪽 창의 내용은 그대로 볼 수 있습니다.</div>
       </div>
     </div>
-    <aside class="panel-col" aria-labelledby="h-sim">
-      <div class="brief" id="brief">
-        <h1 id="h-sim" tabindex="-1">시뮬레이터</h1>
-        <ol class="stepper compact" id="sim-stepper" aria-label="시뮬레이션 단계">
-          <li><button type="button" data-step="1"><span class="n">1</span>판단실</button></li>
-          <li><button type="button" data-step="2"><span class="n">2</span>약사 시점</button></li>
-          <li><button type="button" data-step="3"><span class="n">3</span>결과</button></li>
-        </ol>
-        <div id="brief-body"></div>
-      </div>
-    </aside>
+    <aside class="side" id="side" aria-labelledby="h-sim"></aside>
   </div>
 </section>
 
-<!-- ================= 약사 답과 비교 ================= -->
-<section id="view-validate" class="view" aria-labelledby="h-val" hidden>
-  <div class="container page-head">
-    <h1 id="h-val" tabindex="-1">약사 답과 비교</h1>
-    <p>같은 상황 카드에 대한 실제 약사의 답과 AI의 답을 나란히 놓습니다. 이 화면이 이 서비스의 목적인 "얼마나 닮았는가"를 기록하는 곳입니다.</p>
-    <div class="explain">
-      <div><b>1. 약사 답을 먼저 받습니다</b><p>약사에게 카드만 보여 주고 답을 받아 적습니다. AI 답을 먼저 보면 약사 답이 그 영향을 받기 때문에, 저장하기 전에는 AI 답이 잠겨 있습니다.</p></div>
-      <div><b>2. AI 답을 열어 비교합니다</b><p>첫 행동과 주문량은 자동으로 비교하고, 우선 조건처럼 글로 된 부분은 사람이 읽고 겹치는 정도를 고릅니다. 합격·불합격 판정은 내리지 않습니다.</p></div>
-      <div><b>3. 새 내용은 근거 후보로 남깁니다</b><p>약사가 인터뷰에서 하지 않은 말을 했다면 근거 후보로 표시해 파일로 내보냅니다. 팀이 검토해 원본 Excel에 넣어야 근거가 됩니다.</p></div>
+<!-- ================= 약사 프로필 ================= -->
+<section id="view-profile" class="view" aria-labelledby="h-pf" hidden>
+  <div class="container">
+    <div class="page-head">
+      <h1 id="h-pf" tabindex="-1">약사 프로필</h1>
+      <p>페르소나가 재현하려는 사람입니다. 인터뷰를 정리한 자료에서 핵심만 모았습니다.</p>
     </div>
+    <div id="profile-root"></div>
   </div>
-  <div class="container" id="validate-root"></div>
 </section>
 
 <!-- ================= 실행 기록 ================= -->
 <section id="view-runs" class="view" aria-labelledby="h-runs" hidden>
   <div class="container page-head">
     <h1 id="h-runs" tabindex="-1">실행 기록</h1>
-    <p>AI에게 상황 카드를 풀게 한 결과가 실행할 때마다 여기에 쌓입니다. 시뮬레이터는 가장 최근 실행만 보여 주고, 이 화면에서는 이전 실행까지 모두 열어 보고 비교할 수 있습니다.</p>
-    <div class="explain">
-      <div><b>쌓이기만 하고 자료는 바뀌지 않습니다</b><p>AI의 답은 사실이 아니어서 인터뷰 근거(claims)에 들어가지 않습니다. 이 화면은 파일을 읽기만 합니다.</p></div>
-      <div><b>연습과 평가용은 사람이 정합니다</b><p><code>runs/labels.json</code>에 실행 번호와 구분(practice 또는 eval)을 적고 <code>python scripts/run_persona.py --reindex</code>를 실행하면 목록에 반영됩니다. 표시하지 않은 실행은 "표시 없음"으로 보입니다.</p></div>
-      <div><b>조건이 다르면 비교가 아닙니다</b><p>모델이나 프롬프트, 인터뷰 근거 묶음이 다른 실행끼리 비교하면 화면이 먼저 경고합니다.</p></div>
-    </div>
+    <p>AI에게 시나리오를 풀게 한 결과가 실행할 때마다 쌓입니다. 시뮬레이터는 가장 최근 실행을 보여 주고, 여기서는 이전 실행까지 열어 보고 비교합니다.</p>
   </div>
   <div class="container" id="runs-root"></div>
 </section>
 
-<!-- ================= 인터뷰 근거 ================= -->
-<section id="view-evidence" class="view" aria-labelledby="h-ev" hidden>
+<!-- ================= 공공·가상 데이터 ================= -->
+<section id="view-data" class="view" aria-labelledby="h-data" hidden>
   <div class="container page-head">
-    <h1 id="h-ev" tabindex="-1">인터뷰 근거</h1>
-    <p>화면에 나오는 모든 근거 번호의 원문입니다. 인터뷰를 정리한 data/1_interview/ 의 CSV를 그대로 읽어 보여 주며, 이 화면에서 고칠 수는 없습니다.</p>
-    <div class="explain">
-      <div><b>발언 (E###)</b><p>인터뷰에서 약사가 한 말 한 토막과 그 요약입니다. 가장 기본이 되는 근거입니다.</p></div>
-      <div><b>규칙 (R##) · 사례 (I##)</b><p>규칙은 여러 발언에서 읽어 낸 판단 방식, 사례는 실제로 있었던 일입니다. 규칙에는 "읽을 때 주의"가 붙어 있습니다.</p></div>
-      <div><b>주의 규칙 (G##)</b><p>근거를 쓸 때 지켜야 할 규칙입니다. 예를 들어 과거 직장 이야기를 지금 약국의 판단으로 쓰지 않습니다.</p></div>
-    </div>
+    <h1 id="h-data" tabindex="-1">공공·가상 데이터</h1>
+    <p>시뮬레이션이 쓰는 데이터를 출처별로 모았습니다. 공공데이터는 실제로 받은 값, 가상데이터는 팀이 가정해서 만든 값입니다.</p>
   </div>
-  <div class="container" id="evidence-root"></div>
+  <div class="container" id="data-root"></div>
 </section>
 
 <!-- ================= 니즈 ================= -->
 <section id="view-needs" class="view" aria-labelledby="h-needs" hidden>
   <div class="container page-head">
     <h1 id="h-needs" tabindex="-1">니즈와 AX 여지</h1>
-    <p>"이런 상황이 있었고, 여기에 AX가 들어갈 여지가 있다"를 정리한 카드입니다. 판단 재현과는 별개이며, 시뮬레이션이 아니라 인터뷰에서 약사가 한 말로만 채웁니다.</p>
-    <div class="explain">
-      <div><b>카드 읽는 순서</b><p>상황 → 지금 하는 방식 → 어려움 → 근거 순서로 읽습니다. AX 여지는 맨 마지막이며 항상 가설입니다.</p></div>
-      <div><b>약사에게 확인하는 법</b><p>해결책을 먼저 보여 주지 않습니다. 어려움이 얼마나 자주, 얼마나 크게 생기는지 먼저 묻고, 그다음 도입 조건을 묻습니다.</p></div>
-      <div><b>확인 상태 기록</b><p>카드 아래에서 확인 상태와 약사가 한 말을 적습니다. 이 브라우저에만 저장됩니다.</p></div>
-    </div>
+    <p>인터뷰에서 약사가 말한 어려움과, 거기에 AX가 들어갈 여지를 가설로 정리했습니다. 상황 → 지금 하는 방식 → 어려움 → 근거 순서로 읽고, AX 여지는 마지막에 봅니다.</p>
   </div>
   <div class="container" id="needs-root"></div>
+</section>
+
+<!-- ================= 운영 메모 ================= -->
+<section id="view-ops" class="view" aria-labelledby="h-ops" hidden>
+  <div class="container">
+    <div class="page-head">
+      <h1 id="h-ops" tabindex="-1">운영 메모</h1>
+      <p>운영진용입니다. 전체 흐름, 아직 안 된 것, 나중에 헷갈리기 쉬운 결정과 그 이유를 모았습니다.</p>
+    </div>
+    <section class="ops-sec">
+      <h2>전체 흐름</h2>
+      <div class="dag-wrap">
+        <svg class="dag" viewBox="0 0 1100 430" role="img" aria-labelledby="dag-t dag-d">
+          <title id="dag-t">데이터와 판단의 흐름</title>
+          <desc id="dag-d">인터뷰 원본, 공공데이터, 가상 약국 기록, 약사 답이 각각 정리 파일이 되고, 시나리오와 AI 판단을 거쳐 시뮬레이터에서 비교된 뒤, 사람이 근거 추가를 결정하면 인터뷰 원본으로 돌아갑니다. AI 답은 근거로 돌아가지 않습니다.</desc>
+          <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="dag-ah"/></marker></defs>
+          <g class="dag-col"><text x="20" y="24">원천</text><text x="250" y="24">정리 파일</text><text x="480" y="24">시나리오</text><text x="690" y="24">판단</text><text x="900" y="24">화면과 결정</text></g>
+          <g class="dag-e">
+            <path d="M190 70H236"/><path d="M190 160H236"/><path d="M190 250H236"/><path d="M190 340H236"/>
+            <path d="M410 70C445 70 440 150 466 155"/><path d="M410 160H466"/><path d="M410 250C445 250 440 170 466 167"/>
+            <path d="M640 160H676"/>
+            <path d="M410 62C560 30 650 60 700 131" class="soft"/>
+            <path d="M850 160H886"/>
+            <path d="M410 170C600 225 800 205 886 182" class="soft"/>
+            <path d="M410 258C620 300 820 230 886 190" class="soft"/>
+            <path d="M410 345C640 350 800 245 886 197"/>
+            <path d="M975 200V296"/>
+            <path d="M975 350V398H8V70H16" class="loop"/>
+          </g>
+          <g class="dag-n">
+            <rect x="20" y="45" width="170" height="50" rx="10"/><text x="105" y="67">인터뷰 원본</text><text x="105" y="84" class="s">source/ Excel</text>
+            <rect x="20" y="135" width="170" height="50" rx="10" class="pub"/><text x="105" y="157">공공데이터</text><text x="105" y="174" class="s">API · 내려받은 파일</text>
+            <rect x="20" y="225" width="170" height="50" rx="10" class="virt"/><text x="105" y="247">가상 약국 기록</text><text x="105" y="264" class="s">팀 Excel</text>
+            <rect x="20" y="315" width="170" height="50" rx="10" class="ans"/><text x="105" y="337">약사 답</text><text x="105" y="354" class="s">운영진이 받아 전달</text>
+            <rect x="240" y="45" width="170" height="50" rx="10"/><text x="325" y="67">인터뷰 근거</text><text x="325" y="84" class="s">build.py → 1_interview</text>
+            <rect x="240" y="135" width="170" height="50" rx="10" class="pub"/><text x="325" y="157">공공 요약 한 파일</text><text x="325" y="174" class="s">build_public.py</text>
+            <rect x="240" y="225" width="170" height="50" rx="10" class="virt"/><text x="325" y="247">가상 표</text><text x="325" y="264" class="s">3_virtual</text>
+            <rect x="240" y="315" width="170" height="50" rx="10" class="ans"/><text x="325" y="337">약사 답 표</text><text x="325" y="354" class="s">5_validation</text>
+            <rect x="470" y="135" width="170" height="50" rx="10"/><text x="555" y="157">시나리오 6개</text><text x="555" y="174" class="s">4_bridge 카드·관측 문구</text>
+            <rect x="680" y="135" width="170" height="50" rx="10" class="ai"/><text x="765" y="157">AI 판단</text><text x="765" y="174" class="s">run_persona.py → runs/</text>
+            <rect x="890" y="135" width="170" height="65" rx="10"/><text x="975" y="157">시뮬레이터</text><text x="975" y="174" class="s">AI 흐름 · 약사 답 비교</text><text x="975" y="189" class="s">기본 보기: 손님 흐름</text>
+            <rect x="890" y="300" width="170" height="50" rx="10" class="hum"/><text x="975" y="322">근거 추가 결정</text><text x="975" y="339" class="s">사람이 검토</text>
+          </g>
+          <g class="dag-note"><text x="560" y="416">근거 추가는 약사 말만. 원본 Excel에 넣은 뒤 다시 빌드 (파란 점선)</text><text x="800" y="124">AI 답은 근거로 돌아가지 않음 (G04)</text><text x="560" y="46" class="faint">인터뷰 근거는 AI 판단에도 들어감</text></g>
+        </svg>
+      </div>
+    </section>
+    <div id="ops-root"></div>
+  </div>
 </section>
 
 </main>
@@ -484,7 +300,7 @@
 <footer class="site-footer">
   <div class="container">
     <p id="data-status">근거 데이터를 불러오는 중입니다…</p>
-    <p class="xs" style="margin:0">이 화면은 초안입니다. 화면은 AI를 직접 호출하지 않고 저장된 실행 결과만 읽습니다. 모든 수치는 가정입니다. 근거는 data/1_interview/ 의 CSV입니다.</p>
+    <p class="xs" style="margin:0">화면은 AI를 직접 부르지 않고 저장된 실행 결과만 읽습니다. 근거는 data/1_interview/, 공공 값은 data/2_world/derived/public_snapshot.csv 입니다.</p>
   </div>
 </footer>
 
@@ -493,15 +309,21 @@
   <div id="drawer-body"></div>
 </aside>
 
-<dialog id="onboard" aria-labelledby="ob-title">
-  <div class="dlg-body" id="ob-body"></div>
+<dialog id="sim-intro" aria-labelledby="intro-t">
+  <div class="dlg-body">
+    <p class="kicker">시뮬레이션</p>
+    <h2 id="intro-t">약사의 눈으로 시나리오를 봅니다</h2>
+    <ol class="intro-steps">
+      <li><b>시나리오 고르기</b><span>어느 날 아침의 약국 사정을 고릅니다.</span></li>
+      <li><b>AI 판단 따라가기</b><span>AI가 본 것, 먼저 한 행동, 최종 판단이 3D와 오른쪽 창에서 차례로 재생됩니다.</span></li>
+      <li><b>약사 답과 비교</b><span>같은 시나리오에 대한 약사 답을 나란히 봅니다.</span></li>
+      <li><b>근거 결정</b><span>약사가 새로 한 말을 근거 후보로 올릴지 정합니다.</span></li>
+    </ol>
+    <p class="small muted">판단은 AI가 인터뷰를 근거로 합니다. 여기서 답을 고르지 않습니다.</p>
+  </div>
   <div class="dlg-foot">
-    <div class="dots" id="ob-dots" aria-hidden="true"></div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn btn-ghost" type="button" id="ob-skip">건너뛰기</button>
-      <button class="btn" type="button" id="ob-prev">이전</button>
-      <button class="btn btn-primary" type="button" id="ob-next">다음</button>
-    </div>
+    <label class="check"><input type="checkbox" id="intro-off"><span class="small">다음부터 보지 않기</span></label>
+    <button class="btn btn-primary" type="button" id="intro-start">시작하기</button>
   </div>
 </dialog>
 

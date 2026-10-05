@@ -7,7 +7,7 @@
   "prices_per_million_usd": {
     "_example": { "input": 0, "output": 0, "cache_write": 0, "cache_read": 0, "batch_discount": 0.5 }
   },
-  "max_tokens": 900,
+  "max_tokens": 1500,
   "sync_concurrency": 4,
   "batch_poll_seconds": 20
 }

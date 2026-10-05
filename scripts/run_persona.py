@@ -284,6 +284,8 @@ def validate(step, layer, db, rnd):
     if a == "commit_choice" and step.get("qty_packs") not in (0, 5, 10):
         flags.append("invalid_qty")
     factors = step.get("factors") or []
+    if step.get("_malformed"):
+        flags.append("output_reshaped")
     fids = [i for f in factors for i in (f.get("ids") or [])]
     ids = list(dict.fromkeys((step.get("cited_ids") or []) + fids))
     unknown = [i for i in ids if i not in db["ids"] and i != "U001"]
@@ -315,8 +317,32 @@ def parse_message(msg):
     """tool_use 블록에서 입력을 꺼낸다. 없으면 None."""
     for b in msg.content:
         if getattr(b, "type", "") == "tool_use":
-            return dict(b.input)
+            return normalize(dict(b.input))
     return None
+
+
+def normalize(d):
+    """모델이 목록을 문자열로 보내는 경우가 있다. 값을 고치지 않고 형식만 펴고, 펴야 했다는 사실을 표시한다."""
+    bad = False
+    for k in ("factors", "cited_ids", "priorities", "missing_info"):
+        v = d.get(k)
+        if isinstance(v, str):
+            try:
+                d[k] = json.loads(v)
+            except ValueError:
+                d[k] = [v] if v.strip() else []
+            bad = True
+    fs = []
+    for f in d.get("factors") or []:
+        if isinstance(f, dict):
+            fs.append(f)
+        else:
+            fs.append({"factor": str(f), "source": "", "ids": []})
+            bad = True
+    d["factors"] = fs
+    if bad:
+        d["_malformed"] = True
+    return d
 
 
 def usage_of(msg):

@@ -60,8 +60,9 @@ export function constraints(c, qid) {
   ];
 }
 
-/** 선택 하나를 적용해 3일을 한 번 진행한다. 제약을 어기면 자르지 않고 오류를 돌려준다. */
-export function runBranch(c, qid) {
+/** 선택 하나를 적용해 3일을 한 번 진행한다. 제약을 어기면 자르지 않고 오류를 돌려준다.
+    demand: 날짜별 수요(팩). 기본은 카드 가정값 [5,5,5] 이고, 팀 검증표도 이 값으로 맞춘다. */
+export function runBranch(c, qid, demand = DEMAND) {
   const opt = OPTIONS.find((o) => o.id === qid);
   if (!opt) return { error: '알 수 없는 선택지입니다.' };
   const failed = constraints(c, qid).filter((x) => !x.pass);
@@ -94,11 +95,11 @@ export function runBranch(c, qid) {
       ledger.push({ date, event: '입고 · 매입채무 인식', packs: o.packs, amountKrw: o.packs * o.unitCost, due: o.due });
     });
     const available = opening + delivered;
-    const demand = DEMAND[i];
-    const fulfilled = Math.min(available, demand);
-    const unmet = demand - fulfilled;
+    const want = demand[i] ?? DEMAND[i];
+    const fulfilled = Math.min(available, want);
+    const unmet = want - fulfilled;
     stock = available - fulfilled;
-    return { i: i + 1, date, opening, received: delivered, demand, fulfilled, unmet, closing: stock };
+    return { i: i + 1, date, opening, received: delivered, demand: want, fulfilled, unmet, closing: stock };
   });
   const sum = (arr) => arr.reduce((a, b) => a + b, 0);
   return {
@@ -115,6 +116,6 @@ export function runBranch(c, qid) {
   };
 }
 
-export function runAll(c) {
-  return OPTIONS.map((o) => runBranch(c, o.id));
+export function runAll(c, demand = DEMAND) {
+  return OPTIONS.map((o) => runBranch(c, o.id, demand));
 }

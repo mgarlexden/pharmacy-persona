@@ -78,3 +78,22 @@ python scripts/fetch.py --only DT_L25,DT_L33 --lat 위도 --lon 경도 --radius 
 - 목록과 호출 방법의 원본은 `data/2_world/data_sources.csv` 입니다. 현재 3건만 자동으로 받고, 나머지 API 32건은 요청 변수를 확인한 뒤 `scripts/fetch.py` 의 `REGISTRY` 에 추가합니다.
 - 받은 값은 `fetched/<data_id>.csv` 에 응답 항목 그대로 저장되고, 행마다 출처·받은 시각·요청 조건이 붙습니다. `fetched/manifest.csv` 에 목록이 정리됩니다. `fetched/` 는 저장소에 올리지 않습니다.
 - 약국의 좌표는 저장소에 적지 않고 실행할 때 넘깁니다.
+
+## 공공·가상 데이터 탭
+
+- 화면: `#/data` (js/datapage.js). 저장된 CSV만 읽는다.
+- 공공: `data/2_world/derived/public_snapshot.csv`. `python scripts/build_public.py`가 API 응답(`fetched/public/`, git 무시)과 내려받은 파일(`fetched/public_files/`)에서 필요한 값만 뽑아 만든다. 새로 받으려면 `--refresh`.
+- 가상: `data/3_virtual/` (virtual_params.csv, field_defs.csv, tables/).
+- 공공 값은 아직 시뮬레이터·3D에 연결하지 않았다. 연결 상태는 이 탭의 "한눈에"에 변수별로 정리돼 있다(`LINKS`).
+- 개별 의원·약국 이름과 좌표는 요약 파일에 넣지 않는다(저장소 공개).
+
+## 화면 구성 (2026-10-06 개편)
+
+- 탭: 홈(5단계) · 사용 가이드 · 시뮬레이터 · 약사 프로필 · 실행 기록 · 공공·가상 데이터 · 니즈 · 운영 메모. 옛 "약사 답과 비교"(#/validate)는 시뮬레이터로, "인터뷰 근거"(#/evidence)는 약사 프로필로 넘어간다.
+- 시뮬레이터 (js/sim.js)
+  - 기본 보기: 1~2층 건물. 날짜(9·10월)·독감·기온·비를 바꾸면 하루 손님 수가 바뀌고(js/demand.js), "하루 재생"으로 3D에서 손님이 띄엄띄엄 들어온다(하루 90초, 인물 1명 = 손님 2명).
+  - 시뮬레이션: 약사 시점(1인칭). 시나리오 → AI 판단(runs/latest.json 의 P1 답을 3D와 오른쪽 창에서 차례로 재생) → 약사 답 비교(data/5_validation/pharmacist_answers.csv) → 근거 결정(브라우저 저장, 운영 메모 탭에서 CSV 로 내보냄).
+  - 화면에서 답을 고르지 않는다. 약사 답은 운영진이 파일에 넣는다.
+- 손님 수 모형 (js/demand.js): 기준 하루 100건(인터뷰 가정 허용값) × 계절(공공) × 독감(공공 값, 반응 0.4 가정) × 기온(공공 값, 1℃당 1.2% 가정) × 연휴 다음 날(+20% 가정). 시간대 분포·처방 비율은 가상 데이터, 같은 건물 이비인후과 진료시간은 공공(팀 정리본). 계수는 K 에서 고친다.
+- 3층(개념 판단실)은 없앴다. 실제 3층은 치과다.
+- 시나리오의 "감기·독감", "주변 의원" 줄은 공공 값으로 바꿨다(data/4_bridge/card_variables.csv). 바꾼 뒤 AI 를 다시 돌렸다.

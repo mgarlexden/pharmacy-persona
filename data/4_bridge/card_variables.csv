@@ -1,11 +1,11 @@
-card_id,line_order,obs_label_ko,obs_text_ko,show_when,variable_ids,layer,source_kind,data_ids,note_ko
+﻿card_id,line_order,obs_label_ko,obs_text_ko,show_when,variable_ids,layer,source_kind,data_ids,note_ko
 *,10,언제,"{date:D0} 아침 8시 50분, 문 열기 전",always,,base,가정,,판단 시각. 장면 설정이라 변수가 아니다
-*,20,그날 사정,"{date:D0}(화)은 연휴 다음 첫 영업일이다(전날 개천절 대체공휴일). {date:D2}(목)은 다음 날 한글날 휴무 전 마지막 영업일이다.",always,X001,scene,공휴일(공공) · 가상 달력,DT_L17,공휴일 이름은 실제 달력. 연휴 전후 표시는 calendar.csv
-*,30,감기·독감,"독감 의사환자 분율 1,000명당 31명 안팎 (같은 해 범위 4.8~62)",always,X005,scene,가상 달력,DT_L11,calendar.csv 의 influenza_ili_per_1000 (10/6~10/8: 31.1~31.5). 가상값
-*,40,주변 의원,1층 정형외과와 같은 층 이비인후과 모두 정상 진료,always,X002,scene,가상 달력,DT_L35,calendar.csv 의 ent_closed=N. 인근 기존 이비인후과(X003)는 값이 없어 넣지 않는다
+*,20,그날 사정,{date:D0}(화)은 연휴 다음 첫 영업일이다(전날 개천절 대체공휴일). {date:D2}(목)은 다음 날 한글날 휴무 전 마지막 영업일이다.,always,X001,scene,공휴일(공공) · 가상 달력,DT_L17,공휴일 이름은 실제 달력. 연휴 전후 표시는 calendar.csv
+*,30,감기·독감,"경기도 인플루엔자 의사환자분율은 가장 최근 집계(39주) 외래 1,000명당 32.1명이다. 이번 절기 유행기준은 12.9명이고, 9/11에 유행주의보가 발령됐다",always,X005,scene,공공,DT_L11,"질병관리청 감염병포털 표본감시(경기, 2026-27 절기 36~39주: 24.2·28.4·33.1·32.1). 유행기준·주의보 발령일은 data_sources.csv DT_L11 비고. public_snapshot.csv"
+*,40,주변 의원,오늘(화) 같은 층 이비인후과는 오후 2시부터 진료한다(화요일 오전 휴진). 1층 정형외과는 진료시간이 확인되지 않았다,always,X002,scene,공공 · 팀 정리본,DT_L35,"같은 건물 이비인후과 진료시간(월·수·목·금 09–19, 화 14–19, 토 09–14, 일·공휴일 09–13, 공식 홈페이지 확인). 팀 정리본 → public_snapshot.csv. 임시 휴진은 반영 안 됨"
 *,50,어떤 약,"가상 발주판단용 단일 품목, 팩 단위",always,S005,base,가정,,
-*,60,남은 재고,"전산 기록 {n:book}팩 ({n:ageH}시간 전 기록). 실제 선반 재고는 아직 확인하지 않았다.",unchecked,S001;C014,base,가정,DT_L48,
-*,60,남은 재고,"전산 기록 {n:book}팩 ({n:ageH}시간 전 기록). 선반을 확인했고 실제로는 {n:physical}팩이다.",checked,S001;S002;S004,base,가정,DT_L48,선반 확인 뒤에만 실물 재고를 공개한다
+*,60,남은 재고,전산 기록 {n:book}팩 ({n:ageH}시간 전 기록). 실제 선반 재고는 아직 확인하지 않았다.,unchecked,S001;C014,base,가정,DT_L48,
+*,60,남은 재고,전산 기록 {n:book}팩 ({n:ageH}시간 전 기록). 선반을 확인했고 실제로는 {n:physical}팩이다.,checked,S001;S002;S004,base,가정,DT_L48,선반 확인 뒤에만 실물 재고를 공개한다
 *,70,최근 판매량,사흘 내내 하루 5팩,always,S007,base,가정,DT_L47,
 *,80,통장 잔액,{won:cash} (판단할 때 참고하는 사정이며 약국 전체 현금이 아니다),always,S011;C001,base,가정,DT_L49,
 *,90,외상 주문 한도,{won:LIMIT} (통장 잔액과 별개로 이번에 후불로 더 주문할 수 있는 금액),always,C001;C002,base,가정,DT_L50,

@@ -1,5 +1,5 @@
 // 약국 건물 3D 디자인 (Three.js r128 전역 THREE).
-// 팀원 목업(floor12 브랜치 prototype/building_mock.html)의 1~3층 건물, 인물, 손님 흐름을 옮겨 왔다.
+// 팀원 목업(floor12 브랜치 prototype/building_mock.html)의 건물(1~2층), 인물, 손님 흐름을 옮겨 왔다.
 // 시뮬레이터(app/js/app.js)는 createScene() 이 돌려주는 인터페이스로만 이 파일을 쓴다. 디자인을 고칠 때 시뮬레이션 코드를 건드릴 필요가 없다.
 //
 // 지킬 것
@@ -19,7 +19,6 @@ const { W, D, FH } = DIM;
 const FLOORS = [
   { id: '1F', slab: 0xcfc8b8, wall: 0xe9e3d4 },
   { id: '2F', slab: 0xcfc8b8, wall: 0xf0ebdd },
-  { id: '3F', slab: 0xc3c9d8, wall: 0xe3e7f1, concept: true },
 ];
 // 약국 내부 배치 (2층 왼쪽, x -7 ~ -0.5). 진열 구역은 L56(가상)의 구역 이름과 맞춘다.
 export const PHARMACY = {
@@ -68,24 +67,22 @@ const AGE = {
 };
 const UMB = [0xd23b2a, 0x2f6fb5, 0xe0a100, 0x3a3f47, 0x2f8f4e];
 const SKIN = 0xe8c9a0;
-const DAY_MS = 12000; // 재생할 때 하루(09~19시)를 보여 주는 시간
+const DAY_MS = 90000; // 재생할 때 하루(09~19시)를 보여 주는 시간. 손님이 띄엄띄엄 오도록 길게 둔다 (setSpeed 로 바꾼다)
 const OPEN_MIN = 540, CLOSE_MIN = 1140;
 
 export const VIEWS = {
-  overview: { t: [0, 4.4, 1.5], r: 31, th: 0.58, ph: 1.16 },
+  overview: { t: [0, 3.2, 1.5], r: 27, th: 0.58, ph: 1.12 },
   pharmacy: { t: [-3.6, FH + 1.1, 0.4], r: 13, th: 0.32, ph: 1.1 },
   stock: { t: [-1.95, FH + 1.1, -3.2], r: 7, th: 0.18, ph: 0.98 },
   pharmacist: { t: [-4.9, FH + 1.5, -1.9], r: 9.5, th: 0.32, ph: 1.24 },
   street: { t: [-2, 1.6, 8.5], r: 23, th: -0.5, ph: 1.22 },
-  judge: { t: [0, 2 * FH + 1.3, 0.5], r: 17, th: 0.45, ph: 1.1 },
-  // 오른쪽에 판단 창이 열려 있을 때: 건물이 화면 왼쪽에 오도록 시선을 오른쪽으로 민다
-  overviewSide: { t: [4.2, 4.4, 1.5], r: 32, th: 0.58, ph: 1.16 },
-  judgeSide: { t: [3.6, 2 * FH + 0.9, 0.8], r: 21, th: 0.42, ph: 1.0 },
+  // 오른쪽 창이 넓을 때: 건물이 화면 왼쪽에 오도록 시선을 오른쪽으로 민다
+  overviewSide: { t: [3.6, 3.2, 1.5], r: 28, th: 0.58, ph: 1.12 },
 };
 // 1인칭(약사 시점) 프리셋: 카운터 뒤에 선 눈높이. yaw 0 = 입구(+z) 쪽, pitch 음수 = 아래
 export const FPV = {
-  front: { eye: [-2.95, FH + 1.68, -2.25], yaw: 0.06, pitch: -0.1, label: '카운터 전산' },
-  shelf: { eye: [-2.3, FH + 1.55, -1.75], yaw: 2.94, pitch: -0.3, label: '재고 선반' },
+  front: { eye: [-3.1, FH + 1.78, -2.95], yaw: 0.1, pitch: -0.16, label: '카운터 전산' },
+  shelf: { eye: [-2.15, FH + 1.7, -1.15], yaw: 2.98, pitch: -0.34, label: '재고 선반' },
 };
 // 라벨 위치 (app 의 SCENE_LABELS 키와 맞춘다)
 const ANCHORS = {
@@ -94,7 +91,6 @@ const ANCHORS = {
   ortho: [3.6, 2.85, D / 2 + 0.2],
   persona: [PHARMACY.phA.x, FH + 2.75, PHARMACY.phA.z],
   stock: [PHARMACY.rack.x, FH + 2.35, PHARMACY.rack.z],
-  judge: [0, 2 * FH + 2.95, D / 2 + 0.2],
   across: [-15.5, 6.2, 2.9],
   goods: [-6.2, FH + 2.5, 1.2],
 };
@@ -170,10 +166,10 @@ export function createScene(container, opts = {}) {
     const c = new T.Mesh(new T.ConeGeometry(0.9, 2.1, 7), mat(0x4f8a52)); c.position.y = 2; c.castShadow = true; t.add(c);
   }
 
-  /* ---- 건물 골격 (1~3층) */
+  /* ---- 건물 골격 (1~2층) */
   const bldg = new T.Group(); scene.add(bldg);
   const FG = [];
-  const conceptMats = new Set(); // 3층(개념 층) 재질. 판단실에 들어가면 진하게 한다
+  const conceptMats = new Set(); // 개념 층 재질 (지금은 없음)
   const glassMat = new T.MeshStandardMaterial({ color: 0x9ec5d8, transparent: true, opacity: 0.1, roughness: 0.1, side: T.DoubleSide, depthWrite: false });
   FLOORS.forEach((f, i) => {
     const g = new T.Group(); g.position.y = i * FH; bldg.add(g); FG.push(g);
@@ -188,7 +184,7 @@ export function createScene(container, opts = {}) {
     const gl = new T.Mesh(new T.PlaneGeometry(W, FH - 0.25), glassMat); gl.position.set(0, 0.25 + (FH - 0.25) / 2, D / 2); gl.raycast = () => {}; g.add(gl);
   });
   // 지붕: 반투명이라 위에서 내려다볼 때 안이 보인다
-  box(bldg, W + 0.8, 0.18, D + 0.8, 0xb9bec6, 0, 3 * FH, 0, { mo: { transparent: true, opacity: 0.22, depthWrite: false }, noShadow: true });
+  box(bldg, W + 0.8, 0.18, D + 0.8, 0xb9bec6, 0, FLOORS.length * FH, 0, { mo: { transparent: true, opacity: 0.22, depthWrite: false }, noShadow: true });
 
   /* ---- 1층: 로비 + 정형외과 */
   {
@@ -335,17 +331,6 @@ export function createScene(container, opts = {}) {
     });
   });
 
-  /* ---- 3층: 판단실 (개념 층, 기능은 오른쪽 패널) */
-  {
-    const g = FG[2];
-    const gh = { mo: { transparent: true, opacity: 0.3, depthWrite: false }, noShadow: true };
-    reg(box(g, 6.6, 0.12, 2.2, 0xa6794a, 0, 0.75, 0.6, gh), 'judge');
-    for (const x of [-3, 3]) for (const z of [-0.3, 1.5]) box(g, 0.12, 0.75, 0.12, 0x6b4a2a, x, 0.25, z, gh);
-    for (let k = 0; k < 4; k++) box(g, 0.6, 0.5, 0.6, 0x59636f, -3.2 + k * 2.1, 0.25, 3, gh);
-    reg(box(g, 9.2, 2.2, 0.12, 0x11161b, 0, 0.6, -3.75, gh), 'judge');
-    g.children.forEach((m) => { if (m.material && m.material.transparent) conceptMats.add(m.material); });
-  }
-
   /* ---- 주변 건물·트럭·날씨 */
   const exg = new T.Group(); exg.position.set(-15.5, 0, -0.5); scene.add(exg);
   reg(box(exg, 6, 5.4, 6.4, 0xd7cfbf, 0, 0, 0), 'across');
@@ -410,17 +395,19 @@ export function createScene(container, opts = {}) {
   }
   const qPos = (k) => V(-1.9 + Math.floor(k / 5) * 0.5, (k % 5) * 0.4, 1);
 
-  const F = { date: null, day: null, min: OPEN_MIN, running: false, agents: [], queue: [], out: [0, 0, 0], spawned: 0, env: { rain: false, dust: null } };
-  const SIM_MIN_PER_MS = (CLOSE_MIN - OPEN_MIN) / DAY_MS; // 재생 1초 = 50분
+  const F = { date: null, day: null, demand: null, perFigure: ASSUME.personsPerFigure, min: OPEN_MIN, running: false, agents: [], queue: [], out: [0, 0, 0], spawned: 0, env: { rain: false, dust: null } };
+  let dayMs = DAY_MS;
+  let SIM_MIN_PER_MS = (CLOSE_MIN - OPEN_MIN) / dayMs; // 하루 90초면 재생 1초 = 약 7분
   const WALK_UNITS_PER_S = 5.5; // 시간을 압축한 연출이라 실제 걸음보다 빠르다
   const maskProb = () => {
-    const ili = F.day ? F.day.ili : 0;
+    const ili = F.demand ? F.demand.ili : F.day ? F.day.ili : 0;
     let p = ili >= 15 ? Math.min(0.8, ili / 60) : 0.05; // 독감 지수 비례 (가정)
     if (dustOn()) p = Math.max(p, 0.6); // 미세먼지 나쁨 (가정)
     return p;
   };
   const dustOn = () => (F.env.dust != null ? F.env.dust : false);
   function rates(h) {
+    if (F.demand) { const x = F.demand.hours[h - 9]; return x && x.open ? { oth: x.oth, ent: x.ent, walk: x.walk, inq: x.inq } : {}; }
     const d = F.day; if (!d || !d.open) return {};
     const i = h - 9; if (i < 0 || i >= 10) return {};
     const hoursOpen = Math.max(1, d.openHours || 10);
@@ -477,11 +464,11 @@ export function createScene(container, opts = {}) {
     [a.g, a.guard].forEach((g) => { if (g && g.userData.umb) g.userData.umb.visible = show; });
   }
   function tickFlow(dtMs) {
-    if (!F.running || !F.day) return;
+    if (!F.running || !(F.demand || F.day)) return;
     const dMin = dtMs * SIM_MIN_PER_MS;
-    if (F.min < CLOSE_MIN && F.day.open) {
+    if (F.min < CLOSE_MIN && (F.demand ? F.demand.open : F.day.open)) {
       const h = Math.floor(F.min / 60), r = rates(h);
-      for (const k in r) if (Math.random() < (r[k] / 60 / ASSUME.personsPerFigure) * dMin) spawn(k);
+      for (const k in r) if (Math.random() < (r[k] / 60 / F.perFigure) * dMin) spawn(k);
     }
     F.min = Math.min(CLOSE_MIN + 120, F.min + dMin);
     const step = (dtMs / 1000) * WALK_UNITS_PER_S;
@@ -510,7 +497,7 @@ export function createScene(container, opts = {}) {
   const labelLayer = document.createElement('div');
   labelLayer.className = 'scene-labels'; labelLayer.setAttribute('aria-hidden', 'true');
   container.appendChild(labelLayer);
-  const labels = (opts.labels || []).map((l) => {
+  const labels = (opts.labels || []).filter((l) => ANCHORS[l.key] || l.at).map((l) => {
     const el = document.createElement('span');
     el.className = `scene-label ${l.cls || ''}${l.action ? ' action' : ''}`; el.textContent = l.text; labelLayer.appendChild(el);
     if (l.action) { el.style.pointerEvents = 'auto'; el.style.cursor = 'pointer'; el.addEventListener('click', () => pickHandler && pickHandler(l.key)); }
@@ -538,8 +525,10 @@ export function createScene(container, opts = {}) {
       wantPos.copy(FP.eye);
       wantLook.set(Math.sin(FP.yaw) * Math.cos(FP.pitch), Math.sin(FP.pitch), Math.cos(FP.yaw) * Math.cos(FP.pitch)).add(FP.eye);
     } else {
+      // 화면이 가로로 좁을수록 뒤로 물러나 건물 좌우가 잘리지 않게 한다 (기준 비율 1.9)
+      const r = cur.r * clamp(1.9 / camera.aspect, 1, 2.2);
       const s = Math.sin(cur.ph);
-      wantPos.set(cur.t.x + cur.r * s * Math.sin(cur.th), cur.t.y + cur.r * Math.cos(cur.ph), cur.t.z + cur.r * s * Math.cos(cur.th));
+      wantPos.set(cur.t.x + r * s * Math.sin(cur.th), cur.t.y + r * Math.cos(cur.ph), cur.t.z + r * s * Math.cos(cur.th));
       wantLook.copy(cur.t);
     }
     if (!camReady || blend <= 0 || reduceMotion()) { camPos.copy(wantPos); camLook.copy(wantLook); camReady = true; blend = 0; }
@@ -552,7 +541,14 @@ export function createScene(container, opts = {}) {
   let pickHandler = null, visible = true, running = true, dark = false;
   const ctrl = {
     VIEWS,
-    dayMs: DAY_MS,
+    get dayMs() { return dayMs; },
+    /** 재생 속도: 하루(09~19시)를 몇 ms 로 보여 줄지 */
+    setSpeed(ms) { dayMs = Math.max(5000, ms); SIM_MIN_PER_MS = (CLOSE_MIN - OPEN_MIN) / dayMs; },
+    /** 앱이 계산한 시간대별 손님 수(손님/시간)로 흐름을 만든다. null 이면 가상 데이터(calendar·rx_daily·otc_hourly)를 쓴다.
+        d: { hours: [{oth, ent, walk, inq, open} × 10 (09~18시)], open, ili, perFigure } */
+    setDemand(d) { F.demand = d || null; if (d && d.perFigure) F.perFigure = d.perFigure; else if (!d) F.perFigure = ASSUME.personsPerFigure; },
+    /** 시계를 09시로 돌리고 손님을 비운다 */
+    resetDay() { clearAgents(); F.min = OPEN_MIN; },
     flyTo(name) { const v = VIEWS[name]; if (!v) return; if (FP.on) { FP.on = false; blend = 1; } apply(goal, v); lastInput = performance.now(); if (reduceMotion()) apply(cur, v); },
     /** 약사 시점(1인칭). name: 'front' | 'shelf' */
     firstPerson(name = 'front') {
@@ -614,7 +610,7 @@ export function createScene(container, opts = {}) {
     },
     flowInfo() {
       const c = {}; F.agents.forEach((a) => { c[a.type] = (c[a.type] || 0) + 1; });
-      return { date: F.date, clock: F.min, running: F.running, onScreen: F.agents.length, byRoute: c, outcomes: F.out.slice(), spawned: F.spawned, perFigure: ASSUME.personsPerFigure, day: F.day };
+      return { date: F.date, clock: F.min, closed: F.min >= CLOSE_MIN, running: F.running, onScreen: F.agents.length, byRoute: c, outcomes: F.out.slice(), spawned: F.spawned, perFigure: F.perFigure, day: F.day, demand: F.demand };
     },
     onPick(fn) { pickHandler = fn; },
     setVisible(v) { visible = v; if (v) resize(); },
