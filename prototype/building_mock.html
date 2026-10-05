@@ -133,6 +133,24 @@ ul.plain li{margin:2px 0}
 #f12Sel h3{margin:0 0 4px;font-size:15px}
 #f12Sel p{margin:0 0 8px;color:var(--muted);font-size:13px}
 .f12-note{border:1px solid var(--warn);border-radius:6px;padding:8px 10px;font-size:12px;margin-bottom:14px}
+.f12-big{font-size:28px;font-weight:600;letter-spacing:-.02em;line-height:1.1}
+.f12-delta{font-size:13px;margin-top:2px;color:var(--muted)}
+.f12-delta.up{color:var(--good)}
+.f12-delta.down{color:var(--bad)}
+.f12-trend{display:flex;gap:2px;align-items:flex-end;height:70px;margin-top:4px}
+.f12-trend div{flex:1;background:var(--line);border-radius:2px 2px 0 0;min-height:2px;cursor:pointer;position:relative}
+.f12-trend div.now{background:var(--accent)}
+.f12-trend div.cl{background:none;border-bottom:2px dotted var(--muted)}
+.f12-trend span{position:absolute;bottom:-16px;left:-4px;right:-4px;text-align:center;font-size:9px;color:var(--muted)}
+.f12-cal .f12-mrow{display:flex;gap:1px;align-items:center;margin-bottom:2px}
+.f12-cal .f12-mrow b{width:26px;font-size:10px;color:var(--muted);font-weight:400}
+.f12-cal .f12-mrow i{flex:1;aspect-ratio:1;border-radius:2px;background:var(--accent);cursor:pointer;min-width:0}
+.f12-cal .f12-mrow i.cl{background:none;border:1px dotted var(--line);cursor:pointer}
+.f12-cal .f12-mrow i.no{visibility:hidden}
+.f12-cal .f12-mrow i.ev{outline:1.5px solid var(--bad);outline-offset:-1px}
+.f12-cal .f12-mrow i.sel{outline:2px solid var(--fg);outline-offset:0}
+.f12-mbar{display:grid;grid-template-columns:30px 1fr 70px;gap:6px;align-items:center;font-size:11px;margin-bottom:3px}
+.f12-mbar div{height:8px;background:var(--accent);border-radius:2px}
 .f12-ctl{display:none;border-top:1px solid var(--line);background:var(--panel);padding:10px 16px}
 .f12-ctl h2{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 6px;font-weight:600}
 .f12-row{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-top:6px}
@@ -205,7 +223,7 @@ ul.plain li{margin:2px 0}
               <div class="f12-stat"><b id="f12SStock">–</b><span id="f12SStockL">판콜에스 재고</span></div>
               <div class="f12-stat"><b id="f12SRho">–</b><span id="f12SRhoL">이 시간대 혼잡도</span></div>
             </div>
-            <p class="mut" style="margin:8px 0 0;font-size:11px">판콜에스 재고는 선택한 날짜 값입니다(가상데이터). 손님 인원·대기·혼잡도는 인물 이식 단계에서 연결합니다.</p>
+            <p class="mut" style="margin:8px 0 0;font-size:11px">판콜에스 재고는 선택한 날짜 값입니다(가상데이터). 손님 인원·대기·혼잡도는 재생 중인 장면에서 실시간으로 집계합니다.</p>
           </section>
           <section>
             <h2>유입 경로별 옷 색 (화면에 있는 수)</h2>
@@ -222,16 +240,11 @@ ul.plain li{margin:2px 0}
             <p class="mut" style="margin:0;font-size:12px">약국을 나가는 손님은 발밑 원과 머리 위 점의 색으로 결과를 표시합니다. 초록은 10분 안에 받은 만족 이용, 노랑은 10분 넘게 기다린 지연 이용, 빨강은 기다리다 그냥 나간 이탈입니다. 이탈 기준(처방 25분, 일반약·문의 12분)은 데이터가 없어 가정값입니다.</p>
             <p class="mut" style="margin:6px 0 0;font-size:12px">옷 색은 유입 경로, 키와 머리색은 연령대입니다. 독감이 유행하면 마스크를 쓰고, 비가 오면 건물 밖에서 우산을 쓰며, 어린이는 보호자와 함께 옵니다. 마스크 착용률과 연령대 비율은 가정값입니다.</p>
             <p class="mut" style="margin:6px 0 0;font-size:12px">약사 A의 초록 말풍선은 조건이 맞을 때 띄우는 인터뷰 원문이고, 흰 말풍선은 상태값입니다.</p>
-            <p class="mut" style="margin:6px 0 0;font-size:11px">※ 약사·손님 인물은 아직 이식 전이라, 위 설명은 다음 단계부터 실제로 보입니다.</p>
           </section>
           <section id="f12Sel"></section>
         </div>
-        <div class="f12-pane" id="f12Pane2" hidden>
-          <div class="f12-note">예상 매출 탭(요인별 계수·근거, 전후 2주 추이)은 날짜·시간축 데이터 연동 단계에서 채웁니다 — 가상데이터 기준.</div>
-        </div>
-        <div class="f12-pane" id="f12Pane3" hidden>
-          <div class="f12-note">매출 달력 탭(월별 히트맵)은 날짜 데이터 연동 단계에서 채웁니다 — 가상데이터 기준.</div>
-        </div>
+        <div class="f12-pane" id="f12Pane2" hidden></div>
+        <div class="f12-pane" id="f12Pane3" hidden></div>
       </div>
     </aside>
   </div>
@@ -598,6 +611,7 @@ fetch('../data/floor12.json').then(r=>r.json()).then(data=>{
   f12Days=data.days;
   f12Items=data.items;
   f12Base=(()=>{const li=38,le=32,walk=12.5;return li*F12_PER_IM+le*F12_PER_ENT+(walk+.18*(li+le))*F12_QTY*f12MixOf(1,true).avg;})(); // 평시 화요일, 호흡기지수 1.0 — floor12.html BASE 그대로
+  f12RenderCal(); // 월별 격자는 365일 고정이라 한 번만 그리고, 이후엔 f12SetDate가 f12MarkCal로 선택 칸만 갱신
   f12SetDate(f12Idx('2026-10-06'));
   applyDay(); // O003 품목 메시가 방금 'cold'로 등록됐으니, 지금 H[day] 기준으로 바로 색칠한다
 }).catch(err=>console.error('data/floor12.json 로드 실패(로컬 서버로 열어야 fetch가 됩니다):',err));
@@ -704,6 +718,85 @@ function f12RenderStats(){
   if(stock) stock.textContent=d.o003_closing_stock==null?'–':d.o003_closing_stock+'개';
   if(stockL) stockL.textContent='판콜에스 재고'+(d.o003_days_of_supply==null?'':' · '+d.o003_days_of_supply+'일분');
 }
+/* ── 탭 ② 예상 매출 · ③ 매출 달력 — floor12.html의 renderRev/renderCal을
+   팀 OBJ 패턴(badge/sec/table)에 맞춰 그대로 이식. 날짜가 바뀔 때만 다시 그린다. */
+function f12Row(k,v,c,cls,tag,src){return '<tr><td><b>'+k+'</b></td><td>'+v+'</td><td class="mono">'+c+'</td><td><span class="badge'+(cls?' '+cls:'')+'">'+tag+'</span> '+src+'</td></tr>';}
+function f12RenderRev(){
+  const el=document.getElementById('f12Pane2'); if(!el||!f12Days.length) return;
+  const d=f12Day(), m=f12Model(), diff=F12S.closed?0:(m.tot/(f12Base||1)-1)*100;
+  let h='<div class="f12-note">아래 값은 가상데이터 기준 약국(개설 4년차, 1층, 내과+이비인후과, 일·공휴일 휴무)의 수요 모델 기댓값입니다. 실측 집계가 아닙니다 — G02.</div>';
+  h+='<section><h2>'+f12Iso(F12S.di)+' ('+d.weekday_ko+')'+(d.holiday_name_ko?' · '+d.holiday_name_ko:'')+' 예상 총매출</h2>';
+  if(F12S.closed){
+    h+='<div class="f12-big">휴무</div><div class="f12-delta">가상데이터는 일요일과 공휴일을 휴무로 둡니다.</div>';
+  }else{
+    h+='<div class="f12-big mono">'+fmtKRW(m.tot)+'</div><div class="f12-delta '+(diff>=0?'up':'down')+'">평시 화요일('+fmtKRW(f12Base)+') 대비 '+(diff>=0?'+':'')+diff.toFixed(0)+'%</div>';
+    h+='<div class="f12-stats" style="margin-top:10px"><div class="f12-stat"><b class="mono">'+fmtKRW(m.rxS)+'</b><span>처방 매출 · 내과 '+m.li.toFixed(0)+'건 + 이비인후과 '+m.le.toFixed(0)+'건</span></div>'+
+       '<div class="f12-stat"><b class="mono">'+fmtKRW(m.nonS)+'</b><span>비처방 매출 · 워크인 '+m.walk.toFixed(1)+'명 + 추가구매 '+(.18*(m.li+m.le)).toFixed(1)+'명</span></div></div>';
+  }
+  h+='</section><section><h2>요인과 근거</h2><table><tr><th>요인</th><th>값</th><th>계수</th><th>근거</th></tr>';
+  if(!F12S.closed){
+    h+=f12Row('요일',d.weekday_ko+'요일','×'+m.w.toFixed(2),'warn','가정','파라미터 요일계수. 월요일 몰림, 토요일 반일 진료');
+    if(F12S.after) h+=f12Row('연휴',F12S.after===1?'연휴 후 첫 영업일':'연휴 전 마지막 영업일','×'+m.hf.toFixed(2),'warn','가정','밀린 진료 · 연휴 전 장기처방. 날짜는 00_공통달력');
+    h+=f12Row('독감 유행','지수 '+F12S.ili.toFixed(1),'×'+m.resp.toFixed(2),'real','참고+보간','이비인후과에만 적용. 00_공통달력 ILI 고정점 사이를 보간');
+    if(F12S.wd===3) h+=f12Row('수요일 오전 휴진','이비인후과','×0.60','warn','실측 기반 가정','L35 진료시간 예시(수 14:00 시작)');
+    if(F12S.entClosed) h+=f12Row('이비인후과 휴진',d.weekday_ko+' 임시 휴진','×0.05','warn','가정','00_공통달력 임시 휴진·여름휴가');
+    if(F12S.dust) h+=f12Row('미세먼지','나쁨','×1.60','warn','가정','3~5월 기본 적용 · L56 계절성(마스크·인공눈물 비중)');
+    if(F12S.eq||F12S.staff) h+=f12Row('장비·인력',(F12S.eq?'장비 고장 ':'')+(F12S.staff?'직원 부재':''),'혼잡도만','bad','식 없음','L55. 매출에 미치는 식은 가상데이터에 없음');
+  }
+  const hot=f12Items.filter((it,i)=>m.mix.p[i][1]>1.05).map(it=>it.name_ko.split(' ')[0]);
+  if(!F12S.closed) h+=f12Row('계절 상품',hot.length?hot.join(', '):'없음','개당 '+Math.round(m.mix.avg).toLocaleString('ko-KR')+'원','warn','가정','L56 계절성으로 품목 구성이 바뀌어 평균 판매가가 달라짐');
+  h+='</table></section>';
+  if(!F12S.closed){
+    const top=f12Items.map((it,i)=>({it,q:m.units*m.mix.p[i][0],s:m.mix.p[i][1]})).sort((a,b)=>b.q*b.it.price_krw-a.q*a.it.price_krw).slice(0,6);
+    h+='<section><h2>비처방 예상 판매 상위 품목 (총 '+m.units.toFixed(0)+'개)</h2><table><tr><th>품목</th><th>수량</th><th>매출</th><th>계절</th></tr>'+
+      top.map(t=>'<tr><td>'+t.it.name_ko+'</td><td class="mono">'+t.q.toFixed(1)+'</td><td class="mono">'+fmtKRW(t.q*t.it.price_krw)+'</td><td class="mono">'+(t.s>1.05||t.s<.95?'×'+t.s.toFixed(2):'—')+'</td></tr>').join('')+'</table></section>';
+  }
+  h+='<section><h2>기본값</h2><table>'+
+    f12Row('처방건수','내과 38 · 이비인후과 32','건/일','warn','가정','전국 평균 약국 하루 83건(L03·L05)의 80%')+
+    f12Row('건당 처방총액','내과 55,507 · 이비인후과 17,886','원','real','표에서 추정','L45 일별 값을 회귀로 나눈 값')+
+    f12Row('워크인 구매자','12.5','명/평일','real','인터뷰','하루 일반약 구매자 10~15명')+
+    f12Row('추가구매','18% · 1인 1.62개','','warn','가정','처방환자 추가구매율 0.18 · L47 생성식 QTY')+
+    '</table></section>';
+  h+='<section><h2>가상데이터 표의 전후 2주 총매출 (막대를 누르면 이동)</h2><div class="f12-trend">';
+  for(let i=F12S.di-7;i<=F12S.di+6;i++){
+    if(i<0||i>=f12Days.length){h+='<div class="cl"></div>';continue;}
+    const t=f12Days[i].total_revenue_krw;
+    h+='<div data-i="'+i+'" class="'+(i===F12S.di?'now':'')+(t?'':' cl')+'" style="height:'+(t?Math.min(100,Math.max(4,t/5.6e6*100)):2)+'%" title="'+f12Iso(i)+' '+f12Days[i].weekday_ko+' '+(t?fmtKRW(t):'휴무')+'"><span>'+f12Iso(i).slice(8)+'</span></div>';
+  }
+  h+='</div><div style="height:18px"></div>';
+  h+='<p class="mut" style="margin:4px 0 0;font-size:11px">표에 기록된 이날 값: '+(d.total_revenue_krw?'총매출 '+fmtKRW(d.total_revenue_krw)+' · 처방 '+(d.im_rx_count+d.ent_rx_count)+'건(내과 '+d.im_rx_count+', 이비인후과 '+d.ent_rx_count+')':'휴무')+'</p>'+
+    '<p class="mut" style="margin:4px 0 0;font-size:11px">예상값은 생성식의 기댓값이고, 표(가상데이터) 값에는 난수가 섞여 있습니다.</p></section>';
+  el.innerHTML=h;
+  el.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>f12SetDate(+b.dataset.i));
+}
+function f12RenderCal(){
+  const el=document.getElementById('f12Pane3'); if(!el||!f12Days.length) return;
+  let h='<section><h2>2026년 일별 총매출 (가상데이터 표 값 · 칸을 누르면 이동)</h2><div class="f12-cal">';
+  const mt=[];
+  for(let mo=0;mo<12;mo++){
+    h+='<div class="f12-mrow"><b>'+(mo+1)+'월</b>'; let sum=0;
+    for(let dd=1;dd<=31;dd++){
+      const t=Date.UTC(2026,mo,dd), dt=new Date(t);
+      if(dt.getUTCMonth()!==mo){h+='<i class="no"></i>';continue;}
+      const i=Math.round((t-f12D0)/864e5), d=f12Days[i];
+      if(!d){h+='<i class="no"></i>';continue;}
+      sum+=d.total_revenue_krw;
+      h+='<i data-i="'+i+'" class="'+(d.total_revenue_krw?'':'cl')+(d.ent_closed?' ev':'')+'" style="'+(d.total_revenue_krw?'opacity:'+(.15+.85*Math.min(1,d.total_revenue_krw/5e6)).toFixed(2):'')+'" title="'+f12Iso(i)+' '+d.weekday_ko+' '+(d.total_revenue_krw?fmtKRW(d.total_revenue_krw):'휴무')+(d.holiday_name_ko?' · '+d.holiday_name_ko:'')+(d.ent_closed?' · 이비인후과 휴진':'')+'"></i>';
+    }
+    h+='</div>'; mt.push(sum);
+  }
+  h+='</div><p class="mut" style="margin-top:8px;font-size:11px">진할수록 매출이 큰 날 · 점선은 휴무 · 빨간 테두리는 이비인후과 휴진 · 검은 테두리는 선택한 날</p></section>';
+  const mx=Math.max.apply(null,mt);
+  h+='<section><h2>월 합계</h2>'+mt.map((v,k)=>'<div class="f12-mbar"><span>'+(k+1)+'월</span><div style="width:'+(v/mx*100).toFixed(0)+'%"></div><span class="mono">'+fmtKRW(v)+'</span></div>').join('')+
+    '<p class="mut" style="margin-top:8px;font-size:11px">겨울(독감 유행기)에 처방과 감기약이 함께 늘어 매출이 커지는 구조입니다. 값은 안정기 가상 약국 기준입니다.</p></section>';
+  el.innerHTML=h;
+  el.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>f12SetDate(+b.dataset.i));
+  f12MarkCal();
+}
+function f12MarkCal(){
+  const prev=document.querySelector('#f12Pane3 i.sel'); if(prev) prev.classList.remove('sel');
+  const cur=document.querySelector('#f12Pane3 i[data-i="'+F12S.di+'"]'); if(cur) cur.classList.add('sel');
+}
 function f12SetDate(i){
   if(!f12Days.length||i<0||i>=f12Days.length) return;
   F12S.di=i; F12S.min=540;
@@ -712,7 +805,7 @@ function f12SetDate(i){
   F12S.entClosed=d.ent_closed; F12S.ili=d.ili; F12S.eq=d.equipment_down; F12S.staff=d.staff_absent;
   const mo=+d.date.slice(5,7); F12S.dust=mo>=3&&mo<=5;
   F12S.rx=0; F12S.out=[0,0,0];
-  f12ClearAgents(); f12SyncCtl(); f12RenderStats();
+  f12ClearAgents(); f12SyncCtl(); f12RenderStats(); f12RenderRev(); f12MarkCal();
 }
 function f12Tick(dt){
   if(!F12S.playing||!f12Days.length) return;
@@ -915,6 +1008,10 @@ function f12UpdateHud(){
   const set=(id,v)=>{const el=document.getElementById(id); if(el) el.textContent=v;};
   set('f12SIn',inPh); set('f12SQ',f12Queue.length); set('f12SEnt',entW); set('f12SRx',F12S.rx);
   set('f12NEnt',c.ent); set('f12NEx',c.ex); set('f12NOth',c.oth); set('f12NWalk',c.walk); set('f12NInq',c.inq);
+  if(!F12S.closed&&f12Days.length){
+    const r=f12Rates(Math.floor(F12S.min/60)), v=r.ent+r.oth+r.walk+r.inq;
+    set('f12SRho',v.toFixed(1)+'명');
+  } else set('f12SRho','–');
   if(f12HudN++%20===0){
     const ps=f12PhState();
     f12SetFace(phA,ps.k); f12SetFace(phB,ps.kb);
