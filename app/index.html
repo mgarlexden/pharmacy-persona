@@ -314,7 +314,7 @@
             <button class="tool" type="button" data-view="pharmacist">약사 보기</button>
             <button class="tool" type="button" data-view="stock">재고 선반</button>
             <button class="tool" type="button" data-view="street">건물 앞 거리</button>
-            <button class="tool" type="button" data-view="judge">판단실(개념)</button>
+            <button class="tool" type="button" data-view="judge">3층 판단실</button>
           </div>
           <div class="tool-group" role="group" aria-label="확대와 표시">
             <button class="tool" type="button" id="btn-zoom-in" aria-label="확대"><svg width="16" height="16" aria-hidden="true"><use href="#i-zoom-in"/></svg></button>
@@ -329,10 +329,10 @@
         <div class="stage-hint" id="stage-hint" hidden>
           <h3>3D 장면 보는 법</h3>
           <ul>
-            <li>2층 왼쪽이 약국, 오른쪽이 이비인후과, 1층이 정형외과입니다.</li>
-            <li>약국 뒤쪽 <b>재고 선반</b>에서 판단에 쓰는 약 한 품목을 보여 줍니다.</li>
-            <li>끌어서 돌리고, 휠로 확대합니다. 물건을 누르면 설명이 나옵니다.</li>
-            <li>판단을 마치면 아래 재생 버튼으로 사흘을 하루씩 볼 수 있습니다.</li>
+            <li>2층 왼쪽이 약국, 오른쪽이 이비인후과, 1층이 정형외과입니다. 3층 판단실은 실제로는 없는 개념 층입니다.</li>
+            <li>약국 카운터 뒤 <b>재고 선반</b>에서 판단에 쓰는 약 한 품목을 보여 줍니다. 다른 진열 상품은 가상 데이터의 배치입니다.</li>
+            <li>판단을 마치면 아래 <b>재생</b>으로 사흘을 하루씩 봅니다. 손님은 재생할 때만 움직이고, 그날의 처방 건수·워크인 수(가상 데이터)를 따라 들어옵니다.</li>
+            <li>끌어서 돌리고, 휠로 확대합니다. 물건이나 인물을 누르면 설명이 나옵니다.</li>
           </ul>
           <button class="btn btn-sm" type="button" id="stage-hint-close">알겠습니다</button>
         </div>
@@ -351,14 +351,53 @@
           <div id="profile-body"></div>
         </div>
 
+        <section class="hud" id="hud" aria-labelledby="hud-title" hidden>
+          <header class="hud-head">
+            <div><span class="hud-kicker" id="hud-kicker">3층 판단실</span><h2 class="hud-title" id="hud-title">미션 고르기</h2></div>
+            <div class="hud-acts">
+              <button class="btn btn-ghost btn-sm" type="button" id="hud-fold" aria-expanded="true">접기</button>
+              <button class="btn btn-ghost btn-sm" type="button" id="hud-leave">건물로 나가기</button>
+            </div>
+          </header>
+          <div id="panel"></div>
+        </section>
+        <button class="btn btn-sm hud-pill" type="button" id="hud-open" hidden>판단 창 열기</button>
+
+        <div class="fp-ui" id="fp-ui" hidden>
+          <span class="fp-tag"><svg width="14" height="14" aria-hidden="true"><use href="#i-eye"/></svg>약사 시점 · 1인칭</span>
+          <div class="seg" role="group" aria-label="보는 방향">
+            <button class="tool" type="button" data-look="front">카운터 전산 보기</button>
+            <button class="tool" type="button" data-look="shelf">재고 선반 보기</button>
+          </div>
+          <span class="fp-hint">끌어서 둘러보기</span>
+        </div>
+
+        <div class="thoughts" id="thoughts" hidden aria-live="polite">
+          <div class="th-chips" id="th-chips"></div>
+          <div class="th-bubble" id="th-bubble"><span class="th-k" id="th-k"></span><b id="th-main"></b><p id="th-sub"></p>
+            <div class="th-nav"><button class="btn btn-ghost btn-sm" type="button" id="th-prev" aria-label="이전 생각">‹</button><span id="th-count"></span><button class="btn btn-ghost btn-sm" type="button" id="th-next" aria-label="다음 생각">›</button></div>
+            <i class="tail t1"></i><i class="tail t2"></i><i class="tail t3"></i>
+          </div>
+          <div class="th-plate" id="th-plate"></div>
+        </div>
+
         <div class="stage-legend" aria-hidden="true">
-          <b>범례</b>
-          <span><i class="sw ghost"></i>전산 기록 재고</span>
-          <span><i class="sw solid"></i>실제 선반 재고</span>
-          <span><i class="sw ok"></i>사 간 손님</span>
-          <span><i class="sw lost"></i>못 사고 간 손님</span>
-          <span><i class="sw me"></i>응답자 약사</span>
-          <span><i class="sw dash"></i>개념 층</span>
+          <b>재고 (이 품목)</b>
+          <span><i class="sw ghost"></i>전산 기록</span>
+          <span><i class="sw solid"></i>실제 선반</span>
+          <b>이 약을 찾은 손님</b>
+          <span><i class="sw" style="background:#5b8def"></i>사 감 (상자를 든 인물)</span>
+          <span><i class="sw" style="background:#9aa0a8;opacity:.45"></i>못 사고 감 (흐린 인물)</span>
+          <b>손님 흐름 · 옷 색 = 들어온 길</b>
+          <span><i class="sw" style="background:#0f9b8c"></i>같은 층 이비인후과</span>
+          <span><i class="sw" style="background:#d4881f"></i>1층 의원</span>
+          <span><i class="sw" style="background:#8b5cf6"></i>일반약 방문</span>
+          <span><i class="sw" style="background:#3b82f6"></i>문의만</span>
+          <b>나갈 때 발 아래 원 (가정)</b>
+          <span><i class="sw round" style="background:#2f8f4e"></i>만족</span>
+          <span><i class="sw round" style="background:#e0a100"></i>지연</span>
+          <span><i class="sw round" style="background:#d23b2a"></i>기다리다 이탈</span>
+          <span><i class="sw" style="background:#0f7f73"></i>응답자 약사 (초록 명찰)</span>
         </div>
         <p class="stage-status" id="stage-status" aria-live="polite">판단 시점 · 결과를 만들기 전입니다.</p>
         <div class="stage-play" id="stage-play">
@@ -371,16 +410,15 @@
       </div>
     </div>
     <aside class="panel-col" aria-labelledby="h-sim">
-      <div class="panel-head">
+      <div class="brief" id="brief">
         <h1 id="h-sim" tabindex="-1">시뮬레이터</h1>
-        <p>상황을 고르고, 약사라면 어떻게 할지 판단하고, 그 결과를 미리 봅니다.</p>
-        <ol class="stepper" id="sim-stepper" aria-label="시뮬레이션 단계">
-          <li><button type="button" data-step="1"><span class="n">1</span>상황 고르기</button></li>
-          <li><button type="button" data-step="2"><span class="n">2</span>판단 내리기</button></li>
-          <li><button type="button" data-step="3"><span class="n">3</span>결과 미리보기</button></li>
+        <ol class="stepper compact" id="sim-stepper" aria-label="시뮬레이션 단계">
+          <li><button type="button" data-step="1"><span class="n">1</span>판단실</button></li>
+          <li><button type="button" data-step="2"><span class="n">2</span>약사 시점</button></li>
+          <li><button type="button" data-step="3"><span class="n">3</span>결과</button></li>
         </ol>
+        <div id="brief-body"></div>
       </div>
-      <div id="panel"></div>
     </aside>
   </div>
 </section>

@@ -59,44 +59,80 @@ def load_dotenv():
 load_dotenv()
 
 # ---------------------------------------------------------------- 카드 (모든 수치는 가정)
-# app/js/data.js 의 CARDS 와 같은 값이다. 한쪽을 바꾸면 다른 쪽도 바꾼다 (--check-cards 로 대조).
-CAL = ["10/6", "10/7", "10/8"]
-UNIT_COST, LIMIT_KRW, CAPACITY, DUE = 10000, 120000, 10, "11/5"
-CARDS = {
-    "C01": dict(cash=60000, arrival="10/7", book=8, physical=8, ageH=12, prior=False),
-    "C02": dict(cash=60000, arrival="10/8", book=8, physical=8, ageH=12, prior=False),
-    "C03": dict(cash=600000, arrival="10/7", book=8, physical=8, ageH=12, prior=False),
-    "C04": dict(cash=600000, arrival="10/8", book=8, physical=8, ageH=12, prior=False),
-    "C05": dict(cash=60000, arrival="10/7", book=8, physical=3, ageH=72, prior=False),
-    "C06": dict(cash=60000, arrival="10/7", book=8, physical=8, ageH=12, prior=True),
-}
+# 카드 조건의 원본은 data/4_bridge/cards.csv, 관측 문장의 원본은 data/4_bridge/card_variables.csv 다.
+# app/js/data.js 의 CARDS 도 같은 값을 가진다 (--check-cards 로 대조).
+BRIDGE = ROOT / "data" / "4_bridge"
+CAL = ["2026-10-06", "2026-10-07", "2026-10-08"]
+UNIT_COST, LIMIT_KRW, CAPACITY, DUE = 10000, 120000, 10, "2026-11-05"
+PRIOR_ARRIVAL = "2026-10-07"
 ACTIONS_R1 = ["check_physical_stock", "commit_choice", "defer"]
 ACTIONS_R2 = ["commit_choice", "defer"]
-LAYERS = ["B1", "P0"]
+# B1 일반 약사 / P0 +인터뷰 근거 / P1 +장면 입력(공공·민간·가상 달력). 약사 본인은 P1 과 같은 정보를 본다.
+LAYERS = ["B1", "P0", "P1"]
+FACTOR_SOURCES = ["interview", "scene", "observation", "assumption", "general_knowledge"]
+EMPTY = {"action": "none", "reason": "", "priorities": [], "cited_ids": [], "missing_info": [], "factors": []}
+DROPS = {}  # 하나씩 빼 보기 층 -> 뺀 ID 집합 (main 에서 채운다)
+
+
+def _read(p):
+    with open(p, encoding="utf-8-sig", newline="") as f:
+        return list(csv.DictReader(f))
+
+
+def load_cards():
+    out = {}
+    for r in _read(BRIDGE / "cards.csv"):
+        out[r["card_id"]] = dict(cash=int(r["cash_krw"]), arrival=r["arrival_date"], book=int(r["book_packs"]),
+                                 physical=int(r["physical_packs"]), ageH=int(r["record_age_h"]), prior=r["prior_order"] == "Y",
+                                 kind=r["kind"], changed=[x for x in r["changed_variable_ids"].split(";") if x])
+    return out
+
+
+CARDS = load_cards()
+# 지금 카드의 근거(app/js/data.js 의 basis)에 쓰인 규칙 + 장면 입력(연휴·의원 일정)을 받치는 R08. --ablate cards 의 대상
+CARD_RULES = ["R01", "R02", "R03", "R08"]
+OBS_ROWS = _read(BRIDGE / "card_variables.csv")
 
 
 def won(n):
     return f"{n:,}원"
 
 
-def observation_text(c, checked_physical=None):
+def day_label(iso):
+    return f"{int(iso[5:7])}/{int(iso[8:10])}"
+
+
+def fill(tpl, c):
+    """card_variables.csv 의 {형식:이름} 자리표시를 채운다. app/js/app.js 의 fillObs 와 같은 규칙이다."""
+    import re
+    ctx = dict(c, LIMIT=LIMIT_KRW, UNIT=UNIT_COST, CAP=CAPACITY, DUE=DUE, PRIOR_ARR=PRIOR_ARRIVAL, D0=CAL[0], D1=CAL[1], D2=CAL[2])
+    fmt = {"won": won, "date": day_label, "n": str}
+    return re.sub(r"\{(\w+):(\w+)\}", lambda m: fmt[m.group(1)](ctx[m.group(2)]), tpl)
+
+
+def obs_lines(card_id, c, checked, scene):
+    """보여 줄 관측 줄. 카드 전용 줄이 같은 순서의 공통(*) 줄을 덮는다. scene=False 면 장면 입력 줄을 뺀다."""
+    want = {"always", "checked" if checked else "unchecked", "prior" if c["prior"] else "no_prior"}
+    rows = {}
+    for r in OBS_ROWS:
+        if r["card_id"] not in ("*", card_id) or r["show_when"] not in want:
+            continue
+        if r["layer"] == "scene" and not scene:
+            continue
+        key = r["line_order"]
+        if key in rows and rows[key]["card_id"] == card_id and r["card_id"] == "*":
+            continue
+        rows[key] = r
+    return [rows[k] for k in sorted(rows, key=int)]
+
+
+def observation_text(card_id, c, checked=False, scene=True):
     """약사와 AI 에게 똑같이 보여 주는 정보. 확인 전의 실제 재고, 앞으로의 손님 수, 선택별 결과는 넣지 않는다."""
-    if checked_physical is None:
-        stock = f"전산 기록 {c['book']}팩 ({c['ageH']}시간 전 기록). 실제 선반 재고는 아직 확인하지 않았다."
-    else:
-        stock = f"전산 기록 {c['book']}팩 ({c['ageH']}시간 전 기록). 선반을 확인했고 실제로는 {checked_physical}팩이다."
-    prior = "5팩, 10/7 아침 도착 예정 (이미 넣어 둔 주문)" if c["prior"] else "없음"
-    return "\n".join([
-        f"- 언제: {CAL[0]} 아침 8시 50분, 문 열기 전",
-        "- 어떤 약: 가상 발주판단용 단일 품목, 팩 단위",
-        f"- 남은 재고: {stock}",
-        "- 최근 판매량: 사흘 내내 하루 5팩",
-        f"- 통장 잔액: {won(c['cash'])} (판단할 때 참고하는 사정이며 약국 전체 현금이 아니다)",
-        f"- 외상 주문 한도: {won(LIMIT_KRW)} (통장 잔액과 별개로 이번에 후불로 더 주문할 수 있는 금액)",
-        f"- 도매상 조건: 팩당 {won(UNIT_COST)}, 최대 {CAPACITY}팩, {c['arrival']} 아침 문 열기 전 도착, 대금은 {DUE}에 결제",
-        f"- 이미 넣은 주문: {prior}",
-        "- 고를 수 있는 것: 선반 확인 / 보류(0팩) / 5팩 주문 / 10팩 주문 / 판단 유보",
-    ])
+    return "\n".join(f"- {r['obs_label_ko']}: {fill(r['obs_text_ko'], c)}" for r in obs_lines(card_id, c, checked, scene))
+
+
+def has_scene(layer):
+    return layer.startswith("P1")
 
 
 # ---------------------------------------------------------------- 인터뷰 자료
@@ -113,11 +149,22 @@ def load_db():
     ids = {r["claim_id"] for r in db["claims"]} | {r["rule_id"] for r in db["rules"]} \
         | {r["case_id"] for r in db["cases"]} | {r["guardrail_id"] for r in db["guardrails"]}
     db["ids"] = ids
+    db["links"] = read_csv("evidence_links.csv")
     return db
 
 
-def interview_package(db):
-    """P0 에서만 보낸다. 모두 정리된 문장이며 source_location, 전사 원문은 넣지 않는다."""
+def ablation_ids(db, rule_id):
+    """하나씩 빼 보기 단위: 규칙 하나 + 그 규칙을 받치는 발언(claim_supports_rule) + 그 규칙을 보여 주는 사례(case_illustrates_rule)."""
+    out = {rule_id}
+    for l in db["links"]:
+        if l["to_id"] == rule_id and l["link_type"] in ("claim_supports_rule", "case_illustrates_rule"):
+            out.add(l["from_id"])
+    return out
+
+
+def interview_package(db, drop=frozenset()):
+    """P0·P1 에서 보낸다. 모두 정리된 문장이며 source_location, 전사 원문은 넣지 않는다. drop 의 ID 는 뺀다 (하나씩 빼 보기)."""
+    keep = lambda i: i not in drop
     out = ["# 인터뷰 근거 (판단 대상 약사 1명)", "", "## 프로필"]
     for r in db["profile"]:
         if r["kind"] == "fact":
@@ -126,12 +173,18 @@ def interview_package(db):
             out.append(f"- [{r['section_ko']}] {r['summary_ko']} — {r['detail_ko']}")
     out += ["", "## 발언 (E###)  형식: ID | 주제 | 해당 범위 | 유형 | 원문 일부 | 요약"]
     for r in db["claims"]:
+        if not keep(r["claim_id"]):
+            continue
         out.append(f"{r['claim_id']} | {r['topic_ko']} | {r['applies_to']} | {r['record_type']} | {r['quote_ko']} | {r['summary_ko']}")
     out += ["", "## 규칙 (R##)  형식: ID | 제목 | 상황 | 고려한 정보 | 판단 | 읽을 때 주의"]
     for r in db["rules"]:
+        if not keep(r["rule_id"]):
+            continue
         out.append(f"{r['rule_id']} | {r['title_ko']} | {r['situation_ko']} | {r['info_considered_ko']} | {r['judgement_ko']} | {r['reading_note_ko']}")
     out += ["", "## 사례 (I##)  형식: ID | 제목 | 해당 범위 | 상황 | 대응 | 결과 | 배운 점"]
     for r in db["cases"]:
+        if not keep(r["case_id"]):
+            continue
         out.append(f"{r['case_id']} | {r['title_ko']} | {r['applies_to']} | {r['situation_ko']} | {r['response_ko']} | {r['outcome_ko']} | {r['learning_ko']}")
     out += ["", "## 주의 규칙 (G##)  이 근거를 쓸 때 반드시 지킨다"]
     for r in db["guardrails"]:
@@ -146,15 +199,23 @@ SYSTEM_COMMON = """당신은 한국의 동네 약국에서 약품 주문(발주)
 - 선택지는 정해져 있다: 선반 확인(check_physical_stock), 보류 0팩·5팩 주문·10팩 주문(commit_choice), 판단 유보(defer).
 - 선반 확인은 한 번만 할 수 있다. 확인하면 실제 재고가 공개되고 다시 판단한다.
 - reason 은 2~4문장으로 쓴다. priorities 는 가장 중요하게 본 것 두 가지를 짧은 문구로 쓴다.
+- factors 에는 이번 판단에 실제로 쓴 요인을 1~5개 적고, 요인마다 출처를 하나 고른다.
+  interview: 아래 인터뷰 근거에서 온 것 (ids 에 E###/R##/I## 를 반드시 적는다)
+  scene: 관측값 중 날짜 사정·독감·주변 의원 같은 외부 환경 줄에서 온 것
+  observation: 관측값의 재고·현금·도매상 조건 숫자에서 온 것
+  assumption: 관측값에 없어 스스로 가정한 것
+  general_knowledge: 인터뷰와 관측값 어디에도 없는 일반 상식에서 온 것
+  일반 상식이나 가정을 썼으면 숨기지 말고 그대로 표시한다. 그렇게 표시하는 것은 감점이 아니다.
 - 반드시 submit_decision 도구로 답한다."""
 
 SYSTEM_B1 = """
 
-이 판단에는 특정 약사에 대한 개인 자료가 주어지지 않는다. 일반적인 약사의 상식으로 판단하고 cited_ids 는 빈 배열로 둔다."""
+이 판단에는 특정 약사에 대한 개인 자료가 주어지지 않는다. 일반적인 약사의 상식으로 판단하고 cited_ids 는 빈 배열로 둔다. factors 에 interview 를 쓰지 않는다."""
 
 SYSTEM_P0 = """
 
 아래 '인터뷰 근거'는 판단 대상인 약사 1명을 인터뷰해 정리한 것이다. 이 약사가 말한 판단 방식과 제약을 따른다.
+- 판단의 근거는 인터뷰 근거와 관측값이다. 이 둘로 정할 수 없는 부분만 일반 상식으로 채우고, 그때는 factors 에 general_knowledge 로 표시한다.
 - 근거로 삼은 ID(E###, R##, I##)를 cited_ids 에 적는다. 목록에 없는 ID 를 만들지 않는다.
 - 인터뷰가 직접 말하지 않은 수량 기준이나 임계값을 만들어 내지 않는다. 이번 상황에 적용한 추론이면 reason 에 '추론'이라고 밝힌다.
 - '과거 근무처'나 '다른 약국'으로 표시된 내용을 현재 약국의 판단 근거로 단정하지 않는다.
@@ -174,23 +235,37 @@ def tool_schema(actions):
                 "priorities": {"type": "array", "items": {"type": "string"}, "maxItems": 2, "description": "가장 중요하게 본 것 두 가지"},
                 "cited_ids": {"type": "array", "items": {"type": "string"}, "description": "근거 ID. 개인 자료가 없으면 빈 배열"},
                 "missing_info": {"type": "array", "items": {"type": "string"}, "description": "더 알고 싶은 정보"},
+                "factors": {
+                    "type": "array", "minItems": 1, "maxItems": 5, "description": "판단에 실제로 쓴 요인과 그 출처",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "factor": {"type": "string", "description": "요인 (짧은 문구)"},
+                            "source": {"type": "string", "enum": FACTOR_SOURCES},
+                            "ids": {"type": "array", "items": {"type": "string"}, "description": "source 가 interview 일 때 근거 ID"},
+                        },
+                        "required": ["factor", "source", "ids"],
+                    },
+                },
             },
-            "required": ["action", "reason", "priorities", "cited_ids", "missing_info"],
+            "required": ["action", "reason", "priorities", "cited_ids", "missing_info", "factors"],
         },
     }
 
 
 def build_params(model, layer, card_id, rnd, prev, pkg):
     c = CARDS[card_id]
-    system = [{"type": "text", "text": SYSTEM_COMMON + (SYSTEM_P0 if layer == "P0" else SYSTEM_B1)}]
-    if layer == "P0":
-        # 모든 요청이 같은 앞부분을 가지므로 캐시한다 (최소 길이를 넘는 경우에만 효과가 있다).
+    personal = layer != "B1"
+    system = [{"type": "text", "text": SYSTEM_COMMON + (SYSTEM_P0 if personal else SYSTEM_B1)}]
+    if personal:
+        # 같은 층의 모든 요청이 같은 앞부분을 가지므로 캐시한다 (최소 길이를 넘는 경우에만 효과가 있다).
         system.append({"type": "text", "text": pkg, "cache_control": {"type": "ephemeral"}})
+    scene = has_scene(layer)
     if rnd == 1:
-        user = "관측값\n" + observation_text(c) + "\n\n어떻게 하시겠습니까? submit_decision 으로 답하세요."
+        user = "관측값\n" + observation_text(card_id, c, False, scene) + "\n\n어떻게 하시겠습니까? submit_decision 으로 답하세요."
         actions = ACTIONS_R1
     else:
-        user = ("관측값\n" + observation_text(c, c["physical"]) +
+        user = ("관측값\n" + observation_text(card_id, c, True, scene) +
                 f"\n\n처음 판단에서 선반 확인을 택했습니다. 그때 이유: {prev['reason']}\n"
                 "이제 확인한 실제 재고를 반영해 최종 선택을 하세요. (보류·5팩·10팩 주문 중 하나이거나 판단 유보) submit_decision 으로 답하세요.")
         actions = ACTIONS_R2
@@ -208,17 +283,32 @@ def validate(step, layer, db, rnd):
         flags.append("action_not_allowed")
     if a == "commit_choice" and step.get("qty_packs") not in (0, 5, 10):
         flags.append("invalid_qty")
-    ids = step.get("cited_ids") or []
+    factors = step.get("factors") or []
+    fids = [i for f in factors for i in (f.get("ids") or [])]
+    ids = list(dict.fromkeys((step.get("cited_ids") or []) + fids))
     unknown = [i for i in ids if i not in db["ids"] and i != "U001"]
     if unknown:
         flags.append("unknown_ids:" + ",".join(unknown))
+    removed = [i for i in ids if i in DROPS.get(layer, ())]
+    if removed:
+        flags.append("cites_removed_id:" + ",".join(removed))
     if layer == "B1" and ids:
         flags.append("ids_given_without_interview")
-    if layer == "P0" and a == "commit_choice" and not ids:
+    if layer != "B1" and a == "commit_choice" and not ids:
         flags.append("no_evidence_cited")
     if len(step.get("priorities") or []) != 2:
         flags.append("priorities_not_two")
-    return flags
+    if not factors:
+        flags.append("no_factors")
+    for f in factors:
+        src = f.get("source")
+        if src == "interview" and not f.get("ids"):
+            flags.append("interview_factor_without_ids")
+        if src == "interview" and layer == "B1":
+            flags.append("interview_factor_in_b1")
+        if src == "scene" and not has_scene(layer):
+            flags.append("scene_factor_without_scene")
+    return list(dict.fromkeys(flags))
 
 
 def parse_message(msg):
@@ -266,6 +356,58 @@ def finalize(task, steps, layer, db, model):
                 flags=flags, usage=sum_usage([s["usage"] for s in steps]))
 
 
+def final_key(r):
+    return r["final_action"] if r["qty_packs"] is None else f"commit_{r['qty_packs']}"
+
+
+def majority(vals):
+    """가장 많이 나온 값. 동률이면 'split'."""
+    c = {}
+    for v in vals:
+        c[v] = c.get(v, 0) + 1
+    if not c:
+        return None
+    top = sorted(c.items(), key=lambda x: -x[1])
+    return "split" if len(top) > 1 and top[0][1] == top[1][1] else top[0][0]
+
+
+def factor_summary(results):
+    """층별로 최종 판단의 요인 출처를 센다. general_knowledge 비율이 '인터뷰·관측값 밖에서 온 몫'의 자기 보고다."""
+    out = {}
+    for r in results:
+        d = out.setdefault(r["layer"], {s: 0 for s in FACTOR_SOURCES})
+        for f in r["steps"][-1].get("factors") or []:
+            if f.get("source") in d:
+                d[f["source"]] += 1
+    for d in out.values():
+        n = sum(d.values())
+        d["total"] = n
+        d["general_knowledge_share"] = round(d["general_knowledge"] / n, 3) if n else None
+    return out
+
+
+def ablation_summary(results, drops):
+    """P1 과 'P1-규칙' 층을 카드별로 비교한다. 다수 선택이 바뀌면 그 규칙 묶음이 판단에 쓰였다는 신호다 (원인 확정은 아니다)."""
+    if not drops:
+        return []
+    by = {}
+    for r in results:
+        by.setdefault((r["card"], r["layer"]), []).append(r)
+    rows = []
+    for layer, ids in drops.items():
+        rule = layer.split("-", 1)[1]
+        for card in sorted({r["card"] for r in results}):
+            base, abl = by.get((card, "P1"), []), by.get((card, layer), [])
+            if not base or not abl:
+                continue
+            bf, af = majority([final_key(r) for r in base]), majority([final_key(r) for r in abl])
+            b1, a1 = majority([r["first_action"] for r in base]), majority([r["first_action"] for r in abl])
+            rows.append(dict(rule=rule, layer=layer, card=card, removed_ids=sorted(ids), base_final=bf, ablated_final=af,
+                             base_first=b1, ablated_first=a1, n_base=len(base), n_ablated=len(abl),
+                             changed=("unclear" if "split" in (bf, af) else "yes" if (bf != af or b1 != a1) else "no")))
+    return rows
+
+
 def consistency(results):
     out = {}
     for r in results:
@@ -293,12 +435,12 @@ def run_sync(client, model, tasks, layers_pkg, db):
         steps = []
         p1 = build_params(model, layer, card, 1, None, pkg)
         m1 = client.messages.create(**p1)
-        d1 = parse_message(m1) or {"action": "none", "reason": "", "priorities": [], "cited_ids": [], "missing_info": []}
+        d1 = parse_message(m1) or dict(EMPTY)
         steps.append(dict(round=1, **d1, usage=usage_of(m1), stop=m1.stop_reason, flags=validate(d1, layer, db, 1)))
         if d1.get("action") == "check_physical_stock":
             p2 = build_params(model, layer, card, 2, d1, pkg)
             m2 = client.messages.create(**p2)
-            d2 = parse_message(m2) or {"action": "none", "reason": "", "priorities": [], "cited_ids": [], "missing_info": []}
+            d2 = parse_message(m2) or dict(EMPTY)
             steps.append(dict(round=2, **d2, usage=usage_of(m2), stop=m2.stop_reason, flags=validate(d2, layer, db, 2)))
         print(f"  {card} {layer} #{rep}: {' → '.join(str(s.get('action')) + (':' + str(s.get('qty_packs')) if s.get('qty_packs') is not None else '') for s in steps)}", flush=True)
         return finalize(task, steps, layer, db, model)
@@ -330,7 +472,7 @@ def run_batch(client, model, tasks, layers_pkg, db):
     need2 = []
     for t in tasks:
         m = got1.get(cid(t, 1))
-        d = (parse_message(m) if m else None) or {"action": "none", "reason": "", "priorities": [], "cited_ids": [], "missing_info": []}
+        d = (parse_message(m) if m else None) or dict(EMPTY)
         steps[t] = [dict(round=1, **d, usage=usage_of(m) if m else dict(input=0, output=0, cache_write=0, cache_read=0),
                          stop=m.stop_reason if m else "error", flags=validate(d, t[1], db, 1))]
         if d.get("action") == "check_physical_stock":
@@ -342,14 +484,14 @@ def run_batch(client, model, tasks, layers_pkg, db):
         batch_ids.append(bid2)
         for t, d in need2:
             m = got2.get(cid(t, 2))
-            d2 = (parse_message(m) if m else None) or {"action": "none", "reason": "", "priorities": [], "cited_ids": [], "missing_info": []}
+            d2 = (parse_message(m) if m else None) or dict(EMPTY)
             steps[t].append(dict(round=2, **d2, usage=usage_of(m) if m else dict(input=0, output=0, cache_write=0, cache_read=0),
                                  stop=m.stop_reason if m else "error", flags=validate(d2, t[1], db, 2)))
     return [finalize(t, steps[t], t[1], db, model) for t in tasks], batch_ids
 
 
 def check_cards():
-    """app/js/data.js 의 카드 조건과 이 파일의 CARDS 가 같은지 대조한다."""
+    """카드 정의 점검: (1) app/js/data.js 의 조건이 cards.csv 와 같은가 (2) 관측 줄과 바꾼 변수가 입력 가능한 변수인가."""
     import re
     js = (ROOT / "app" / "js" / "data.js").read_text(encoding="utf-8")
     ok = True
@@ -358,19 +500,32 @@ def check_cards():
         if not m:
             print(f"{cid}: data.js 에서 찾지 못함"); ok = False; continue
         cash, d, extra = int(m.group(1)), m.group(2), m.group(3) or ""
-        arr = "10/7" if d == "1" else "10/8"
+        arr = CAL[int(d)]
         phys = int(re.search(r"physical:\s*(\d+)", extra).group(1)) if "physical" in extra else 8
         age = int(re.search(r"ageH:\s*(\d+)", extra).group(1)) if "ageH" in extra else 12
         prior = "prior: true" in extra
         same = (cash, arr, phys, age, prior) == (c["cash"], c["arrival"], c["physical"], c["ageH"], c["prior"])
-        print(f"{cid}: {'일치' if same else '불일치'}"); ok &= same
+        print(f"{cid}: data.js 와 cards.csv {'일치' if same else '불일치'}"); ok &= same
+    roles = {r["variable_id"]: r for r in _read(BRIDGE / "variable_roles.csv")}
+    used = [(f"card_variables {r['card_id']}/{r['line_order']}", v) for r in OBS_ROWS for v in r["variable_ids"].split(";") if v]
+    used += [(f"cards {cid}", v) for cid, c in CARDS.items() for v in c["changed"]]
+    for where, v in used:
+        if v not in roles:
+            print(f"{where}: {v} 는 variables.csv 에 없는 변수"); ok = False
+        elif roles[v]["card_input_allowed"] != "Y":
+            print(f"{where}: {v} ({roles[v]['sim_role_ko']}) 는 입력으로 쓸 수 없는 변수"); ok = False
+    for r in OBS_ROWS:
+        if r["layer"] == "scene" and not any(roles.get(v, {}).get("sim_role") == "scene_input" for v in r["variable_ids"].split(";")):
+            print(f"card_variables {r['card_id']}/{r['line_order']}: 장면 입력 줄인데 장면 입력 변수가 없음"); ok = False
+    print("변수 점검:", "통과" if ok else "실패")
     return ok
 
 
 def prompt_hash(pkg):
-    """프롬프트 문구와 인터뷰 근거 묶음이 같은지 알아보는 지문. 다른 지문의 실행끼리는 같은 조건의 비교가 아니다."""
+    """프롬프트 문구, 인터뷰 근거 묶음, 카드 변수표가 같은지 알아보는 지문. 다른 지문의 실행끼리는 같은 조건의 비교가 아니다."""
     h = hashlib.sha256()
-    for s in (SYSTEM_COMMON, SYSTEM_B1, SYSTEM_P0, pkg, json.dumps(tool_schema(ACTIONS_R1), ensure_ascii=False, sort_keys=True)):
+    cards = json.dumps(CARDS, ensure_ascii=False, sort_keys=True) + json.dumps(OBS_ROWS, ensure_ascii=False, sort_keys=True)
+    for s in (SYSTEM_COMMON, SYSTEM_B1, SYSTEM_P0, pkg, cards, json.dumps(tool_schema(ACTIONS_R1), ensure_ascii=False, sort_keys=True)):
         h.update(s.encode("utf-8"))
     return h.hexdigest()[:10]
 
@@ -410,6 +565,7 @@ def main():
     ap.add_argument("--run-id", default=None)
     ap.add_argument("--dry-run", action="store_true", help="요청 수와 토큰만 계산한다. 호출 비용 없음")
     ap.add_argument("--yes", action="store_true", help="비용이 드는 실행을 확인했다")
+    ap.add_argument("--ablate", default="", help="하나씩 빼 보기: 규칙 ID 를 쉼표로 (예: R01,R03) 또는 'cards' (카드 근거에 쓰인 규칙 전부). 규칙마다 'P1-규칙' 층이 추가된다")
     ap.add_argument("--check-cards", action="store_true")
     a = ap.parse_args()
 
@@ -428,19 +584,31 @@ def main():
         sys.exit(f"알 수 없는 값: {bad}")
     db = load_db()
     pkg = interview_package(db)
-    layers_pkg = {"P0": pkg}
+    layers_pkg = {"P0": pkg, "P1": pkg}
+    rules = sorted({r["rule_id"] for r in db["rules"]})
+    abl = CARD_RULES if a.ablate == "cards" else [x.strip() for x in a.ablate.split(",") if x.strip()]
+    if [x for x in abl if x not in rules]:
+        sys.exit(f"알 수 없는 규칙: {[x for x in abl if x not in rules]}")
+    if abl and "P1" not in layers:
+        layers.append("P1")  # 비교 기준
+    for rule in abl:
+        ids = ablation_ids(db, rule)
+        DROPS[f"P1-{rule}"] = ids
+        layers_pkg[f"P1-{rule}"] = interview_package(db, frozenset(ids))
+        layers.append(f"P1-{rule}")
     tasks = [(c, l, r) for c in cards for l in layers for r in range(1, a.reps + 1)]
-    n_check = sum(1 for t in tasks if t[0] == "C05")  # 선반 확인이 일어날 가능성이 가장 큰 카드. 추가 호출 상한 추정용
 
     print(f"모델 {model} · 방식 {a.mode} · 층 {layers} · 카드 {len(cards)}장 · 반복 {a.reps} → 요청 {len(tasks)}건 (+선반 확인 후 재판단 최대 {len(tasks)}건)")
-    print(f"인터뷰 자료 {len(pkg):,}자 (P0 에서만 전송, 전사 원문과 약사 응답은 전송하지 않음)")
+    print(f"인터뷰 자료 {len(pkg):,}자 (P0·P1 에서만 전송, 전사 원문과 약사 응답은 전송하지 않음)")
+    for l, ids in DROPS.items():
+        print(f"  {l}: {len(ids)}개 ID 를 뺌 ({', '.join(sorted(ids))})")
 
     if a.dry_run:
         per_layer = len(cards) * a.reps
         try:
             client = make_client()
             tok = {}
-            for l in layers:
+            for l in dict.fromkeys(layers):
                 p = build_params(model, l, cards[0], 1, None, layers_pkg.get(l))
                 r = client.messages.count_tokens(model=p["model"], system=p["system"], messages=p["messages"], tools=p["tools"], tool_choice=p["tool_choice"])
                 tok[l] = r.input_tokens
@@ -477,7 +645,9 @@ def main():
     agg = dict(run_id=run_id, created_at=started, mode=a.mode, model=model, layers=layers, cards=cards, reps=a.reps,
                prompt_hash=prompt_hash(pkg), batch_ids=batch_ids, usage=usage, est_cost_usd=est_cost(usage, model, a.mode == "batch"),
                note="AI 시뮬레이션 출력이며 사실이 아니다. claims 로 되먹이지 않는다 (G04).",
-               consistency=consistency(results), results=results)
+               ablations={l: sorted(ids) for l, ids in DROPS.items()},
+               consistency=consistency(results), factor_summary=factor_summary(results),
+               ablation_summary=ablation_summary(results, DROPS), results=results)
     (out_dir / "results.json").write_text(json.dumps(agg, ensure_ascii=False, indent=2), encoding="utf-8")
     (RUNS / "latest.json").write_text(json.dumps(agg, ensure_ascii=False, indent=2), encoding="utf-8")
     reindex()
@@ -487,6 +657,11 @@ def main():
     c = agg["est_cost_usd"]
     print("추정 비용: " + (f"${c:.3f}" if c is not None else "단가 미설정 (scripts/persona_config.json)"))
     print(f"검증 플래그가 있는 결과 {len(flagged)}건 / {len(results)}건")
+    for l, d in agg["factor_summary"].items():
+        print(f"  {l}: 요인 {d['total']}개 중 일반 상식 {d['general_knowledge']}개")
+    changed = [r for r in agg["ablation_summary"] if r["changed"] == "yes"]
+    if agg["ablation_summary"]:
+        print(f"하나씩 빼 보기: {len(agg['ablation_summary'])}개 비교 중 판단이 바뀐 것 {len(changed)}개")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,16 @@
+card_id,line_order,obs_label_ko,obs_text_ko,show_when,variable_ids,layer,source_kind,data_ids,note_ko
+*,10,언제,"{date:D0} 아침 8시 50분, 문 열기 전",always,,base,가정,,판단 시각. 장면 설정이라 변수가 아니다
+*,20,그날 사정,"{date:D0}(화)은 연휴 다음 첫 영업일이다(전날 개천절 대체공휴일). {date:D2}(목)은 다음 날 한글날 휴무 전 마지막 영업일이다.",always,X001,scene,공휴일(공공) · 가상 달력,DT_L17,공휴일 이름은 실제 달력. 연휴 전후 표시는 calendar.csv
+*,30,감기·독감,"독감 의사환자 분율 1,000명당 31명 안팎 (같은 해 범위 4.8~62)",always,X005,scene,가상 달력,DT_L11,calendar.csv 의 influenza_ili_per_1000 (10/6~10/8: 31.1~31.5). 가상값
+*,40,주변 의원,1층 정형외과와 같은 층 이비인후과 모두 정상 진료,always,X002,scene,가상 달력,DT_L35,calendar.csv 의 ent_closed=N. 인근 기존 이비인후과(X003)는 값이 없어 넣지 않는다
+*,50,어떤 약,"가상 발주판단용 단일 품목, 팩 단위",always,S005,base,가정,,
+*,60,남은 재고,"전산 기록 {n:book}팩 ({n:ageH}시간 전 기록). 실제 선반 재고는 아직 확인하지 않았다.",unchecked,S001;C014,base,가정,DT_L48,
+*,60,남은 재고,"전산 기록 {n:book}팩 ({n:ageH}시간 전 기록). 선반을 확인했고 실제로는 {n:physical}팩이다.",checked,S001;S002;S004,base,가정,DT_L48,선반 확인 뒤에만 실물 재고를 공개한다
+*,70,최근 판매량,사흘 내내 하루 5팩,always,S007,base,가정,DT_L47,
+*,80,통장 잔액,{won:cash} (판단할 때 참고하는 사정이며 약국 전체 현금이 아니다),always,S011;C001,base,가정,DT_L49,
+*,90,외상 주문 한도,{won:LIMIT} (통장 잔액과 별개로 이번에 후불로 더 주문할 수 있는 금액),always,C001;C002,base,가정,DT_L50,
+*,100,도매상 조건,"팩당 {won:UNIT}, 최대 {n:CAP}팩, {date:arrival} 아침 문 열기 전 도착, 대금은 {date:DUE}에 결제",always,X006;C002,base,가정,DT_L52,
+*,110,이미 넣은 주문,"5팩, {date:PRIOR_ARR} 아침 도착 예정 (이미 넣어 둔 주문)",prior,C015,base,가정,DT_L52,
+*,110,이미 넣은 주문,없음,no_prior,C015,base,,,
+*,120,고를 수 있는 것,선반 확인 / 보류(0팩) / 5팩 주문 / 10팩 주문 / 판단 유보,always,,base,,,선택지. 변수가 아니다
+*,900,주지 않는 정보,"확인 전의 실제 재고, 앞으로 올 손님 수, 선택별 결과",hidden,S002;S007,base,,,관측 경계. 실제 약사도 아침에는 모른다

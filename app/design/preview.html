@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>건물 3D 디자인 미리보기</title>
+<link rel="stylesheet" href="../css/styles.css">
+<style>
+  body { margin: 0; height: 100dvh; display: grid; grid-template-columns: minmax(0, 1fr) 320px; background: var(--bg, #fff); }
+  #stage { position: relative; min-height: 0; }
+  aside { border-left: 1px solid var(--line, #e5e5e5); padding: 20px; overflow-y: auto; font-size: .875rem; }
+  aside h1 { font-size: 1.125rem; margin: 0 0 4px; }
+  aside h2 { font-size: .8125rem; color: var(--muted, #777); margin: 18px 0 6px; font-weight: 600; }
+  .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 6px; }
+  .row label { display: inline-flex; gap: 6px; align-items: center; }
+  pre { background: var(--surface-2, #f7f7f5); padding: 10px; border-radius: 8px; font-size: .75rem; white-space: pre-wrap; }
+  @media (max-width: 800px) { body { grid-template-columns: 1fr; grid-template-rows: 60vh auto; } aside { border-left: 0; } }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<aside>
+  <h1>건물 3D 디자인 미리보기</h1>
+  <p class="xs muted">시뮬레이터와 같은 파일(app/design/building3d.js)을 씁니다. 디자인을 고친 뒤 이 화면과 시뮬레이터에서 함께 확인하세요. 모든 수치는 가상입니다.</p>
+  <h2>보는 위치</h2>
+  <div class="row" id="views"></div>
+  <h2>손님 흐름 (가상 데이터)</h2>
+  <div class="row"><label>날짜 <input type="date" id="date" value="2026-10-06" min="2026-01-01" max="2026-12-31"></label></div>
+  <div class="row"><button class="btn btn-sm" id="play">재생</button><button class="btn btn-sm btn-ghost" id="clear">비우기</button></div>
+  <h2>날씨 연출 (데이터 연동 전, 가상)</h2>
+  <div class="row"><label><input type="checkbox" id="rain"> 비 (밖에서 우산)</label></div>
+  <div class="row"><label><input type="checkbox" id="dust"> 미세먼지 나쁨 (마스크·뿌연 하늘)</label></div>
+  <h2>판단 품목 상태</h2>
+  <div class="row"><label>전산 <input type="number" id="ghost" min="0" max="10" value="8" style="width:56px"></label><label>실물 <input type="number" id="solid" min="0" max="10" value="3" style="width:56px"></label></div>
+  <div class="row"><label>사 간 손님 <input type="number" id="ful" min="0" max="5" value="3" style="width:56px"></label><label>못 산 손님 <input type="number" id="unmet" min="0" max="5" value="2" style="width:56px"></label></div>
+  <div class="row"><label><input type="checkbox" id="truck"> 트럭 도착 (상자 5개)</label></div>
+  <h2>지금 화면</h2>
+  <pre id="info">-</pre>
+</aside>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script type="module">
+import { createScene, VIEWS, loadFlowData, ROUTE_LABEL, OUTCOME_LABEL } from './building3d.js';
+const $ = (s) => document.querySelector(s);
+const LABELS = [
+  { key: 'pharmacy', text: '약국 · 2F', cls: 'real' }, { key: 'ent', text: '이비인후과 · 2F', cls: 'real' },
+  { key: 'ortho', text: '정형외과 · 1F', cls: 'real' }, { key: 'persona', text: '응답자 약사', cls: 'real' },
+  { key: 'stock', text: '재고 선반 (가상)', cls: 'virtual' }, { key: 'judge', text: '3F 판단실 (개념)', cls: 'concept' },
+  { key: 'across', text: '건너편 기존 이비인후과', cls: 'muted' }, { key: 'truck', text: '도매 트럭 (가상)', cls: 'virtual', at: [-40, 3.3, 9.2] },
+];
+const DATA = '../../data/3_virtual/tables/';
+const sc = createScene($('#stage'), { labels: LABELS, itemsUrl: './items.json', dataBase: DATA });
+await loadFlowData(DATA);
+$('#views').innerHTML = Object.keys(VIEWS).map((v) => `<button class="btn btn-sm btn-ghost" data-v="${v}">${v}</button>`).join('');
+$('#views').addEventListener('click', (e) => { const b = e.target.closest('[data-v]'); if (b) sc.flyTo(b.dataset.v); });
+let running = false;
+const state = () => sc.setState({ ghost: +$('#ghost').value, solid: +$('#solid').value, truck: $('#truck').checked ? 'arrived' : 'away', drop: 5, fulfilled: +$('#ful').value, unmet: +$('#unmet').value });
+['#ghost', '#solid', '#ful', '#unmet', '#truck'].forEach((s) => $(s).addEventListener('input', state));
+state();
+$('#play').onclick = () => { running = !running; sc.setFlow({ date: $('#date').value, running }); $('#play').textContent = running ? '멈춤' : '재생'; };
+$('#clear').onclick = () => { running = false; sc.setFlow({ date: null, running: false }); $('#play').textContent = '재생'; };
+$('#date').onchange = () => sc.setFlow({ date: $('#date').value, running });
+const env = () => sc.setEnv({ rain: $('#rain').checked, dust: $('#dust').checked });
+$('#rain').onchange = env; $('#dust').onchange = env;
+setInterval(() => {
+  const f = sc.flowInfo(), d = f.day;
+  const hh = Math.floor(f.clock / 60), mm = String(Math.floor(f.clock % 60)).padStart(2, '0');
+  $('#info').textContent = [
+    `날짜 ${f.date || '-'} · ${f.running ? '재생 중' : '멈춤'} · ${hh}:${mm}`,
+    d ? `그날 데이터(가상): ${d.openType}, 1층 처방 ${d.im}, 이비인후과 처방 ${d.ent}, 워크인 ${d.walk.reduce((a, b) => a + b, 0)}, 독감 지수 ${d.ili}` : '그날 데이터 없음',
+    `화면의 인물 ${f.onScreen}명 (인물 1명 ≈ 손님 ${f.perFigure}명)`,
+    ...Object.entries(f.byRoute).map(([k, n]) => `  ${ROUTE_LABEL[k] || k}: ${n}`),
+    `나간 손님: ${OUTCOME_LABEL.map((l, i) => `${l} ${f.outcomes[i]}`).join(' · ')}`,
+  ].join('\n');
+}, 400);
+window.__preview = sc;
+</script>
+</body>
+</html>

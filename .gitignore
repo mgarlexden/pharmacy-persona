@@ -21,3 +21,6 @@ __pycache__/
 .DS_Store
 Thumbs.db
 .vscode/
+
+# 브라우저 점검 기록
+.playwright-mcp/

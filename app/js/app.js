@@ -1,6 +1,6 @@
-import { loadData, DB, lookup, CARDS, SUPPORT, cardById, PAIRS, KIND2_CANDIDATES, EXPECTED, SAMPLES, EVIDENCE_PICKS, OBJ_INFO, SCENE_LABELS, NEEDS, DONTS } from './data.js';
+import { loadData, DB, lookup, obsLines, CARDS, SUPPORT, cardById, PAIRS, KIND2_CANDIDATES, EXPECTED, SAMPLES, EVIDENCE_PICKS, OBJ_INFO, SCENE_LABELS, NEEDS, DONTS } from './data.js';
 import * as E from './engine.js';
-import { createScene } from './scene3d.js';
+import { createScene } from '../design/building3d.js'; // 팀원 목업에서 옮긴 1~3층 건물. 이전 장면은 ./scene3d.js
 
 /* ---------- 도우미 ---------- */
 const $ = (s, r = document) => r.querySelector(s);
@@ -35,9 +35,12 @@ const S = {
   obs: null, checked: false, log: [], sampleIdx: 0,
   pick: { action: null, refs: new Set(), missing: '', deferReason: '' },
   result: null, chosen: null, source: null, finalRefs: [], day: 0, playing: false, engineView: false,
+  inside: false, hudOpen: true, // inside=false: 건물 밖(전체 보기). 3층 판단실에 들어가야 미션을 시작한다
 };
+let lastMode = null;
 const card = () => CARDS.find((c) => c.id === S.cardId);
 let playTimer;
+let scenes = { hero: null, sim: null }; // resetSim → stopPlay 가 쓰므로 먼저 선언한다
 function resetSim(keepCond = false) {
   if (!keepCond) S.cond = { ...card().cond };
   S.obs = E.buildObservation(S.cond);
@@ -48,7 +51,6 @@ function resetSim(keepCond = false) {
 }
 resetSim();
 
-let scenes = { hero: null, sim: null };
 
 /* ---------- 테마 ---------- */
 const isDark = () => {
@@ -80,7 +82,12 @@ function ensureScene(kind) {
   }
   scenes[kind] = sc;
   sc.setTheme(isDark());
-  sc.onPick((key) => { if (kind === 'sim') showObj(key); else location.hash = '#/simulate'; });
+  sc.onPick((key) => {
+    if (kind !== 'sim') { location.hash = '#/simulate'; return; }
+    if (key === 'judge' && curMode() !== 'lobby') { enterLobby(); return; }
+    if (key === 'persona') { openThoughts(); return; }
+    showObj(key);
+  });
   if (kind === 'sim') { applyScene(); }
   return sc;
 }
@@ -103,10 +110,20 @@ function statusText() {
   }
   const br = S.result.find((r) => r.qid === S.chosen);
   const t = br.timeline[S.day - 1];
-  return `${dl(t.date)} 문 닫을 때 · 들어온 약 ${t.received}팩 · 사 간 손님 ${t.fulfilled}명 · 못 사고 간 손님 ${t.unmet}명 · 남은 재고 ${t.closing}팩${t.closing > 10 ? ' (선반에는 10팩까지 표시)' : ''} · 코드 계산(가상)`;
+  const fi = scenes.sim && scenes.sim.flowInfo ? scenes.sim.flowInfo() : null;
+  const fd = fi && fi.day;
+  const flow = fd ? ` · 손님 흐름 연출: 처방 ${fd.im + fd.ent}건(1층 ${fd.im} · 이비인후과 ${fd.ent}), 워크인 ${fd.walk.reduce((a, b) => a + b, 0)}명, 인물 1명 ≈ 손님 ${fi.perFigure}명 (가상 데이터)` : '';
+  return `${dl(t.date)} · 이 약: 들어온 약 ${t.received}팩 · 사 간 손님 ${t.fulfilled}명 · 못 사고 간 손님 ${t.unmet}명 · 남은 재고 ${t.closing}팩${t.closing > 10 ? ' (선반에는 10팩까지 표시)' : ''} · 코드 계산(가상)${flow}`;
 }
 function applyScene() {
-  if (scenes.sim) scenes.sim.setState(sceneView());
+  if (scenes.sim) {
+    scenes.sim.setState(sceneView());
+    // 전산 모니터: 약사와 AI에게 주는 관측값(전산 기록)만 띄운다. 실물 재고는 띄우지 않는다
+    const c = S.cond;
+    scenes.sim.setScreen({ big: `${c.book}팩`, lines: [`전산 재고 · ${c.ageH}시간 전 기록`, `최근 하루 5팩 판매 (가상)`, `도매 입고 가능: ${dl(c.arrival)} 아침`, c.prior ? '미입고 주문 5팩 있음' : '미입고 주문 없음'] });
+    // 손님 흐름은 결과 재생 중에만 움직인다. 판단 시점(0)에는 비운다.
+    scenes.sim.setFlow({ date: S.result && S.day > 0 ? E.CAL[S.day - 1] : null, running: S.playing && S.day > 0 });
+  }
   $('#stage-status').textContent = statusText();
   renderDayChips();
 }
@@ -120,17 +137,18 @@ function renderDayChips() {
   $('#play-label').textContent = S.playing ? '멈춤' : '재생';
   $('#play-icon').setAttribute('href', S.playing ? '#i-pause' : '#i-play');
 }
-function stopPlay() { S.playing = false; clearInterval(playTimer); }
+function stopPlay() { S.playing = false; clearInterval(playTimer); if (scenes.sim) scenes.sim.setFlow({ running: false }); if (window.__app) renderBrief(); /* 초기화가 끝난 뒤에만 */ }
 function startPlay() {
   if (!S.result) return;
-  if (S.day >= 3) S.day = 0;
+  if (S.day >= 3 || S.day === 0) S.day = 1; // 재생은 첫날 영업부터 시작한다
   S.playing = true; clearInterval(playTimer);
+  const dayMs = (scenes.sim && scenes.sim.dayMs) || 1700;
+  if (window.__app) renderBrief(); /* 초기화가 끝난 뒤에만 */
   playTimer = setInterval(() => {
-    if (S.day >= 3) { stopPlay(); applyScene(); return; }
+    if (S.day >= 3) { stopPlay(); applyScene(); return; } // 마지막 날도 하루치를 다 보여 준 뒤 멈춘다
     S.day += 1; applyScene(); if (S.step === 3) markDay();
-    if (S.day >= 3) { stopPlay(); applyScene(); }
-  }, 1700);
-  applyScene();
+  }, dayMs);
+  applyScene(); if (S.step === 3) markDay();
 }
 function markDay() { $$('#panel tr[data-day]').forEach((tr) => tr.classList.toggle('sel', Number(tr.dataset.day) === S.day)); }
 function setDay(d) { stopPlay(); S.day = Math.max(0, Math.min(3, d)); applyScene(); markDay(); }
@@ -146,7 +164,7 @@ $('#stage-play').addEventListener('click', (e) => {
 $('.stage-tools').addEventListener('click', (e) => {
   const b = e.target.closest('button'); if (!b) return;
   const sc = scenes.sim;
-  if (b.dataset.view) { sc && sc.flyTo(b.dataset.view); if (b.dataset.view === 'judge') showObj('judge'); if (b.dataset.view === 'roof') showObj('roof'); if (b.dataset.view === 'stock') showObj('stock'); if (b.dataset.view === 'street') showObj('truck'); if (b.dataset.view === 'pharmacy') showObj('pharmacy'); if (b.dataset.view === 'pharmacist') openProfile(); }
+  if (b.dataset.view) { sc && sc.flyTo(b.dataset.view); if (b.dataset.view === 'judge') { enterLobby(); return; } if (b.dataset.view === 'roof') showObj('roof'); if (b.dataset.view === 'stock') showObj('stock'); if (b.dataset.view === 'street') showObj('truck'); if (b.dataset.view === 'pharmacy') showObj('pharmacy'); if (b.dataset.view === 'pharmacist') openThoughts(); }
   else if (b.id === 'btn-zoom-in') sc && sc.zoom(0.8);
   else if (b.id === 'btn-zoom-out') sc && sc.zoom(1.25);
   else if (b.id === 'btn-labels') { const on = b.getAttribute('aria-pressed') !== 'true'; b.setAttribute('aria-pressed', String(on)); sc && sc.setLabels(on); }
@@ -167,7 +185,7 @@ $('#stage').addEventListener('keydown', (e) => {
 
 /* 장면 목록과 물건 설명 (무대 위 카드) */
 function renderObjList() {
-  const order = ['pharmacy', 'stock', 'counter', 'customers', 'truck', 'sofa', 'ent', 'ortho', 'across', 'judge', 'roof'];
+  const order = ['pharmacy', 'stock', 'persona', 'counter', 'demand', 'customers', 'goods', 'truck', 'sofa', 'ent', 'ortho', 'across', 'nbph', 'judge'];
   $('#obj-list').innerHTML = order.map((k) => `<button type="button" class="btn btn-sm" data-obj="${k}">${esc(OBJ_INFO[k].title)}</button>`).join('');
 }
 $('#obj-list').addEventListener('click', (e) => { const b = e.target.closest('[data-obj]'); if (b) showObj(b.dataset.obj); });
@@ -187,9 +205,19 @@ function showObj(key) {
 /* 인터뷰 약사 프로필: persona_profile.csv(사실값·서술)와 variables.csv(고정 속성·제약·상태·판단규칙…)를 그대로 읽어 보여 준다.
    CSV 에 없는 값(성별, 나이, 경력 연수)은 지어내지 않고 '미확인'으로 둔다. */
 const MISSING_FACTS = [['성별', '인터뷰 자료에 없음'], ['나이', '인터뷰 자료에 없음'], ['약사 경력 연수', '"이전 약국과 규모가 큰 약국에서 근무"까지만 있고 연수는 없음 (P008)']];
+/* 개업일(PF16, E001)부터 오늘까지 지난 날수. 개업일 당일을 1일째로 센다. */
+function openedDays() {
+  const r = DB.profile.find((x) => x.unit === 'date' && /개업일/.test(x.summary_ko));
+  if (!r) return null;
+  const [y, mo, d] = r.value.split('-').map(Number);
+  const open = new Date(y, mo - 1, d), now = new Date(); now.setHours(0, 0, 0, 0);
+  const days = Math.round((now - open) / 86400000);
+  return { date: r.value, days, nth: days + 1, today: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}` };
+}
 function profileHTML() {
   if (!DB.ok) return '<p class="muted">근거 데이터를 불러오는 중입니다.</p>';
   const facts = DB.profile.filter((r) => r.kind === 'fact');
+  const od = openedDays();
   const narr = DB.profile.filter((r) => r.kind === 'narrative');
   const factRows = facts.map((r) => `<tr><th>${esc(r.summary_ko)}</th><td><b>${esc(r.value)}</b> ${esc(r.unit === 'date' ? '' : r.unit)} ${badge('interview', '인터뷰')}</td></tr>`).join('')
     + MISSING_FACTS.map(([k, why]) => `<tr><th>${k}</th><td>${badge('unknown', '미확인')} <span class="xs muted">${esc(why)}</span></td></tr>`).join('');
@@ -200,11 +228,12 @@ function profileHTML() {
   return `
     <h3>인터뷰 약사 ${badge('interview', '응답자 1인')}</h3>
     <p class="lede">이 시뮬레이터가 재현하려는 사람입니다. 아래는 인터뷰를 정리한 CSV를 그대로 읽어 온 것이고, 시뮬레이션 값이 아닙니다.</p>
+    ${od ? `<div class="pf-days"><span class="big">개업 ${od.nth}일째</span><span class="small">개업 ${esc(od.date)} · 오늘 ${esc(od.today)} 기준 ${od.days}일 지남</span><span class="xs muted">인터뷰는 개업 약 3주 때 했습니다. 판단 근거는 그때의 말입니다.</span></div>` : ''}
     <p class="xs" style="margin:0 0 6px"><b>확인된 사실</b></p>
     <table class="pf-facts"><tbody>${factRows}</tbody></table>
     <div class="callout warn" style="margin-bottom:12px"><p>성별과 나이는 인터뷰 자료에 없어서 비워 두었습니다. 화면에서 추정해 채우지 않습니다. 확인되면 원본 Excel에 추가해야 이곳에 나타납니다.</p></div>
-    <p class="xs" style="margin:12px 0 0"><b>어떤 사람인가 (인터뷰 정리)</b></p>
-    ${narr.map((r) => `<div class="pf-sec"><span class="k">${esc(r.section_ko)}</span><b>${esc(r.summary_ko)}</b><p>${esc(r.detail_ko)}</p></div>`).join('')}
+    <p class="xs" style="margin:12px 0 0"><b>어떤 사람인가 (인터뷰 정리)</b> <span class="muted">— 약사의 말 그대로가 아니라 인터뷰를 정리한 문장입니다</span></p>
+    <div class="pf-cards">${narr.map((r) => `<div class="pf-card"><span class="k">${esc(r.section_ko)}</span><b>${esc(r.summary_ko)}</b><p>${esc(r.detail_ko)}</p></div>`).join('')}</div>
     <p class="xs" style="margin:16px 0 4px"><b>세부 항목 (변수 사전 ${DB.variables.length}건)</b> <span class="muted">— 누르면 펼쳐집니다</span></p>
     ${varGroups}
     <div class="callout" style="margin:12px 0 16px"><p>약사 2인 운영은 사용자 보완 정보(U001)이고 응답자는 1명입니다. 응답자의 과거 근무 경험은 현재 약국의 값과 따로 둡니다 ${chips(['U001', 'G01', 'G07'])}.</p></div>`;
@@ -215,6 +244,68 @@ function setProfile(open) {
 }
 function openProfile() { setProfile(true); }
 $('#profile-close').addEventListener('click', () => setProfile(false));
+/* 약사 보기: 캐릭터 선택 화면처럼 약사에게 다가가 생각 말풍선을 하나씩 넘겨 본다.
+   내용은 persona_profile.csv 의 '어떤 사람인가' 문장(인터뷰 정리)이며 약사의 말 그대로가 아니다. */
+const TH = { open: false, i: 0, raf: 0, timer: 0, touched: false };
+const thItems = () => DB.profile.filter((r) => r.kind === 'narrative');
+function openThoughts() {
+  if (!DB.ok) { openProfile(); return; }
+  if (curMode() === 'fpv' || curMode() === 'lobby') { S.inside = false; renderPanel(); }
+  setObjCard(false); setProfile(false); setStageHint(false);
+  const sc = scenes.sim; sc && sc.flyTo('pharmacist');
+  TH.open = true; TH.i = 0; TH.touched = false;
+  const od = openedDays();
+  $('#th-plate').innerHTML = `<div><p class="nm">인터뷰 약사 ${badge('interview', '응답자 1인')}</p><p class="sub">2층 약국 · ${od ? `개업 ${od.nth}일째 (${esc(od.date)} 개업)` : '개업 약 3주(인터뷰 당시)'} · 성별·나이 미확인</p></div>
+    <div class="acts"><button class="btn btn-sm btn-primary" type="button" data-th="profile">프로필 전체 보기</button><button class="btn btn-sm" type="button" data-th="close">닫기</button></div>`;
+  const items = thItems();
+  $('#th-chips').innerHTML = items.map((r, i) => `<button type="button" class="th-chip th-pop" style="--d:${(i * 0.05).toFixed(2)}s" data-th-i="${i}">${esc(r.section_ko)}</button>`).join('');
+  $('#thoughts').hidden = false; $('#stage').classList.add('thinking');
+  showThought(0);
+  cancelAnimationFrame(TH.raf); TH.raf = requestAnimationFrame(placeThoughts);
+  clearInterval(TH.timer);
+  if (!reduceMotion()) TH.timer = setInterval(() => { if (!TH.touched) showThought(TH.i + 1); }, 6500);
+}
+function showThought(i) {
+  const items = thItems(); if (!items.length) return;
+  TH.i = (i + items.length) % items.length;
+  const r = items[TH.i];
+  $('#th-k').textContent = r.section_ko; $('#th-main').textContent = r.summary_ko; $('#th-sub').textContent = r.detail_ko;
+  $('#th-count').textContent = `${TH.i + 1} / ${items.length}`;
+  const bub = $('#th-bubble'); bub.classList.remove('th-pop'); void bub.offsetWidth; bub.classList.add('th-pop');
+  $$('#th-chips .th-chip').forEach((c) => c.setAttribute('aria-current', String(Number(c.dataset.thI) === TH.i)));
+}
+function placeThoughts() {
+  if (!TH.open) return;
+  const sc = scenes.sim, st = $('#stage');
+  const p = sc && sc.anchorScreen ? sc.anchorScreen('personaHead') : null;
+  const W = st.clientWidth, H = st.clientHeight;
+  const hx = p ? p.x : W * 0.45, hy = p ? p.y : H * 0.45;
+  $('#thoughts').style.setProperty('--hx', `${(hx / W) * 100}%`); $('#thoughts').style.setProperty('--hy', `${(hy / H) * 100}%`);
+  const bub = $('#th-bubble'), bw = bub.offsetWidth, bh = bub.offsetHeight;
+  const bx = Math.max(12, Math.min(W - bw - 12, hx - 40)), by = Math.max(70, hy - bh - 60);
+  bub.style.left = `${bx}px`; bub.style.top = `${by}px`;
+  // 생각 칩: 머리 왼쪽에 세로로 줄 세운다 (넘치면 두 줄)
+  const chips = $$('#th-chips .th-chip'), gap = 34, top = Math.max(70, Math.min(hy - 220, H - 160 - Math.min(chips.length, 10) * gap));
+  chips.forEach((c, i) => {
+    const col = Math.floor(i / 10), row = i % 10;
+    const cx = Math.max(12, hx - 150 - c.offsetWidth - col * 150), cy = top + row * gap;
+    c.style.left = `${cx}px`; c.style.top = `${cy}px`;
+  });
+  TH.raf = requestAnimationFrame(placeThoughts);
+}
+function closeThoughts() {
+  if (!TH.open) return;
+  TH.open = false; cancelAnimationFrame(TH.raf); clearInterval(TH.timer);
+  $('#thoughts').hidden = true; $('#stage').classList.remove('thinking');
+}
+$('#thoughts').addEventListener('click', (e) => {
+  const c = e.target.closest('[data-th-i]'); if (c) { TH.touched = true; showThought(Number(c.dataset.thI)); return; }
+  const b = e.target.closest('[data-th]'); if (!b) return;
+  if (b.dataset.th === 'close') { closeThoughts(); scenes.sim && scenes.sim.flyTo('overview'); }
+  else if (b.dataset.th === 'profile') { closeThoughts(); openProfile(); }
+});
+$('#th-prev').addEventListener('click', () => { TH.touched = true; showThought(TH.i - 1); });
+$('#th-next').addEventListener('click', () => { TH.touched = true; showThought(TH.i + 1); });
 function setStageHint(open) {
   $('#stage-hint').hidden = !open;
   $('#btn-stagehelp').setAttribute('aria-pressed', String(open));
@@ -253,6 +344,7 @@ $('#drawer-close').addEventListener('click', closeDrawer);
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
   if (!$('#drawer').hidden) closeDrawer();
+  else if (TH.open) closeThoughts();
   else if (!$('#profile-card').hidden) setProfile(false);
   else if (!$('#obj-card').hidden) setObjCard(false);
   else if (!$('#stage-hint').hidden) setStageHint(false);
@@ -272,7 +364,8 @@ function renderStepper() {
   });
 }
 $('#sim-stepper').addEventListener('click', (e) => { const b = e.target.closest('button[data-step]'); if (b && !b.disabled) goStep(Number(b.dataset.step)); });
-function goStep(n) { S.step = n; if (n !== 3) { stopPlay(); } renderPanel(); $('.panel-col').scrollTop = 0; applyScene(); const h = $('#panel h2'); h && h.focus && (h.tabIndex = -1, h.focus({ preventScroll: true })); }
+function goStep(n) { S.inside = true; S.hudOpen = true; S.step = n; if (n !== 3) { stopPlay(); } renderPanel(); $('#panel').scrollTop = 0; applyScene(); focusHud(); }
+const focusHud = () => { const h = $('#hud-title'); h && (h.tabIndex = -1, h.focus({ preventScroll: true })); };
 
 const helpBox = (title, html) => `<details class="help"><summary>${esc(title)}</summary>${html}</details>`;
 
@@ -284,23 +377,43 @@ function changedConds() {
   if (c.physical !== base.physical) d.push('전산·실물 불일치');
   return d;
 }
+/* 관측 문장 채우기: scripts/run_persona.py 의 fill 과 같은 규칙 ({won:cash}, {date:arrival}, {n:book}) */
+function fillObs(tpl, c) {
+  const ctx = { ...c, LIMIT: E.LIMIT_KRW, UNIT: E.UNIT_COST, CAP: E.OFFER.capacity, DUE: E.OFFER.due, PRIOR_ARR: E.PRIOR_ORDER.arrival, D0: E.CAL[0], D1: E.CAL[1], D2: E.CAL[2] };
+  const fmt = { won: E.won, date: E.dayLabel, n: String };
+  return String(tpl).replace(/\{(\w+):(\w+)\}/g, (_, f, k) => fmt[f](ctx[k]));
+}
+const varChips = (ids) => ids.split(';').filter(Boolean).map((v) => {
+  const r = DB.roleById && DB.roleById.get(v);
+  return `<span class="var-id" title="${esc(r ? `${r.label_ko} · ${r.sim_role_ko}` : v)}">${esc(v)}</span>`;
+}).join('');
+function srcBadge(k) {
+  if (!k) return '';
+  const out = [];
+  if (/공공/.test(k)) out.push(badge('interview', '공공'));
+  if (/가상|가정/.test(k)) out.push(VIRT);
+  return out.join(' ');
+}
 function obsTable() {
-  const c = S.cond, o = S.obs;
-  const stockCell = S.checked
-    ? `전산 ${c.book}팩 (${c.ageH}시간 전 기록) ${VIRT}<br><b>실물 확인: ${c.physical}팩</b> ${badge('good', '확인됨')}`
-    : `전산 ${c.book}팩 (${c.ageH}시간 전 기록) ${VIRT} ${badge('unknown', '실물 미확인')}`;
-  return `<div class="tbl-wrap"><table class="tbl obs"><caption class="sr-only">약사와 AI에게 똑같이 주는 정보</caption><tbody>
-    <tr><td>언제</td><td>${dl(E.CAL[0])} 아침 8시 50분, 문 열기 전 ${VIRT}</td></tr>
-    <tr><td>어떤 약</td><td>${esc(o.item.label)}, 팩 단위 ${VIRT}</td></tr>
-    <tr><td>남은 재고</td><td>${stockCell}</td></tr>
-    <tr><td>최근 판매량</td><td>사흘 내내 하루 5팩 ${VIRT}</td></tr>
-    <tr><td>통장 잔액</td><td>${E.won(c.cash)} ${VIRT}<br><span class="xs muted">판단할 때 참고하는 사정일 뿐, 약국의 전체 현금을 예측한 값이 아닙니다.</span></td></tr>
-    <tr><td>외상 주문 한도</td><td>${E.won(E.LIMIT_KRW)} ${VIRT}<br><span class="xs muted">통장 잔액과 별개로, 이번에 후불로 더 주문할 수 있는 금액입니다.</span></td></tr>
-    <tr><td>도매상 조건</td><td>팩당 ${E.won(E.UNIT_COST)}, 최대 ${E.OFFER.capacity}팩까지 가능<br>${dl(c.arrival)} 아침 문 열기 전에 도착, 대금은 ${dl(E.OFFER.due)}에 결제 ${VIRT}</td></tr>
-    <tr><td>이미 넣은 주문</td><td>${c.prior ? `5팩, ${dl(E.PRIOR_ORDER.arrival)} 아침 도착 예정 ${VIRT}` : '없음'}</td></tr>
-    <tr><td>고를 수 있는 것</td><td>선반 확인 · 보류(0팩) · 5팩 주문 · 10팩 주문 · 판단 유보</td></tr>
-    <tr class="hidden-row"><td><span class="lock"><svg width="14" height="14" aria-hidden="true"><use href="#i-lock"/></svg>주지 않는 정보</span></td><td>확인 전의 실제 재고, 앞으로 올 손님 수, 선택별 결과. 실제 약사도 아침에는 이것을 모릅니다.</td></tr>
-  </tbody></table></div>`;
+  const c = S.cond;
+  if (!DB.obsRows.length) return '<p class="small muted">카드 변수표(data/4_bridge/card_variables.csv)를 읽지 못했습니다.</p>';
+  const { shown, hidden } = obsLines(S.cardId, c, S.checked, true);
+  const rows = shown.map((r) => {
+    const scene = r.layer === 'scene';
+    const extra = r.line_order === '60' ? (S.checked ? ` ${badge('good', '확인됨')}` : ` ${badge('unknown', '실물 미확인')}`) : '';
+    return `<tr${scene ? ' class="scene-row"' : ''}><td>${esc(r.obs_label_ko)}${scene ? '<br><span class="xs muted">장면 입력</span>' : ''}<div class="var-ids">${varChips(r.variable_ids)}</div></td>
+      <td>${esc(fillObs(r.obs_text_ko, c))} ${srcBadge(r.source_kind)}${extra}</td></tr>`;
+  }).join('');
+  const hid = hidden.map((r) => `<tr class="hidden-row"><td><span class="lock"><svg width="14" height="14" aria-hidden="true"><use href="#i-lock"/></svg>${esc(r.obs_label_ko)}</span></td><td>${esc(r.obs_text_ko)}. 실제 약사도 아침에는 이것을 모릅니다.</td></tr>`).join('');
+  return `<div class="tbl-wrap"><table class="tbl obs"><caption class="sr-only">약사와 AI에게 똑같이 주는 정보</caption><tbody>${rows}${hid}</tbody></table></div>
+    <p class="xs muted" style="margin-top:6px">각 줄 아래 회색 번호는 그 줄이 담은 인터뷰 변수입니다(data/4_bridge/card_variables.csv). "장면 입력" 줄은 날짜 사정·독감·주변 의원처럼 바깥 환경이며, AI 실행에서는 P1 층에만 들어갑니다. 약사에게는 모두 보여 줍니다.</p>`;
+}
+
+function cardVarsHTML(k) {
+  const sp = DB.specById && DB.specById.get(k.id);
+  if (!sp) return '';
+  const ch = sp.changed_variable_ids.split(';').filter(Boolean);
+  return `<p style="margin:8px 0 0"><span class="k">바꾼 변수</span>${ch.length ? `${varChips(sp.changed_variable_ids)} ${esc(sp.changed_ko)}` : esc(sp.changed_ko)}${sp.base_card_id ? ` <span class="xs muted">(기준: ${esc(cardById(sp.base_card_id).short)})</span>` : ''}</p>`;
 }
 
 const supportBadge = (k) => badge(SUPPORT[k.support].cls, SUPPORT[k.support].label);
@@ -310,58 +423,47 @@ function cardMore(k) {
     <p><span class="k">근거가 된 인터뷰 내용</span></p>
     <ul class="basis">${k.basis.map((b) => `<li>${chips(b.ids)}<span>${esc(b.why)}</span></li>`).join('')}</ul>
     <p style="margin:8px 0 0"><span class="k">가정으로 정한 부분</span>${VIRT} ${esc(k.invented)}</p>
+    ${cardVarsHTML(k)}
   </div>`;
 }
+const MISSION_KEY = 'pp-missions';
+const doneMissions = () => new Set(store.get(MISSION_KEY, []));
+function markMission(id) { const d = doneMissions(); d.add(id); store.set(MISSION_KEY, [...d]); }
 function renderStep1() {
-  const c = S.cond, diff = changedConds();
+  const c = S.cond, diff = changedConds(), k = card(), done = doneMissions();
   return `
-    <div class="p-title"><h2>상황 고르기</h2><span class="xs muted">1 / 3</span></div>
-    <div class="intro"><dl>
-      <dt>하는 일</dt><dd>약사에게 물어볼 <b>상황 카드</b>를 하나 고릅니다. 상황 카드는 "어느 날 아침의 약국 사정"입니다. 남은 재고, 통장 잔액, 도매상이 언제 가져다주는지가 들어 있고, 마지막에 "몇 팩을 주문하겠습니까?"를 묻습니다.</dd>
-      <dt>왜</dt><dd>카드마다 조건이 <b>하나씩만</b> 다릅니다. 그래야 약사의 답이 달라졌을 때 무엇 때문인지 알 수 있습니다.</dd>
-      <dt>다음</dt><dd>카드를 고르면 왼쪽 3D 선반과 아래 "약사와 AI가 보게 될 정보"가 바뀝니다. 확인한 뒤 판단 단계로 넘어갑니다.</dd>
-    </dl></div>
-
-    <div class="sec-label">상황 카드 ${badge('neutral', '모두 연습용')}</div>
-    <p class="sec-hint">고른 카드는 펼쳐져서, 무엇을 확인하려는 카드인지와 인터뷰의 어떤 말에서 나왔는지 보여 줍니다.</p>
-    <div class="cardlist" role="radiogroup" aria-label="상황 카드">
-      ${CARDS.map((k) => {
-        const on = k.id === S.cardId;
-        return `<label class="card-opt"><input type="radio" name="card" value="${k.id}" ${on ? 'checked' : ''}><span>
-          <span class="t">${esc(k.title)}</span>
-          <span class="d">${esc(k.story)}</span>
-          <span class="tags">${supportBadge(k)}${k.tags.map((t) => `<span class="chip">${esc(t)}</span>`).join('')}</span>
-          ${on ? cardMore(k) : ''}
-        </span></label>`;
-      }).join('')}
-      <label class="card-opt off" aria-disabled="true"><input type="radio" disabled><span>
-        <span class="t">인터뷰에 없던 새 상황 ${badge('unknown', '준비 중')}</span>
-        <span class="d">재현도를 실제로 재는 <b>평가용</b> 카드입니다. 위의 여섯 장은 인터뷰가 이미 다룬 요소로 만들어서, AI가 인터뷰를 따라 하기만 해도 맞힐 수 있습니다. 그래서 인터뷰에 없던 상황이 따로 필요합니다.</span>
-        <span class="d" style="margin-top:6px">후보: ${KIND2_CANDIDATES.map(esc).join(', ')}. 인터뷰가 다룬 범위와 대조한 뒤 확정합니다.</span>
-      </span></label>
+    <div class="p-title"><h2>미션 고르기</h2><span class="xs muted">1 / 3</span></div>
+    <p class="small" style="margin:0 0 4px">3층 판단실입니다. 약사에게 물어볼 <b>미션(상황 카드)</b>을 하나 고르고 시작하면, 2층 약사의 눈으로 들어가 판단합니다.</p>
+    <p class="xs muted" style="margin:0">미션마다 조건이 <b>하나씩만</b> 다릅니다. 그래야 답이 달라졌을 때 무엇 때문인지 알 수 있습니다. ${badge('neutral', '모두 연습용')}</p>
+    <div class="missions" role="radiogroup" aria-label="미션 (상황 카드)">
+      ${CARDS.map((m, i) => `<label class="mission"><input type="radio" name="card" value="${m.id}" ${m.id === S.cardId ? 'checked' : ''}><span>
+        <span class="no">미션 ${i + 1}</span><span class="t">${esc(m.title)}</span>
+        <span class="tags">${m.tags.map((t) => `<span class="chip">${esc(t)}</span>`).join('')}</span>
+        ${done.has(m.id) ? '<span class="done">✓ 해 봄</span>' : ''}
+      </span></label>`).join('')}
+      <div class="mission locked" aria-disabled="true"><span><span class="no">평가용</span><span class="t">인터뷰에 없던 새 상황</span><span class="tags">${badge('unknown', '준비 중')}</span></span></div>
     </div>
-
+    <div class="mission-detail">
+      <p class="story">${esc(k.story)}</p>
+      <span class="tags" style="display:flex;gap:4px;flex-wrap:wrap">${supportBadge(k)}</span>
+      <details class="help" style="margin-top:6px"><summary>이 미션이 확인하려는 것과 근거</summary>${cardMore(k)}</details>
+    </div>
     <details class="toggle" ${diff.length ? 'open' : ''}>
       <summary>조건 하나 바꿔 보기 ${diff.length ? badge('hyp', `바꾼 조건: ${diff.join(', ')}`) : '<span class="xs muted" style="font-weight:400">(선택)</span>'}</summary>
-      <p class="sec-hint">고른 카드에서 조건 하나만 바꿔 새 상황을 만들어 봅니다. 카드에 없는 조합을 시험할 때 씁니다. 바꾼 상황에는 미리 써 둔 예시 응답이 맞지 않을 수 있습니다.</p>
+      <p class="sec-hint">고른 미션에서 조건 하나만 바꿔 새 상황을 만들어 봅니다. 바꾼 상황에는 미리 써 둔 예시 응답이 맞지 않을 수 있습니다.</p>
       <div class="cond-row"><span class="lab" id="lab-cash">통장 잔액</span>
-        <span class="seg" role="radiogroup" aria-labelledby="lab-cash"><label><input type="radio" name="cash" value="60000" ${c.cash === 60000 ? 'checked' : ''}><span>6만원 (빠듯함)</span></label><label><input type="radio" name="cash" value="600000" ${c.cash === 600000 ? 'checked' : ''}><span>60만원 (넉넉함)</span></label></span>
-        <span class="hint">주문은 후불이라 계산상 재고에는 영향이 없습니다. 약사가 돈 걱정 때문에 덜 주문하는지 보려는 조건입니다.</span></div>
+        <span class="seg" role="radiogroup" aria-labelledby="lab-cash"><label><input type="radio" name="cash" value="60000" ${c.cash === 60000 ? 'checked' : ''}><span>6만원 (빠듯함)</span></label><label><input type="radio" name="cash" value="600000" ${c.cash === 600000 ? 'checked' : ''}><span>60만원 (넉넉함)</span></label></span></div>
       <div class="cond-row"><span class="lab" id="lab-arr">주문한 약이 들어오는 날</span>
-        <span class="seg" role="radiogroup" aria-labelledby="lab-arr"><label><input type="radio" name="arrival" value="${E.CAL[1]}" ${c.arrival === E.CAL[1] ? 'checked' : ''}><span>내일 아침 (${dl(E.CAL[1])})</span></label><label><input type="radio" name="arrival" value="${E.CAL[2]}" ${c.arrival === E.CAL[2] ? 'checked' : ''}><span>모레 아침 (${dl(E.CAL[2])})</span></label></span>
-        <span class="hint">늦게 들어오면 그 사이 손님을 돌려보낼 수 있습니다.</span></div>
+        <span class="seg" role="radiogroup" aria-labelledby="lab-arr"><label><input type="radio" name="arrival" value="${E.CAL[1]}" ${c.arrival === E.CAL[1] ? 'checked' : ''}><span>내일 (${dl(E.CAL[1])})</span></label><label><input type="radio" name="arrival" value="${E.CAL[2]}" ${c.arrival === E.CAL[2] ? 'checked' : ''}><span>모레 (${dl(E.CAL[2])})</span></label></span></div>
       <div class="checks">
-        <label class="check"><input type="checkbox" name="prior" ${c.prior ? 'checked' : ''}><span>어제 넣은 주문 5팩이 내일 들어올 예정<br><span class="xs muted">이미 넣은 주문을 고려하는지 봅니다.</span></span></label>
-        <label class="check"><input type="checkbox" name="gap" ${c.physical !== c.book ? 'checked' : ''}><span>전산 기록과 실제 선반이 다름<br><span class="xs muted">실제로는 3팩. 선반을 확인하기 전에는 숨겨집니다.</span></span></label>
+        <label class="check"><input type="checkbox" name="prior" ${c.prior ? 'checked' : ''}><span>어제 넣은 주문 5팩이 내일 들어올 예정</span></label>
+        <label class="check"><input type="checkbox" name="gap" ${c.physical !== c.book ? 'checked' : ''}><span>전산 기록과 실제 선반이 다름 (실제 3팩, 확인 전에는 숨김)</span></label>
       </div>
       ${diff.length > 1 ? `<div class="callout warn" style="margin-top:12px"><b>조건을 둘 이상 바꿨습니다.</b> 답이 달라져도 어느 조건 때문인지 알 수 없습니다. 하나만 바꾸세요.</div>` : ''}
-      ${diff.length ? '<button class="btn btn-sm" type="button" data-reset="1" style="margin-top:12px">카드 원래 조건으로 되돌리기</button>' : ''}
+      ${diff.length ? '<button class="btn btn-sm" type="button" data-reset="1" style="margin-top:12px">미션 원래 조건으로 되돌리기</button>' : ''}
     </details>
-
-    <div class="sec-label">약사와 AI가 보게 될 정보</div>
-    <p class="sec-hint">약사에게 물을 때도, AI에게 물을 때도 이 표의 내용만 줍니다. 마지막 줄의 잠긴 정보는 판단이 끝날 때까지 누구에게도 주지 않습니다.</p>
-    ${obsTable()}
-    <div class="btn-row sticky"><button class="btn btn-primary" type="button" data-go="2">이 상황으로 판단하기</button></div>`;
+    <details class="help"><summary>약사와 AI가 보게 될 정보 미리 보기</summary>${obsTable()}</details>
+    <div class="btn-row sticky"><button class="btn btn-primary" type="button" data-go="2">미션 시작 · 약사 시점으로</button></div>`;
 }
 
 function sampleCurrent() {
@@ -399,7 +501,14 @@ async function loadRuns() {
 const qidOf = (a, qty) => (a === 'commit_choice' ? `Q_${qty ?? 0}` : a);
 const runsFor = (cardId, layer) => (RUNS ? RUNS.results.filter((r) => r.card === cardId && (!layer || r.layer === layer)) : []);
 const runLayers = () => (RUNS ? RUNS.layers : []);
-const SV = { layer: 'P0', rep: 1 };
+const SV = { layer: 'P1', rep: 1 };
+const layerName = (l) => (l === 'B1' ? 'B1 · 일반 약사' : l === 'P0' ? 'P0 · 인터뷰 근거' : l === 'P1' ? 'P1 · 인터뷰 + 장면 입력' : l.startsWith('P1-') ? `P1에서 ${l.slice(3)} 근거 뺌` : l);
+const SRC_KO = { interview: '인터뷰', scene: '장면 입력', observation: '관측값', assumption: '가정', general_knowledge: '일반 상식' };
+const srcTag = (k) => `<span class="src-tag src-${esc(k)}">${esc(SRC_KO[k] || k)}</span>`;
+function factorsHTML(fs) {
+  if (!fs || !fs.length) return '<p class="small muted">요인을 적지 않았습니다 (이전 형식의 실행).</p>';
+  return `<ul class="factor-list">${fs.map((f) => `<li>${srcTag(f.source)}<span>${esc(f.factor)}</span>${(f.ids || []).map((i) => chip(i)).join('')}</li>`).join('')}</ul>`;
+}
 function savedPick(cardId) {
   const layer = runLayers().includes(SV.layer) ? SV.layer : runLayers()[0];
   const list = runsFor(cardId, layer);
@@ -414,8 +523,12 @@ const FLAG_TEXT = {
   invalid_qty: '주문량이 선택지에 없습니다',
   action_not_allowed: '허용되지 않은 행동입니다',
   priorities_not_two: '중요하게 본 것이 두 가지가 아닙니다',
+  no_factors: '판단 요인을 적지 않았습니다',
+  interview_factor_without_ids: '인터뷰 요인이라면서 근거 번호가 없습니다',
+  interview_factor_in_b1: '인터뷰 자료가 없는데 인터뷰 요인을 댔습니다',
+  scene_factor_without_scene: '장면 입력을 받지 않았는데 장면 입력 요인을 댔습니다',
 };
-const flagText = (f) => { const k = f.replace(/^r\d+:/, ''); return FLAG_TEXT[k] || (k.startsWith('unknown_ids') ? `데이터에 없는 근거 번호: ${k.split(':').slice(1).join(':')}` : k); };
+const flagText = (f) => { const k = f.replace(/^r\d+:/, ''); return FLAG_TEXT[k] || (k.startsWith('unknown_ids') ? `데이터에 없는 근거 번호: ${k.split(':').slice(1).join(':')}` : k.startsWith('cites_removed_id') ? `이번 실행에서 뺀 근거를 인용했습니다: ${k.split(':').slice(1).join(':')}` : k); };
 function savedHTML() {
   const k = card();
   if (!RUNS) return `<div class="callout warn"><p><b>저장된 AI 답이 아직 없습니다.</b> 터미널에서 <code>python scripts/run_persona.py --mode sync --cards all --reps 1 --yes</code> 를 실행하면 <code>runs/latest.json</code> 이 만들어지고 이 화면이 읽습니다. 자세한 방법은 app/README.md 에 있습니다.</p></div>`;
@@ -423,8 +536,8 @@ function savedHTML() {
   const modified = changedConds().length > 0;
   const head = `<p class="small muted">모델 <b>${esc(RUNS.model)}</b> · 실행 ${esc(RUNS.created_at.replace('T', ' '))} · ${RUNS.mode === 'batch' ? '일괄 실행' : '바로 실행'} ${RUNS.est_cost_usd != null ? `· 추정 비용 $${RUNS.est_cost_usd.toFixed(3)}` : ''}</p>`;
   const layerSeg = `<div class="cond-row"><span class="lab" id="lab-layer">어떤 정보를 준 AI인가요?</span>
-    <span class="seg" role="radiogroup" aria-labelledby="lab-layer">${runLayers().map((l) => `<label><input type="radio" name="svlayer" value="${l}" ${l === layer ? 'checked' : ''}><span>${l === 'B1' ? 'B1 · 일반 약사' : l === 'P0' ? 'P0 · 인터뷰 근거 포함' : l}</span></label>`).join('')}</span>
-    <span class="hint">B1은 인터뷰 자료 없이, P0는 인터뷰 근거를 함께 줬습니다. 둘의 차이가 인터뷰가 더한 몫입니다.</span></div>`;
+    <span class="seg" role="radiogroup" aria-labelledby="lab-layer">${runLayers().map((l) => `<label><input type="radio" name="svlayer" value="${l}" ${l === layer ? 'checked' : ''}><span>${esc(layerName(l))}</span></label>`).join('')}</span>
+    <span class="hint">B1은 인터뷰 자료 없이, P0는 인터뷰 근거를, P1은 여기에 날짜 사정·독감·주변 의원 같은 장면 입력까지 줬습니다. 약사가 보는 정보와 같은 것은 P1입니다. "근거 뺌"은 P1에서 규칙 하나와 그 근거를 빼고 돌린 것입니다.</span></div>`;
   if (!cur) return `${head}${layerSeg}<div class="callout warn"><p>이 상황(${esc(k.title)})은 저장된 실행에 들어 있지 않습니다.</p></div>`;
   const repSeg = `<div class="cond-row"><span class="lab" id="lab-rep">몇 번째 시도인가요?</span>
     <span class="seg" role="radiogroup" aria-labelledby="lab-rep">${list.map((r) => `<label><input type="radio" name="svrep" value="${r.rep}" ${r.rep === cur.rep ? 'checked' : ''}><span>${r.rep}번째</span></label>`).join('')}</span>
@@ -445,6 +558,7 @@ function savedHTML() {
       <p class="xs muted" style="margin:0">최종 선택</p><p class="big-choice">${esc(ACTION_LABEL[finalQ] || finalQ)}</p>
       <p class="xs muted" style="margin:0 0 2px">이유</p><p class="reason">${esc(last.reason)}</p>
       <p class="xs muted" style="margin:0 0 2px">중요하게 본 것</p><p class="small">${(last.priorities || []).map(esc).join(' · ') || '-'}</p>
+      <p class="xs muted" style="margin:0 0 2px">판단에 쓴 요인과 출처 (AI의 자기 보고)</p>${factorsHTML(last.factors)}
       <p class="xs muted" style="margin:0 0 6px">근거로 든 인터뷰 번호 (데이터에 실제 있는지 확인)</p>${idsHtml}
       <p class="xs muted" style="margin:10px 0 2px">더 알고 싶은 정보</p><p class="small">${(last.missing_info || []).map(esc).join(' · ') || '없음'}</p>
       ${flagHtml}${consTxt ? `<p class="xs muted" style="margin:10px 0 0">${consTxt}</p>` : ''}
@@ -462,7 +576,7 @@ function runSaved() {
 }
 function savedAnswer(cardId) {
   if (!RUNS) return null;
-  const layer = runLayers().includes('P0') ? 'P0' : runLayers()[0];
+  const layer = runLayers().includes('P1') ? 'P1' : runLayers().includes('P0') ? 'P0' : runLayers()[0];
   const cur = runsFor(cardId, layer).find((r) => r.rep === 1) || runsFor(cardId, layer)[0];
   if (!cur) return null;
   const last = cur.steps[cur.steps.length - 1];
@@ -498,7 +612,7 @@ function renderStep2() {
       <div class="panel-flat">
         <p class="small" style="margin:0 0 8px">${stockLine}</p>
         <button class="btn btn-sm" type="button" data-check="1" ${S.checked ? 'disabled' : ''}><svg width="16" height="16" aria-hidden="true"><use href="#i-eye"/></svg>${S.checked ? '선반 확인함' : '선반 확인하기'}</button>
-        <p class="xs muted" style="margin:8px 0 0">누르면 실제 재고가 공개되고 왼쪽 3D 선반에 갈색 상자로 나타납니다. 확인했다는 사실이 기록에 남습니다.</p>
+        <p class="xs muted" style="margin:8px 0 0">누르면 약사가 뒤돌아 재고 선반을 봅니다. 실제 재고가 공개되고 선반에 갈색 상자로 나타납니다. 확인했다는 사실이 기록에 남습니다.</p>
       </div>
       <div class="sec-label"><span class="badge b-neutral">②</span> 어떻게 하시겠어요?</div>
       <p class="sec-hint">하나를 고르면 코드가 도매상 조건(최대 10팩, 외상 한도)을 넘지 않는지 바로 검사합니다. 검사는 규칙 위반만 알려 줄 뿐 좋고 나쁨을 판단하지 않습니다.</p>
@@ -522,7 +636,8 @@ function renderStep2() {
       <dt>누가</dt><dd>이 자리는 AI(페르소나)가 답하는 곳입니다. 화면이 AI를 직접 부르지는 않고, <b>저장된 AI 답</b>(터미널에서 미리 실행해 둔 결과)을 보여 줍니다. 결과가 없으면 <b>직접 판단</b>(내가 페르소나 역할)하거나 <b>예시 응답</b>(미리 써 둔 샘플)을 쓸 수 있습니다.</dd>
       <dt>다음</dt><dd>선택을 확정하면 결과 미리보기로 넘어갑니다. 판단 유보는 결과 없이 기록만 남습니다.</dd>
     </dl></div>
-    <div class="panel-flat" style="margin-bottom:16px"><p class="xs muted" style="margin:0 0 2px">지금 상황</p><p style="margin:0;font-weight:600">${esc(k.title)}</p>${modified ? `<p class="xs" style="margin:4px 0 0">${badge('hyp', `조건 바꿈: ${changedConds().join(', ')}`)}</p>` : ''}<button class="btn btn-ghost btn-sm" type="button" data-go="1" style="margin:6px 0 0 -10px">상황 다시 보기</button></div>
+    <details class="help" open style="margin-bottom:12px"><summary>약사 눈에 보이는 것 (약사와 AI에게 같은 정보)</summary>${obsTable()}</details>
+    <div class="panel-flat" style="margin-bottom:16px"><p class="xs muted" style="margin:0 0 2px">지금 미션</p><p style="margin:0;font-weight:600">${esc(k.title)}</p>${modified ? `<p class="xs" style="margin:4px 0 0">${badge('hyp', `조건 바꿈: ${changedConds().join(', ')}`)}</p>` : ''}<button class="btn btn-ghost btn-sm" type="button" data-go="1" style="margin:6px 0 0 -10px">3층 판단실로 돌아가기</button></div>
     <div class="cond-row"><span class="lab" id="lab-resp">누가 판단하나요?</span>
       <span class="seg" role="radiogroup" aria-labelledby="lab-resp"><label><input type="radio" name="resp" value="direct" ${S.responder === 'direct' ? 'checked' : ''}><span>직접 판단</span></label><label><input type="radio" name="resp" value="saved" ${S.responder === 'saved' ? 'checked' : ''}><span>저장된 AI 답${RUNS ? '' : ' (없음)'}</span></label><label><input type="radio" name="resp" value="sample" ${S.responder === 'sample' ? 'checked' : ''}><span>예시 응답 보기</span></label></span></div>
     ${body}
@@ -612,14 +727,105 @@ function renderStep3() {
       <div><b>니즈</b>${badge('unknown', '아직 안 함')}<br><span class="muted">약사 확인 전</span></div>
     </div>
     <div class="callout" style="margin-top:20px"><b>다음 할 일</b><br>이 상황 카드를 실제 약사에게 보여 주고 답을 받아, "약사 답과 비교" 화면에 입력합니다. 결과 화면은 보여 주지 않습니다.</div>
-    <div class="btn-row sticky"><a class="btn btn-primary" href="#/validate" data-to-validate="1">약사 답과 비교하기</a><button class="btn" type="button" data-reset="1">다른 상황으로 다시</button></div>`;
+    <div class="btn-row sticky"><a class="btn btn-primary" href="#/validate" data-to-validate="1">약사 답과 비교하기</a><button class="btn" type="button" data-reset="1">다른 미션 고르기</button></div>`;
 }
 
 function renderPanel(focusSel) {
   $('#panel').innerHTML = S.step === 1 ? renderStep1() : S.step === 2 ? renderStep2() : renderStep3();
   renderStepper();
+  renderBrief();
+  applyMode();
   if (focusSel) { const el = $(focusSel, $('#panel')); el && el.focus({ preventScroll: true }); }
 }
+
+/* ---------- 모드: 건물 밖 → 3층 판단실(미션) → 약사 시점(1인칭 판단) → 결과 ---------- */
+const MODE_INFO = {
+  building: { kicker: '건물 전체', title: '' },
+  lobby: { kicker: '3층 판단실', title: '미션 고르기' },
+  fpv: { kicker: '2층 약국 · 약사 시점', title: '판단 내리기' },
+  result: { kicker: '결과', title: '사흘 미리보기' },
+};
+const curMode = () => (!S.inside ? 'building' : S.step === 1 ? 'lobby' : S.step === 2 ? 'fpv' : 'result');
+function applyMode() {
+  const m = curMode(), stage = $('#stage'), sc = scenes.sim;
+  const showHud = m !== 'building' && S.hudOpen;
+  $('#hud').hidden = !showHud;
+  $('#hud-open').hidden = !(m !== 'building' && !S.hudOpen);
+  stage.classList.toggle('hud-open', showHud);
+  stage.classList.toggle('fpv', m === 'fpv');
+  $('#fp-ui').hidden = m !== 'fpv';
+  $('#hud-kicker').textContent = MODE_INFO[m].kicker;
+  $('#hud-title').textContent = MODE_INFO[m].title;
+  if (m === lastMode) return;
+  if (m !== 'building') { setObjCard(false); setProfile(false); setStageHint(false); closeThoughts(); }
+  if (sc) {
+    const side = $('#hud').hidden ? '' : 'Side';
+    if (m === 'building') sc.flyTo('overview');
+    else if (m === 'lobby') sc.flyTo(`judge${side}`);
+    else if (m === 'fpv') lookFp(S.checked ? 'shelf' : 'front');
+    else sc.flyTo(`overview${side}`);
+    sc.setConceptFocus(m === 'lobby');
+    sc.setLabelHidden('judge', m !== 'building');
+  }
+  lastMode = m;
+}
+function lookFp(name) {
+  const sc = scenes.sim; if (sc) sc.firstPerson(name);
+  $$('#fp-ui [data-look]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.look === name)));
+  if (window.__app) renderBrief();
+}
+function enterLobby() { S.inside = true; S.hudOpen = true; S.step = 1; stopPlay(); renderPanel(); applyScene(); focusHud(); }
+function leaveBuilding() { S.inside = false; stopPlay(); renderPanel(); applyScene(); }
+$('#hud-leave').addEventListener('click', leaveBuilding);
+$('#hud-fold').addEventListener('click', () => { S.hudOpen = false; applyMode(); $('#hud-open').focus(); });
+$('#hud-open').addEventListener('click', () => { S.hudOpen = true; applyMode(); focusHud(); });
+$('#fp-ui').addEventListener('click', (e) => { const b = e.target.closest('[data-look]'); if (b) lookFp(b.dataset.look); });
+
+/* 오른쪽 요약 창: 핵심만 */
+function renderBrief() {
+  const m = curMode(), k = card(), c = S.cond;
+  const stock = S.checked ? `전산 ${c.book}팩 · 실물 ${c.physical}팩` : `전산 ${c.book}팩 · 실물 미확인`;
+  const chosen = S.result ? ACTION_LABEL[S.chosen] : S.pick.action ? `${ACTION_LABEL[S.pick.action]} (고르는 중)` : '아직 없음';
+  const facts = `<ul class="brief-facts">
+      <li><span>재고</span><b>${stock}</b></li>
+      <li><span>통장 잔액</span><b>${E.won(c.cash)}</b></li>
+      <li><span>입고</span><b>${dl(c.arrival)} 아침</b></li>
+      <li><span>이미 넣은 주문</span><b>${c.prior ? '5팩' : '없음'}</b></li>
+      <li><span>선택</span><b>${esc(chosen)}</b></li>
+    </ul>`;
+  let cta = '', note = '';
+  if (m === 'building') {
+    cta = `<button class="btn btn-primary" type="button" data-brief="enter">3층 판단실로 올라가기</button><button class="btn" type="button" data-brief="persona">약사 보기</button>`;
+    note = '시뮬레이션은 3층 판단실에서 시작합니다. 3D의 파란 "3F 판단실" 표시를 눌러도 됩니다.';
+  } else if (m === 'lobby') {
+    cta = `<button class="btn btn-primary" type="button" data-brief="start">미션 시작 · 약사 시점으로</button><button class="btn btn-ghost" type="button" data-brief="leave">건물로 나가기</button>`;
+    note = '미션의 자세한 내용은 3D 위 판단 창에 있습니다.';
+  } else if (m === 'fpv') {
+    const onShelf = $('#fp-ui [data-look="shelf"]')?.getAttribute('aria-pressed') === 'true';
+    cta = `${S.hudOpen ? '' : '<button class="btn btn-primary" type="button" data-brief="hud">판단 창 열기</button>'}<button class="btn" type="button" data-brief="look">${onShelf ? '카운터 전산 보기' : '재고 선반 보기'}</button>${S.hudOpen ? '<button class="btn" type="button" data-brief="hud">판단 창 접고 둘러보기</button>' : ''}<button class="btn btn-ghost" type="button" data-brief="lobby">3층으로 돌아가기</button>`;
+    note = '약사의 눈으로 보고 있습니다. 확인 → 선택 → 이유 순서로 판단 창에서 정합니다.';
+  } else {
+    cta = `<button class="btn btn-primary" type="button" data-brief="play">${S.playing ? '재생 멈춤' : '사흘 재생'}</button><a class="btn" href="#/validate" data-to-validate="1">약사 답과 비교하기</a><button class="btn btn-ghost" type="button" data-brief="lobby">다른 미션 고르기</button>`;
+    note = '재생하면 하루씩 손님이 오가고, 재고 선반과 도매 트럭이 바뀝니다. 결과는 참고 자료이며 약사에게 보여 주지 않습니다.';
+  }
+  $('#brief-body').innerHTML = `
+    <span class="mode-chip">${esc(MODE_INFO[m].kicker)}</span>
+    <div class="brief-card"><span class="k">지금 미션</span><span class="t">${esc(k.title)}</span>${changedConds().length ? `<p class="xs" style="margin:6px 0 0">${badge('hyp', `조건 바꿈: ${changedConds().join(', ')}`)}</p>` : ''}${facts}</div>
+    <p class="brief-note">${esc(note)} 모든 수치는 ${VIRT}입니다.</p>
+    <div class="brief-cta">${cta}</div>`;
+}
+$('#brief-body').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-brief], [data-to-validate]'); if (!b) return;
+  if (b.dataset.toValidate) { V.cardId = S.cardId; return; }
+  const a = b.dataset.brief;
+  if (a === 'enter' || a === 'lobby') enterLobby();
+  else if (a === 'start') goStep(2);
+  else if (a === 'leave') leaveBuilding();
+  else if (a === 'persona') openThoughts();
+  else if (a === 'hud') { S.hudOpen = !S.hudOpen; applyMode(); renderBrief(); }
+  else if (a === 'look') { lookFp($('#fp-ui [data-look="shelf"]').getAttribute('aria-pressed') === 'true' ? 'front' : 'shelf'); }
+  else if (a === 'play') { S.playing ? (stopPlay(), applyScene()) : startPlay(); renderBrief(); }
+});
 
 /* 패널 이벤트 (위임) */
 const panel = $('#panel');
@@ -656,6 +862,7 @@ function doCheck() {
   S.log.push({ t: 'check', text: `선반 확인 → 실제 ${S.cond.physical}팩 (전산 기록은 ${S.cond.book}팩)` });
   toast(`선반에 실제로 ${S.cond.physical}팩이 있습니다. 이 정보로 다시 판단하세요.`);
   renderPanel('[data-check]'); applyScene();
+  if (curMode() === 'fpv') lookFp('shelf');
 }
 function runSample() {
   const cur = sampleCurrent();
@@ -679,11 +886,10 @@ function commitDirect() {
 function commit(qid, source) {
   const r = E.runBranch(S.cond, qid);
   if (r.error) { toast(r.error + ' — 자동으로 고치지 않습니다. 다른 선택을 하세요.'); return; }
-  S.result = E.runAll(S.cond); S.chosen = qid; S.source = source;
+  S.result = E.runAll(S.cond); S.chosen = qid; S.source = source; markMission(S.cardId);
   S.log.push({ t: 'commit', text: `선택 확정: ${ACTION_LABEL[qid]} (${source === 'sample' ? '예시 응답' : source === 'saved' ? '저장된 AI 답' : '직접 판단'})` });
   S.step = 3; S.day = 0;
-  renderPanel(); applyScene(); $('.panel-col').scrollTop = 0;
-  const h = $('#panel h2'); h && (h.tabIndex = -1, h.focus({ preventScroll: true }));
+  renderPanel(); applyScene(); $('#panel').scrollTop = 0; focusHud();
   if (!reduceMotion()) startPlay(); else toast('재생 버튼이나 날짜 버튼으로 3일을 확인하세요.');
 }
 
@@ -1050,7 +1256,7 @@ async function runDetailHTML(id) {
   const byKey = (c, l) => d.results.filter((r) => r.card === c && r.layer === l);
   const rows = d.cards.map((c) => `<tr><td>${esc(cardById(c).title)}</td>${d.layers.map((l) => `<td>${tallyHTML(byKey(c, l))}</td>`).join('')}</tr>`).join('');
   const flagged = d.results.filter((r) => r.flags.length);
-  const flagRows = flagged.map((r) => `<li><b>${esc(cardById(r.card).title)}</b> · ${esc(r.layer)} · ${r.rep}번째: ${r.flags.map((f) => esc(flagText(f))).join(', ')}</li>`).join('');
+  const flagRows = flagged.map((r) => `<li><b>${esc(cardById(r.card).title)}</b> · ${esc(r.layer)} · ${r.rep}번째: ${[...new Set(r.flags.map(flagText))].map(esc).join(', ')}</li>`).join('');
   const detail = d.results.map((r) => {
     const last = r.steps[r.steps.length - 1];
     const ids = [...new Set(r.steps.flatMap((s) => s.cited_ids || []))];
@@ -1061,21 +1267,42 @@ async function runDetailHTML(id) {
   }).join('');
   return `<section class="run-detail"><h3>${runBrief({ ...m, ...d })}</h3>
     <p class="small muted">같은 상황을 ${d.reps}번씩 물은 결과입니다. 한 칸의 "5팩 주문 2번"은 두 번의 시도가 그 선택으로 끝났다는 뜻입니다. 위 칸의 숫자가 갈릴수록 AI의 답이 일정하지 않습니다.</p>
-    <div class="tbl-wrap"><table class="tbl"><thead><tr><th>상황</th>${d.layers.map((l) => `<th>${l === 'B1' ? 'B1 · 일반 약사' : l === 'P0' ? 'P0 · 인터뷰 근거 포함' : esc(l)}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="tbl-wrap"><table class="tbl"><thead><tr><th>상황</th>${d.layers.map((l) => `<th>${esc(layerName(l))}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>
+    ${factorSummaryHTML(d)}${ablationHTML(d)}
     ${flagged.length ? `<div class="callout warn" style="margin:12px 0"><p><b>검증에 걸린 결과 ${flagged.length}건</b></p><ul class="small">${flagRows}</ul></div>` : ''}
     <h3 style="margin-top:20px">시도별 이유와 근거</h3>${detail}
     <p class="xs muted" style="margin-top:12px">${esc(d.note || '')}</p></section>`;
 }
+function factorSummaryHTML(d) {
+  const fs = d.factor_summary; if (!fs) return '';
+  const srcs = ['interview', 'scene', 'observation', 'assumption', 'general_knowledge'];
+  const rows = Object.entries(fs).map(([l, v]) => `<tr><td>${esc(layerName(l))}</td>${srcs.map((k) => `<td class="num">${v[k]}</td>`).join('')}<td class="num"><b>${v.general_knowledge_share == null ? '-' : `${Math.round(v.general_knowledge_share * 100)}%`}</b></td></tr>`).join('');
+  return `<h3 style="margin-top:20px">판단 요인의 출처</h3>
+    <p class="small muted">AI가 최종 판단마다 적은 요인을 출처별로 센 것입니다. "일반 상식" 몫이 클수록 인터뷰와 관측값 밖의 지식에 기댔다는 뜻입니다. AI의 자기 보고라서 실제로 무엇에 기댔는지를 보증하지는 않습니다. 그래서 아래 "근거를 하나씩 빼 보기"로 따로 확인합니다.</p>
+    <div class="tbl-wrap"><table class="tbl"><thead><tr><th>층</th>${srcs.map((k) => `<th class="num">${srcTag(k)}</th>`).join('')}<th class="num">일반 상식 비율</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+function ablationHTML(d) {
+  const rows = d.ablation_summary || []; if (!rows.length) return '';
+  const fin = (k) => (k === 'split' ? '시도가 갈림' : k === 'commit_choice' ? '바로 주문 결정' : k === 'commit_0' ? '보류' : k === 'commit_5' ? '5팩 주문' : k === 'commit_10' ? '10팩 주문' : (ACTION_LABEL[k] || k || '-'));
+  const res = (c) => (c === 'yes' ? badge('bad', '판단이 바뀜') : c === 'no' ? badge('neutral', '그대로') : badge('unknown', '시도가 갈려 판단 보류'));
+  const body = rows.map((r) => `<tr><td>${chip(r.rule)}</td><td>${esc(cardById(r.card).title)}</td><td>${esc(fin(r.base_first))} → ${esc(fin(r.base_final))}</td><td>${esc(fin(r.ablated_first))} → ${esc(fin(r.ablated_final))}</td><td>${res(r.changed)}</td></tr>`).join('');
+  const removed = Object.entries(d.ablations || {}).map(([l, ids]) => `<li><b>${esc(l.slice(3))}</b> 묶음: ${ids.map((i) => chip(i)).join(' ')}</li>`).join('');
+  return `<h3 style="margin-top:20px">근거를 하나씩 빼 보기</h3>
+    <p class="small muted">P1에서 규칙 하나와 그 규칙을 받치는 발언·사례를 빼고 같은 카드를 다시 풀게 했습니다. 판단(첫 행동 또는 가장 많은 최종 선택)이 바뀌면 그 근거가 실제로 판단에 쓰였다는 신호입니다. 그대로면 그 근거 없이도 같은 답이 나온다는 뜻이라, 그 카드에서는 근거가 장식일 수 있습니다. 반복 수가 적으면 우연히 바뀔 수 있으니 확정 결론으로 읽지 않습니다.</p>
+    <ul class="small">${removed}</ul>
+    <div class="tbl-wrap"><table class="tbl"><thead><tr><th>뺀 규칙</th><th>상황</th><th>P1 (첫 행동 → 최종)</th><th>뺀 뒤</th><th>결과</th></tr></thead><tbody>${body}</tbody></table></div>`;
+}
 function cardAccumHTML(runsData) {
   const cardOpts = Object.keys(CARDS_BY_ID_LIST()).map((c) => `<option value="${c}"${c === RH.card ? ' selected' : ''}>${esc(cardById(c).title)}</option>`).join('');
+  const AL = [...new Set(Object.values(runsData).flatMap((d) => d.layers))].filter((l) => !l.startsWith('P1-'));
   const rows = RH.index.map((m) => {
     const d = runsData[m.run_id];
     if (!d) return '';
-    const cells = ['B1', 'P0'].map((l) => `<td>${tallyHTML(d.results.filter((r) => r.card === RH.card && r.layer === l))}</td>`).join('');
+    const cells = AL.map((l) => `<td>${tallyHTML(d.results.filter((r) => r.card === RH.card && r.layer === l))}</td>`).join('');
     return `<tr><td>${runTime(m.created_at)}</td><td>${KIND_BADGE[m.kind] ? KIND_BADGE[m.kind]() : ''}</td><td>${esc(m.model)}</td>${cells}</tr>`;
   }).join('');
   return `<div class="cond-row"><label class="lab" for="rh-card">상황</label><select id="rh-card" class="sel">${cardOpts}</select></div>
-    <div class="tbl-wrap"><table class="tbl"><thead><tr><th>실행 시각</th><th>구분</th><th>모델</th><th>B1 · 일반 약사</th><th>P0 · 인터뷰 근거 포함</th></tr></thead><tbody>${rows || '<tr><td colspan="5" class="muted">이 상황이 들어 있는 실행이 없습니다.</td></tr>'}</tbody></table></div>
+    <div class="tbl-wrap"><table class="tbl"><thead><tr><th>실행 시각</th><th>구분</th><th>모델</th>${AL.map((l) => `<th>${esc(layerName(l))}</th>`).join('')}</tr></thead><tbody>${rows || `<tr><td colspan="${3 + AL.length}" class="muted">이 상황이 들어 있는 실행이 없습니다.</td></tr>`}</tbody></table></div>
     <p class="xs muted" style="margin-top:8px">같은 상황에 대한 모든 실행의 최종 선택입니다. 모델이나 입력 지문이 다른 실행이 섞여 있을 수 있으니 목록 탭에서 조건을 함께 확인하세요.</p>`;
 }
 const CARDS_BY_ID_LIST = () => Object.fromEntries(CARDS.map((c) => [c.id, c]));

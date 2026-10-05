@@ -1,0 +1,86 @@
+﻿variable_id,category_code,label_ko,sim_role,sim_role_ko,card_input_allowed,visible_to_decider,data_scope,data_ids,rule_ids,claim_ids,used_in_practice_cards,role_note_ko
+P001,fixed_attribute,약국 층수,context,고정 맥락,Y,profile,world_linked,DT_L42,,E002;E013,,카드가 바꾸지 않는다. 프로필로 항상 준다.
+P002,fixed_attribute,운영 단계,context,고정 맥락,Y,profile,world_linked,DT_L41,,E001,,카드가 바꾸지 않는다. 프로필로 항상 준다.
+P004,fixed_attribute,운영 약사 수,context,고정 맥락,Y,profile,world_linked,DT_L43;DT_L44,,U001,,카드가 바꾸지 않는다. 프로필로 항상 준다.
+P006,fixed_attribute,응답자의 담당 업무,context,고정 맥락,Y,profile,interview_only,,,E005;E069,,카드가 바꾸지 않는다. 프로필로 항상 준다.
+P008,fixed_attribute,과거 근무 경험,context,고정 맥락,Y,profile,interview_only,,R05,E007;E073;E075,,카드가 바꾸지 않는다. 프로필로 항상 준다.
+P010,fixed_attribute,주요 처방 유입 맥락,context,고정 맥락,Y,profile,world_linked,DT_L33;DT_L34;DT_L36,R06,E002;E009;E017,,카드가 바꾸지 않는다. 프로필로 항상 준다.
+P011,fixed_attribute,같은 건물의 의료기관 구성,context,고정 맥락,Y,profile,world_linked,DT_L33;DT_L34;DT_L37,,E002;E014,,카드가 바꾸지 않는다. 프로필로 항상 준다.
+P012,fixed_attribute,의료기관별 운영 이력,context,고정 맥락,Y,profile,world_linked,DT_L38,,E002;E003;E004,,카드가 바꾸지 않는다. 프로필로 항상 준다.
+P013,fixed_attribute,이동 경로,context,고정 맥락,Y,profile,world_linked,DT_L32;DT_L59,,E019,,카드가 바꾸지 않는다. 프로필로 항상 준다.
+P014,fixed_attribute,입구·동선 인지,context,고정 맥락,Y,profile,world_linked,DT_L32;DT_L59,,E013;E019,,카드가 바꾸지 않는다. 프로필로 항상 준다.
+P015,fixed_attribute,주변 상권,context,고정 맥락,Y,profile,world_linked,DT_L21;DT_L27;DT_L28;DT_L30,,E015,,카드가 바꾸지 않는다. 프로필로 항상 준다.
+P016,fixed_attribute,영업일 방침,context,고정 맥락,Y,profile,world_linked,DT_L40,,E022;E026,,카드가 바꾸지 않는다. 프로필로 항상 준다.
+P018,fixed_attribute,운영 중심,context,고정 맥락,Y,profile,world_linked,DT_L01;DT_L03;DT_L45;DT_L46,R06,E010;E088;E089,,카드가 바꾸지 않는다. 프로필로 항상 준다.
+P020,fixed_attribute,워크인 유입,context,고정 맥락,Y,profile,world_linked,DT_L59,R06,E012,,카드가 바꾸지 않는다. 프로필로 항상 준다.
+P022,fixed_attribute,사용 전산의 성격,context,고정 맥락,Y,profile,world_linked,DT_L54,,E059,,카드가 바꾸지 않는다. 프로필로 항상 준다.
+C001,structural_constraint,재고 구매대금 부담,manipulable,조작 변수,Y,at_decision,world_linked,DT_L01;DT_L02;DT_L03;DT_L06;DT_L08;DT_L49,R03,E034,통장 잔액·외상 한도,카드에서 값(금액·기한·공간·조건)을 정해 관측값으로 준다. 값은 가정 또는 가상.
+C002,structural_constraint,결제 주기 부담,manipulable,조작 변수,Y,at_decision,world_linked,DT_L09;DT_L50,,E034,외상 한도·결제일,카드에서 값(금액·기한·공간·조건)을 정해 관측값으로 준다. 값은 가정 또는 가상.
+C003,structural_constraint,거래처별 반품 조건,manipulable,조작 변수,Y,at_decision,world_linked,DT_L51,R04,E038,,카드에서 값(금액·기한·공간·조건)을 정해 관측값으로 준다. 값은 가정 또는 가상.
+C005,structural_constraint,반품 가능 기간,manipulable,조작 변수,Y,at_decision,world_linked,DT_L51,R04,E038,,카드에서 값(금액·기한·공간·조건)을 정해 관측값으로 준다. 값은 가정 또는 가상.
+C006,structural_constraint,보관 공간,manipulable,조작 변수,Y,at_decision,world_linked,DT_L39;DT_L53,R03,E035;E068,,카드에서 값(금액·기한·공간·조건)을 정해 관측값으로 준다. 값은 가정 또는 가상.
+C007,structural_constraint,진열 공간,manipulable,조작 변수,Y,at_decision,world_linked,DT_L39;DT_L53,,E068,,카드에서 값(금액·기한·공간·조건)을 정해 관측값으로 준다. 값은 가정 또는 가상.
+C008,structural_constraint,유효기간,manipulable,조작 변수,Y,at_decision,world_linked,DT_L51,,E035,,카드에서 값(금액·기한·공간·조건)을 정해 관측값으로 준다. 값은 가정 또는 가상.
+C009,structural_constraint,약사 확인 영역,context,고정 맥락,Y,profile,interview_only,,R15,E044;E048,,약사의 인식·수용 조건 서술이다. 인터뷰 근거로만 주고 카드가 값을 바꾸지 않는다.
+C010,structural_constraint,보조인력 교육,context,고정 맥락,Y,profile,interview_only,,R15,E045;E046,,약사의 인식·수용 조건 서술이다. 인터뷰 근거로만 주고 카드가 값을 바꾸지 않는다.
+C011,structural_constraint,전문 운영인력 비용,context,고정 맥락,Y,profile,world_linked,DT_L07,,E071,,약사의 인식·수용 조건 서술이다. 인터뷰 근거로만 주고 카드가 값을 바꾸지 않는다.
+C012,structural_constraint,상담 시간·공간,context,고정 맥락,Y,profile,interview_only,,,E077;E078,,약사의 인식·수용 조건 서술이다. 인터뷰 근거로만 주고 카드가 값을 바꾸지 않는다.
+C013,structural_constraint,자동 상담기록 수용조건,context,고정 맥락,Y,profile,interview_only,,R13,E060;E061;E062,,약사의 인식·수용 조건 서술이다. 인터뷰 근거로만 주고 카드가 값을 바꾸지 않는다.
+C014,structural_constraint,전산 재고 정확도,manipulable,조작 변수,Y,at_decision,world_linked,DT_L54,,E042;E043,전산 기록 시각(C05),카드에서 값(금액·기한·공간·조건)을 정해 관측값으로 준다. 값은 가정 또는 가상.
+C015,structural_constraint,공급정보 분산,manipulable,조작 변수,Y,at_decision,world_linked,DT_L52,,E064,이미 넣은 주문(C06),카드에서 값(금액·기한·공간·조건)을 정해 관측값으로 준다. 값은 가정 또는 가상.
+C016,structural_constraint,추가 설명 부담,context,고정 맥락,Y,profile,interview_only,,,E081;E084;E085,,약사의 인식·수용 조건 서술이다. 인터뷰 근거로만 주고 카드가 값을 바꾸지 않는다.
+C017,structural_constraint,고객별 기록 부담,context,고정 맥락,Y,profile,interview_only,,R09,E054;E056,,약사의 인식·수용 조건 서술이다. 인터뷰 근거로만 주고 카드가 값을 바꾸지 않는다.
+C018,structural_constraint,의료기관 안내에 대한 인식,context,고정 맥락,Y,profile,interview_only,,,E020,,약사의 인식·수용 조건 서술이다. 인터뷰 근거로만 주고 카드가 값을 바꾸지 않는다.
+S001,internal_state,전산 재고 정보,manipulable,조작 변수,Y,at_decision,world_linked,DT_L48,R01,E028;E030;E042,남은 재고(전산 기록),판단 시점의 약국 상태. 카드가 값을 정한다.
+S002,internal_state,실물 재고 확인,manipulable,조작 변수,Y,after_check,world_linked,DT_L48,R01,E030;E031,남은 재고(선반 확인 결과),판단 시점의 약국 상태. 카드가 값을 정한다. 선반 확인 전에는 숨긴다.
+S004,internal_state,전산·실물 오차,manipulable,조작 변수,Y,after_check,world_linked,DT_L48,,E042,전산·실물 차이(C05),판단 시점의 약국 상태. 카드가 값을 정한다. 선반 확인 전에는 숨긴다.
+S005,internal_state,자주 쓰는 품목,manipulable,조작 변수,Y,at_decision,world_linked,DT_L48,R01,E031,어떤 약(자주 나가는 단일 품목),판단 시점의 약국 상태. 카드가 값을 정한다.
+S007,internal_state,상품별 판매 반응,manipulable,조작 변수,Y,at_decision,world_linked,DT_L47,,E016;E088,최근 판매량,판단 시점의 약국 상태. 카드가 값을 정한다.
+S008,internal_state,체감 잔여 사용기간,manipulable,조작 변수,Y,at_decision,world_linked,DT_L48,R02,E029,,판단 시점의 약국 상태. 카드가 값을 정한다.
+S011,internal_state,현재 자금 부담,manipulable,조작 변수,Y,at_decision,world_linked,DT_L49,R03,E034,통장 잔액,판단 시점의 약국 상태. 카드가 값을 정한다.
+S013,internal_state,일반약 구매 규모,manipulable,조작 변수,Y,at_decision,world_linked,DT_L47,,E088,,판단 시점의 약국 상태. 카드가 값을 정한다.
+S016,internal_state,취급 상품 구성,manipulable,조작 변수,Y,at_decision,world_linked,DT_L15;DT_L56,R05;R06,E009;E010;E011,,판단 시점의 약국 상태. 카드가 값을 정한다.
+S017,internal_state,진열 위치,manipulable,조작 변수,Y,at_decision,world_linked,DT_L56,R07,E049;E050;E053,,판단 시점의 약국 상태. 카드가 값을 정한다.
+S019,internal_state,혼잡·조제 부담,manipulable,조작 변수,Y,at_decision,world_linked,DT_L55,R17,E077;E096,,판단 시점의 약국 상태. 카드가 값을 정한다.
+S020,internal_state,중단·미완료 업무,manipulable,조작 변수,Y,at_decision,world_linked,DT_L58,R17;R18,E093;E094,,판단 시점의 약국 상태. 카드가 값을 정한다.
+S021,internal_state,장비 상태,manipulable,조작 변수,Y,at_decision,world_linked,DT_L58,,E098,,판단 시점의 약국 상태. 카드가 값을 정한다.
+S022,internal_state,구매 이력 연결,context,고정 맥락,Y,profile,world_linked,DT_L54,R09,E055;E057,,전산 기능·인식에 대한 서술이라 관측값이 아니다.
+S023,internal_state,상품 수익성 인식,context,고정 맥락,Y,profile,world_linked,DT_L12;DT_L13;DT_L57,R11,E008;E079;E080,,전산 기능·인식에 대한 서술이라 관측값이 아니다.
+X001,external_trigger,요일·공휴일,scene_input,장면 입력,Y,at_decision,world_linked,DT_L17,R08,E026;E096,그날 사정(연휴 전후),외부 환경. 값은 공공·민간 데이터 또는 가상 달력에서 가져오고 출처를 표시한다. P1 층에서만 모델에 준다.
+X002,external_trigger,주요 의료기관 진료 일정,scene_input,장면 입력,Y,at_decision,world_linked,DT_L35,R08,E003;E026,주변 의원 진료,외부 환경. 값은 공공·민간 데이터 또는 가상 달력에서 가져오고 출처를 표시한다. P1 층에서만 모델에 준다.
+X003,external_trigger,인근 기존 이비인후과 휴진,scene_input,장면 입력,Y,at_decision,world_linked,DT_L35,R08,E025,,외부 환경. 값은 공공·민간 데이터 또는 가상 달력에서 가져오고 출처를 표시한다. P1 층에서만 모델에 준다.
+X004,external_trigger,신규 의원 인지도,scene_input,장면 입력,Y,at_decision,world_linked,DT_L59,,E023;E024,,외부 환경. 값은 공공·민간 데이터 또는 가상 달력에서 가져오고 출처를 표시한다. P1 층에서만 모델에 준다.
+X005,external_trigger,감기·독감 유행,scene_input,장면 입력,Y,at_decision,world_linked,DT_L10;DT_L11;DT_L14;DT_L18;DT_L19;DT_L20,,E033,감기·독감 유행,외부 환경. 값은 공공·민간 데이터 또는 가상 달력에서 가져오고 출처를 표시한다. P1 층에서만 모델에 준다.
+X006,external_trigger,거래처 주문 가능 상태,scene_input,장면 입력,Y,at_decision,world_linked,DT_L14;DT_L52,,E033;E064,도매상 조건·입고일,외부 환경. 값은 공공·민간 데이터 또는 가상 달력에서 가져오고 출처를 표시한다. P1 층에서만 모델에 준다.
+X008,external_trigger,불규칙한 고객 도착,scene_input,장면 입력,Y,at_decision,world_linked,DT_L26;DT_L55,,E094;E096,,외부 환경. 값은 공공·민간 데이터 또는 가상 달력에서 가져오고 출처를 표시한다. P1 층에서만 모델에 준다.
+X009,external_trigger,단일·복수 제품 요청,scene_input,장면 입력,Y,at_decision,world_linked,DT_L59,R12,E084,,외부 환경. 값은 공공·민간 데이터 또는 가상 달력에서 가져오고 출처를 표시한다. P1 층에서만 모델에 준다.
+X010,external_trigger,공급자의 상품 정보,scene_input,장면 입력,Y,at_decision,world_linked,DT_L15,,E006,,외부 환경. 값은 공공·민간 데이터 또는 가상 달력에서 가져오고 출처를 표시한다. P1 층에서만 모델에 준다.
+X011,external_trigger,상권과 실제 고객의 차이,scene_input,장면 입력,Y,at_decision,world_linked,DT_L10;DT_L21;DT_L31,,E015,,외부 환경. 값은 공공·민간 데이터 또는 가상 달력에서 가져오고 출처를 표시한다. P1 층에서만 모델에 준다.
+X012,external_trigger,기존 약국 이용 습관,scene_input,장면 입력,Y,at_decision,world_linked,DT_L22;DT_L23;DT_L59,,E018,,외부 환경. 값은 공공·민간 데이터 또는 가상 달력에서 가져오고 출처를 표시한다. P1 층에서만 모델에 준다.
+X013,external_trigger,고객의 가격 기대,scene_input,장면 입력,Y,at_decision,world_linked,DT_L13;DT_L57;DT_L59,,E079,,외부 환경. 값은 공공·민간 데이터 또는 가상 달력에서 가져오고 출처를 표시한다. P1 층에서만 모델에 준다.
+X014,external_trigger,근무·지원인력 공백,scene_input,장면 입력,Y,at_decision,world_linked,DT_L58,R16,E045,,외부 환경. 값은 공공·민간 데이터 또는 가상 달력에서 가져오고 출처를 표시한다. P1 층에서만 모델에 준다.
+D001,decision_rule,필요한 약의 공급 지속,evaluation_target,평가 대상,N,never,interview_only,,,E032;E033,,모델이 인터뷰 근거에서 추론해야 하는 판단 방식이다. 관측값으로 주면 답을 알려 주는 셈이므로 입력 금지.
+D002,decision_rule,재고·대금 부담 조절,evaluation_target,평가 대상,N,never,interview_only,,R03,E034;E038,,모델이 인터뷰 근거에서 추론해야 하는 판단 방식이다. 관측값으로 주면 답을 알려 주는 셈이므로 입력 금지.
+D003,decision_rule,가격과 마진 고려,evaluation_target,평가 대상,N,never,interview_only,,R11,E008;E079;E081,,모델이 인터뷰 근거에서 추론해야 하는 판단 방식이다. 관측값으로 주면 답을 알려 주는 셈이므로 입력 금지.
+D004,decision_rule,과잉판매 인식에 대한 부담,evaluation_target,평가 대상,N,never,interview_only,,R11;R12,E052;E084;E085,,모델이 인터뷰 근거에서 추론해야 하는 판단 방식이다. 관측값으로 주면 답을 알려 주는 셈이므로 입력 금지.
+D005,decision_rule,재고 확인 방식,evaluation_target,평가 대상,N,never,interview_only,,R01,E030;E031,,모델이 인터뷰 근거에서 추론해야 하는 판단 방식이다. 관측값으로 주면 답을 알려 주는 셈이므로 입력 금지.
+D006,decision_rule,잔여기간 판단,evaluation_target,평가 대상,N,never,interview_only,,R02,E029,,모델이 인터뷰 근거에서 추론해야 하는 판단 방식이다. 관측값으로 주면 답을 알려 주는 셈이므로 입력 금지.
+D007,decision_rule,초도 상품 선택,evaluation_target,평가 대상,N,never,interview_only,,R05,E006;E007;E008;E009;E010,,모델이 인터뷰 근거에서 추론해야 하는 판단 방식이다. 관측값으로 주면 답을 알려 주는 셈이므로 입력 금지.
+D008,decision_rule,수기 기록의 기준,evaluation_target,평가 대상,N,never,interview_only,,R09,E056;E057,,모델이 인터뷰 근거에서 추론해야 하는 판단 방식이다. 관측값으로 주면 답을 알려 주는 셈이므로 입력 금지.
+D009,decision_rule,필요한 분석 대상,evaluation_target,평가 대상,N,never,interview_only,,R10,E065,,모델이 인터뷰 근거에서 추론해야 하는 판단 방식이다. 관측값으로 주면 답을 알려 주는 셈이므로 입력 금지.
+D010,decision_rule,전문가의 판단 역할,evaluation_target,평가 대상,N,never,interview_only,,R14,E048;E086;E087,,모델이 인터뷰 근거에서 추론해야 하는 판단 방식이다. 관측값으로 주면 답을 알려 주는 셈이므로 입력 금지.
+D011,decision_rule,AI 보조정보의 수용범위,evaluation_target,평가 대상,N,never,interview_only,,R14,E086;E087,,모델이 인터뷰 근거에서 추론해야 하는 판단 방식이다. 관측값으로 주면 답을 알려 주는 셈이므로 입력 금지.
+D013,decision_rule,운영업무 처리 시점,evaluation_target,평가 대상,N,never,interview_only,,R17,E093,,모델이 인터뷰 근거에서 추론해야 하는 판단 방식이다. 관측값으로 주면 답을 알려 주는 셈이므로 입력 금지.
+D016,decision_rule,함께 고려하는 목표,evaluation_target,평가 대상,N,never,interview_only,,,E034;E071;E081;E084,,모델이 인터뷰 근거에서 추론해야 하는 판단 방식이다. 관측값으로 주면 답을 알려 주는 셈이므로 입력 금지.
+L001,outcome_learning,청소년 상품 수요 재인식,learning_outcome,학습·결과,N,never,interview_only,,,E015,,결과를 보고 기준이 바뀐 기록이다. 인터뷰 1건으로는 재현을 검증할 수 없어 시뮬레이션 입력에서 뺀다. 재인터뷰 질문 소재로 쓴다.
+L002,outcome_learning,정형외과 유입 재인식,learning_outcome,학습·결과,N,never,interview_only,,,E017;E018;E019,,결과를 보고 기준이 바뀐 기록이다. 인터뷰 1건으로는 재현을 검증할 수 없어 시뮬레이션 입력에서 뺀다. 재인터뷰 질문 소재로 쓴다.
+L003,outcome_learning,어린이 칫솔의 관심 반응,learning_outcome,학습·결과,N,never,interview_only,,R07,E050;E051,,결과를 보고 기준이 바뀐 기록이다. 인터뷰 1건으로는 재현을 검증할 수 없어 시뮬레이션 입력에서 뺀다. 재인터뷰 질문 소재로 쓴다.
+L004,outcome_learning,관심 사례의 구매 결과,learning_outcome,학습·결과,N,never,interview_only,,R07,E051,,결과를 보고 기준이 바뀐 기록이다. 인터뷰 1건으로는 재현을 검증할 수 없어 시뮬레이션 입력에서 뺀다. 재인터뷰 질문 소재로 쓴다.
+L005,outcome_learning,안마봉 판매 결과,learning_outcome,학습·결과,N,never,interview_only,,R07,E053,,결과를 보고 기준이 바뀐 기록이다. 인터뷰 1건으로는 재현을 검증할 수 없어 시뮬레이션 입력에서 뺀다. 재인터뷰 질문 소재로 쓴다.
+L006,outcome_learning,품절 근접 경험,learning_outcome,학습·결과,N,never,interview_only,,,E032,,결과를 보고 기준이 바뀐 기록이다. 인터뷰 1건으로는 재현을 검증할 수 없어 시뮬레이션 입력에서 뺀다. 재인터뷰 질문 소재로 쓴다.
+L007,outcome_learning,과거 코로나 키트 재고,learning_outcome,학습·결과,N,never,interview_only,,,E039,,결과를 보고 기준이 바뀐 기록이다. 인터뷰 1건으로는 재현을 검증할 수 없어 시뮬레이션 입력에서 뺀다. 재인터뷰 질문 소재로 쓴다.
+L008,outcome_learning,브랜드 언급 후 추가 구매,learning_outcome,학습·결과,N,never,interview_only,,R11,E080;E081,,결과를 보고 기준이 바뀐 기록이다. 인터뷰 1건으로는 재현을 검증할 수 없어 시뮬레이션 입력에서 뺀다. 재인터뷰 질문 소재로 쓴다.
+L009,outcome_learning,관찰을 통한 인식 변화,learning_outcome,학습·결과,N,never,interview_only,,,E015;E017;E051,,결과를 보고 기준이 바뀐 기록이다. 인터뷰 1건으로는 재현을 검증할 수 없어 시뮬레이션 입력에서 뺀다. 재인터뷰 질문 소재로 쓴다.
+L010,outcome_learning,세트 진열 계획,learning_outcome,학습·결과,N,never,interview_only,,R12,E085,,결과를 보고 기준이 바뀐 기록이다. 인터뷰 1건으로는 재현을 검증할 수 없어 시뮬레이션 입력에서 뺀다. 재인터뷰 질문 소재로 쓴다.
+L011,outcome_learning,창고형 적합성에 대한 생각,learning_outcome,학습·결과,N,never,interview_only,,,E090,,결과를 보고 기준이 바뀐 기록이다. 인터뷰 1건으로는 재현을 검증할 수 없어 시뮬레이션 입력에서 뺀다. 재인터뷰 질문 소재로 쓴다.
+L012,outcome_learning,장비 고장과 수리,learning_outcome,학습·결과,N,never,interview_only,,,E098,,결과를 보고 기준이 바뀐 기록이다. 인터뷰 1건으로는 재현을 검증할 수 없어 시뮬레이션 입력에서 뺀다. 재인터뷰 질문 소재로 쓴다.

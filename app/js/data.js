@@ -24,15 +24,24 @@ const FILES = {
   claims: 'claims.csv', rules: 'rules.csv', cases: 'cases.csv', guardrails: 'guardrails.csv', profile: 'persona_profile.csv', variables: 'variables.csv',
 };
 
-export const DB = { claims: [], rules: [], cases: [], guardrails: [], profile: [], variables: [], byId: new Map(), ok: false };
+// 카드 변수표 (data/4_bridge). 관측 문장과 변수 역할의 원본이다. scripts/run_persona.py 도 같은 파일을 읽는다.
+const BRIDGE = { obsRows: 'card_variables.csv', cardSpecs: 'cards.csv', roles: 'variable_roles.csv' };
+
+export const DB = { claims: [], rules: [], cases: [], guardrails: [], profile: [], variables: [], obsRows: [], cardSpecs: [], roles: [], byId: new Map(), ok: false };
 
 export async function loadData() {
-  const entries = await Promise.all(Object.entries(FILES).map(async ([k, f]) => {
-    const res = await fetch(`../data/1_interview/${f}`);
+  const get = async (dir, f) => {
+    const res = await fetch(`../data/${dir}/${f}`);
     if (!res.ok) throw new Error(`${f} ${res.status}`);
-    return [k, parseCSV(await res.text())];
-  }));
+    return parseCSV(await res.text());
+  };
+  const entries = await Promise.all([
+    ...Object.entries(FILES).map(async ([k, f]) => [k, await get('1_interview', f)]),
+    ...Object.entries(BRIDGE).map(async ([k, f]) => [k, await get('4_bridge', f)]),
+  ]);
   entries.forEach(([k, rows]) => { DB[k] = rows; });
+  DB.roleById = new Map(DB.roles.map((r) => [r.variable_id, r]));
+  DB.specById = new Map(DB.cardSpecs.map((r) => [r.card_id, r]));
   DB.claims.forEach((r) => DB.byId.set(r.claim_id, { kind: '발언', id: r.claim_id, title: r.topic_ko, quote: r.quote_ko, summary: r.summary_ko, type: r.record_type, where: r.source_location, applies: r.applies_to }));
   DB.rules.forEach((r) => DB.byId.set(r.rule_id, { kind: '규칙', id: r.rule_id, title: r.title_ko, summary: r.judgement_ko, note: r.reading_note_ko, situation: r.situation_ko, type: r.statement_type }));
   DB.cases.forEach((r) => DB.byId.set(r.case_id, { kind: '사례', id: r.case_id, title: r.title_ko, summary: r.outcome_ko, note: r.learning_ko, situation: r.situation_ko, type: r.record_type, applies: r.applies_to }));
@@ -42,6 +51,23 @@ export async function loadData() {
 }
 
 export const lookup = (id) => DB.byId.get(id) || null;
+
+/* 관측 줄 고르기: scripts/run_persona.py 의 obs_lines 와 같은 규칙.
+   카드 전용 줄이 같은 순서의 공통(*) 줄을 덮고, scene=false 면 장면 입력 줄을 뺀다. hidden 줄은 따로 돌려준다. */
+export function obsLines(cardId, cond, checked, scene = true) {
+  const want = new Set(['always', checked ? 'checked' : 'unchecked', cond.prior ? 'prior' : 'no_prior']);
+  const rows = new Map();
+  DB.obsRows.forEach((r) => {
+    if ((r.card_id !== '*' && r.card_id !== cardId) || !want.has(r.show_when)) return;
+    if (r.layer === 'scene' && !scene) return;
+    const prev = rows.get(r.line_order);
+    if (prev && prev.card_id === cardId && r.card_id === '*') return;
+    rows.set(r.line_order, r);
+  });
+  const shown = [...rows.values()].sort((a, b) => Number(a.line_order) - Number(b.line_order));
+  const hidden = DB.obsRows.filter((r) => r.show_when === 'hidden' && (r.card_id === '*' || r.card_id === cardId));
+  return { shown, hidden };
+}
 
 // ---------- 시나리오 카드 (모든 수치는 가정) ----------
 const mk = (cash, arrival, extra = {}) => ({ cash, arrival, book: 8, physical: 8, ageH: 12, prior: false, ...extra });
@@ -179,31 +205,32 @@ export const EVIDENCE_PICKS = ['R01', 'R02', 'R03', 'R04', 'E030', 'E029', 'E034
 
 // ---------- 3D 장면 속 물건 설명 ----------
 export const OBJ_INFO = {
-  pharmacy: { title: '약국 (2층)', tag: '인터뷰', body: '인터뷰 약국은 2층에 있고, 1층에는 정형외과, 같은 층에는 이비인후과가 있습니다. 개업 약 3주차입니다.', refs: ['E001', 'E002', 'E013'] },
-  stock: { title: '재고 선반 · 가상 단일 품목', tag: '가상', body: '반투명 상자는 전산 기록(관측값), 불투명 상자는 실물입니다. 실물은 "실물 확인"을 한 뒤에, 또는 결과 재생 중에 보입니다. 품목과 수량은 모두 가정입니다.', refs: ['E030', 'E042'] },
-  persona: { title: '응답자 약사 (파란 인물)', tag: '인터뷰', body: '인터뷰에 응한 약사 1명입니다. 눌러서 프로필을 봅니다.', refs: ['U001', 'G07'] },
-  counter: { title: '카운터 · 다른 약사', tag: '인터뷰', body: '파란 인물이 응답자 1인입니다. 회색 반투명 인물은 다른 약사로, 응답자가 아니므로 이 사람의 판단·성향은 확정하지 않습니다. 약사 2인 운영은 사용자 보완입니다.', refs: ['U001', 'G07'] },
-  sofa: { title: '소파 · 안마봉', tag: '인터뷰', body: '안마봉을 소파 근처에 두었고 보유분이 모두 팔렸다는 사례입니다. 이번 발주 장면에는 쓰이지 않는 배경입니다.', refs: ['E053', 'I10'] },
-  ent: { title: '이비인후과 (2층, 같은 건물)', tag: '인터뷰', body: '같은 건물 신규 의원입니다. 인터뷰에서 확인된 사실이며, 이번 장면의 수요에는 반영하지 않았습니다.', refs: ['E002'] },
-  ortho: { title: '정형외과 (1층)', tag: '인터뷰', body: '같은 건물 1층 정형외과입니다. 환자 유입이 기대보다 적었다는 사례가 있습니다.', refs: ['E002', 'I03'] },
-  across: { title: '건너편 기존 이비인후과', tag: '미반영', body: '기존 이비인후과가 쉬는 날 같은 건물 신규 의원이 붐빈다는 관찰입니다. 휴진 주체의 해석이 확정되지 않아 현재 시뮬레이션에는 반영하지 않습니다.', refs: ['E025', 'I04'] },
-  truck: { title: '도매 트럭 · 입고', tag: '가상', body: '주문한 약이 도착하는 날에 트럭이 건물 앞에 서고, 입고 후에 재고 선반이 채워집니다. 입고일과 단가는 가정입니다.', refs: [] },
-  customers: { title: '손님 · 수요', tag: '가상', body: '하루 수요 5팩을 손님 5명으로 표현했습니다. 초록은 판매된 수요, 빨강은 재고가 없어 못 판 수요입니다. 못 판 수요는 다음 날로 이월하지 않습니다.', refs: [] },
-  judge: { title: '3층 발주 판단실 (개념 층)', tag: '개념', body: '실제 건물에는 없는 층입니다. 관측값을 보고 조회·선택·근거를 정하는 판단 과정을 건물 안에 비유한 공간입니다.', refs: [] },
-  roof: { title: '옥상 관제실 (개념 층)', tag: '개념', body: '실제 건물에는 없는 공간입니다. 근거, 검증 상태, 범위 문구를 확인하는 자리를 비유합니다.', refs: ['G02', 'G04', 'G07'] },
+  pharmacy: { title: '약국 (2층) · 조제실', tag: '인터뷰', body: '인터뷰 약국은 2층에 있고, 1층에는 정형외과, 같은 층에는 이비인후과가 있습니다. 개업 약 3주차입니다. 유리벽 안쪽이 조제실입니다. 내부 배치는 인터뷰에 없어 임의로 그렸습니다.', refs: ['E001', 'E002', 'E013'] },
+  stock: { title: '재고 선반 · 판단 품목', tag: '가상', body: '카운터 뒤 선반에 판단에 쓰는 약 한 품목을 보여 줍니다. 반투명 보라 상자는 전산 기록(관측값), 불투명 갈색 상자는 실물입니다. 실물은 "실물 확인"을 한 뒤에, 또는 결과 재생 중에 보입니다. 품목과 수량은 모두 가정입니다.', refs: ['E030', 'E042'] },
+  persona: { title: '응답자 약사 (초록 명찰)', tag: '인터뷰', body: '인터뷰에 응한 약사 1명입니다. 조제실에 있습니다. 눌러서 프로필을 봅니다.', refs: ['U001', 'G07'] },
+  counter: { title: '카운터 · 전산 모니터 · 다른 약사', tag: '인터뷰', body: '카운터 위 모니터는 약국 전산입니다. 약사와 AI에게 주는 관측값(전산 기록 재고 등)만 띄우고, 확인 전의 실제 재고는 띄우지 않습니다. 파란 명찰의 약사는 응답자가 아닌 다른 약사로, 이 사람의 판단·성향은 만들지 않습니다. 약사 2인 운영은 사용자 보완입니다.', refs: ['U001', 'G07'] },
+  demand: { title: '이 약을 찾은 손님 (하루 수요)', tag: '가상', body: '카운터 앞 줄은 판단 품목을 찾은 손님입니다. 하루 수요 5팩을 5명으로 나타냈고, 상자를 든 인물은 사 간 손님, 흐린 인물은 재고가 없어 못 사고 간 손님입니다. 코드가 계산한 가상 결과이며 못 판 수요는 다음 날로 넘기지 않습니다.', refs: [] },
+  customers: { title: '손님 흐름 (재생 중)', tag: '가상', body: '그날 약국에 온 손님을 움직임으로 보여 주는 연출입니다. 손님 수는 가상 데이터의 처방 건수(1층 의원·이비인후과)와 시간대별 워크인 수를 따르고, 인물 1명이 손님 약 2명입니다. 옷 색은 들어온 길, 나갈 때 발 아래 원은 기다린 시간에 따른 결과(만족·지연·이탈)입니다. 시간대 분포, 기다릴 수 있는 시간, 연령 비율, 마스크 비율은 가정입니다. 어린이는 보호자와 함께 다닙니다. 가상 데이터의 1층 처방은 "내과" 처방으로 만들어져 있어, 인터뷰의 1층 정형외과와 이름이 다릅니다. 이 연출은 판단 품목의 계산(하루 5팩)과 연결되지 않습니다.', refs: ['E012', 'E088', 'G02'] },
+  goods: { title: '진열 상품', tag: '가상', body: '진열대의 다른 상품입니다. 품목·진열 위치·페이스 수는 가상 데이터(L56·L57)이며 위치는 인터뷰에 없는 임의 배치입니다. 색은 구분(초록 일반의약품, 보라 건강기능식품, 주황 의약외품, 회색 기타)입니다. 이번 발주 판단에는 쓰지 않습니다.', refs: ['R06', 'G02'] },
+  sofa: { title: '대기 소파', tag: '인터뷰', body: '조제를 기다리는 자리입니다. 소파 근처에 둔 안마봉이 모두 팔렸다는 사례가 있습니다. 이번 발주 장면에는 쓰이지 않는 배경입니다.', refs: ['E053', 'I10'] },
+  ent: { title: '이비인후과 (2층, 같은 층)', tag: '인터뷰', body: '같은 건물 신규 의원입니다. 재생 중에는 그날 이비인후과 처방 건수(가상)만큼 환자가 진료를 기다렸다가 약국으로 옵니다.', refs: ['E002', 'E003'] },
+  ortho: { title: '정형외과 (1층)', tag: '인터뷰', body: '같은 건물 1층 정형외과입니다. 환자 유입이 기대보다 적었다는 사례가 있습니다.', refs: ['E002', 'I03', 'E017'] },
+  across: { title: '건너편 기존 이비인후과', tag: '미반영', body: '기존 이비인후과가 쉬는 날 같은 건물 신규 의원이 붐빈다는 관찰입니다. 휴진 일정 데이터가 없어 지금은 반영하지 않습니다.', refs: ['E025', 'I04'] },
+  nbph: { title: '옆 건물 약국', tag: '인터뷰', body: '기존 환자가 그대로 옆 건물 약국으로 가기도 한다는 발언에 나오는 약국입니다. 위치와 영업일은 연동 전이라 자리만 표시했습니다.', refs: ['E018'] },
+  truck: { title: '도매 트럭 · 입고', tag: '가상', body: '주문한 약이 도착하는 날에 트럭이 건물 앞에 서고, 상자가 내려진 뒤 재고 선반이 채워집니다. 입고일과 단가는 가정입니다.', refs: [] },
+  judge: { title: '3층 판단실 (개념 층)', tag: '개념', body: '실제 건물에는 없는 층입니다. 관측값을 보고 조회·선택·근거를 정하는 판단 과정을 건물 안에 비유한 공간이며, 실제 판단은 오른쪽 패널에서 합니다.', refs: [] },
 };
 
-// 3D 라벨 (장면에 겹쳐 보이는 짧은 이름)
+// 3D 라벨 (장면에 겹쳐 보이는 짧은 이름). 위치는 app/design/building3d.js 의 ANCHORS 가 정한다.
 export const SCENE_LABELS = [
-  { key: 'pharmacy', text: '약국 · 2F', cls: 'real', at: [-2.6, 3.0, 4.3] },
-  { key: 'ent', text: '이비인후과 · 2F', cls: 'real', at: [3.8, 3.0, 4.3] },
-  { key: 'ortho', text: '정형외과 · 1F', cls: 'real', at: [2.5, 0.1, 4.3] },
-  { key: 'persona', text: '응답자 약사', cls: 'real', at: [-3.2, 4.65, 0.1] },
-  { key: 'stock', text: '재고 선반 (가상)', cls: 'virtual', at: [-4.6, 5.45, -3.3] },
-  { key: 'judge', text: '3F 판단실 (개념)', cls: 'concept', at: [4.6, 8.9, 4.1] },
-  { key: 'roof', text: '옥상 관제실 (개념)', cls: 'concept', at: [0, 11.1, 0] },
-  { key: 'across', text: '건너편 기존 이비인후과 (미반영)', cls: 'muted', at: [-17, 6.6, 13] },
-  { key: 'truck', text: '도매 트럭 · 대기 (가상)', cls: 'virtual', at: [-13, 2.9, 9.3] },
+  { key: 'pharmacy', text: '약국 · 2F', cls: 'real' },
+  { key: 'ent', text: '이비인후과 · 2F', cls: 'real' },
+  { key: 'ortho', text: '정형외과 · 1F', cls: 'real' },
+  { key: 'persona', text: '응답자 약사', cls: 'real' },
+  { key: 'stock', text: '재고 선반 (가상)', cls: 'virtual' },
+  { key: 'judge', text: '3F 판단실 · 눌러서 시뮬레이션 시작', cls: 'concept', action: true },
+  { key: 'across', text: '건너편 기존 이비인후과 (미반영)', cls: 'muted' },
+  { key: 'truck', text: '도매 트럭 · 대기 (가상)', cls: 'virtual', at: [-40, 3.3, 9.2] },
 ];
 
 // ---------- 니즈 카드 (근거는 CSV 의 실제 ID) ----------
