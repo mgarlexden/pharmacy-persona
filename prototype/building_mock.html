@@ -138,6 +138,12 @@ ul.plain li{margin:2px 0}
 .f12-row{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-top:6px}
 .f12-ctl input[type=range]{accent-color:var(--accent)}
 .f12-clk{font-variant-numeric:tabular-nums;font-size:14px}
+#bubs{position:absolute;inset:0;pointer-events:none}
+.f12-bub{position:absolute;transform:translate(-50%,-100%);font-size:14px;line-height:1;white-space:nowrap;pointer-events:none;text-align:center}
+.f12-bub span{display:block;font-size:11px;line-height:1.3;margin-bottom:2px;padding:2px 7px;border-radius:9px;background:#fff;color:#1f2a2a;border:1px solid rgba(0,0,0,.2);box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.f12-bub.ph span{background:#0f7f73;color:#fff;border-color:#0f7f73;font-weight:600}
+.f12-bub span:empty{display:none}
+.f12-bub.ph.st span{background:#fff;color:#1f2a2a;border-color:rgba(0,0,0,.25);font-weight:400}
 .lg b{display:block;font-size:11px;margin-top:2px}
 .lg i{display:inline-block;vertical-align:middle;margin-right:4px}
 .lg i.gr{width:70px;height:9px;border-radius:2px}
@@ -160,6 +166,7 @@ ul.plain li{margin:2px 0}
         <div id="labels"></div>
         <div class="hud" id="hud"></div>
         <div class="lg" id="lg"></div>
+        <div id="bubs"></div>
         <div class="tools" id="tools">
           <button data-v="all">전체 보기</button>
           <button data-v="front">정면</button>
@@ -293,6 +300,11 @@ const EV = {
  E017:{t:'발언 E017 · 정형외과 유입 예상 차이',b:'“생각보다 많이 안 올라와” — 같은 건물 정형외과에서 유입될 것으로 기대한 환자가 생각보다 적었다.'},
  E018:{t:'발언 E018 · 기존 이용 동선',b:'“원래 다니던 사람들도 그냥 옆건물로 가던가” — 기존 환자가 그대로 옆건물 약국으로 가기도 한다.'},
  E019:{t:'발언 E019 · 후문·엘리베이터',b:'“후문으로 나오자마자 엘베를 타면 … 바로거든” — 후문·엘리베이터 동선이 접근성에 영향을 준다.'},
+ E012:{t:'발언 E012 · 워크인 관찰',b:'“진짜 몇 … 안 돼” — 일반약만 사러 오는 워크인 방문이 많지 않다는 관찰.'},
+ E021:{t:'발언 E021 · 의료기관 직원 고객',b:'“직원들이 한 20명 … 되거든 … 한두 씩은 … 와” — 주변 의료기관 직원도 손님으로 온다.'},
+ E022:{t:'발언 E022 · 영업 인지도',b:'“매일 한다는 걸 좀 잘 모를 수도 있어서” — 토요일 등 영업 여부를 손님이 잘 모를 수 있다는 설명.'},
+ E023:{t:'발언 E023 · 기존 이비인후과 대기',b:'“대기가 기온 1시간이래” — 기존 이비인후과의 대기시간이 길다는 관찰.'},
+ E025:{t:'발언 E025 · 휴진과 수요',b:'“그 병원이 문을 닫는 날에 유난히 우리 병원이 사람 많아” — 건너편 휴진일에 손님이 늘어난다는 관찰.'},
  G02:{t:'가드레일 G02 · 없는 수량·비율을 만들지 않기',b:'가상 입력은 가상으로 표시하고, 현재 인터뷰 값처럼 저장하지 않는다. 이 화면의 재고·현금·처방 수치는 모두 가상값이다.'},
  G04:{t:'가드레일 G04 · 생성 결과와 관측 결과 분리',b:'제안, 실제 시행, 실제 관측, 가상 모형 결과를 구분한다. LLM이 쓴 성과를 실제 성과로 다시 넣지 않는다.'},
  G07:{t:'가드레일 G07 · 응답자와 공동운영 정책 구분',b:'응답자 1인의 설명이라는 범위를 유지한다. 약사 2인 운영만으로 두 사람의 합의·권한·성향을 확정하지 않는다.'}
@@ -336,7 +348,12 @@ const OBJ = {
  sofa:{t:'대기 소파',d:'조제를 기다리는 자리. 옆에 안마봉을 두어 만져보다 사게 하는 진열이 인터뷰에 나옵니다.',b:['L56 진열 구역 "대기 소파 옆"'],r:['R06'],z:4},
  elev:{t:'엘리베이터',d:'1층과 2층을 잇는 동선입니다.',b:['(배치: 인터뷰 설명 기준)'],r:['E019'],z:5},
  front:{t:'정문',d:'건물 주 출입구입니다. 2층이고 입구를 찾기 어렵다는 점이 방문 제약으로 언급됩니다.',b:['(배치: 가정)'],r:['E013'],z:5},
- nbph:{t:'옆건물 약국',d:'기존 환자가 그대로 옆건물로 간다는 발언에 나오는 경쟁 약국입니다. 위치와 영업일은 아직 연동 전이라 자리만 표시했습니다.',b:['L23 주변 약국 수·최근접 거리 (연동 예정)','L40 영업시간 (연동 예정)'],r:['E018'],z:9}
+ nbph:{t:'옆건물 약국',d:'기존 환자가 그대로 옆건물로 간다는 발언에 나오는 경쟁 약국입니다. 위치와 영업일은 아직 연동 전이라 자리만 표시했습니다.',b:['L23 주변 약국 수·최근접 거리 (연동 예정)','L40 영업시간 (연동 예정)'],r:['E018'],z:9},
+ a_ent:{t:'이비인후과 처방 환자',d:'진료 대기 → 진료 → 같은 층 약국에서 조제 순서로 움직입니다. 18%는 일반약을 함께 삽니다.',b:['L45 이비인후과 처방건수 × L55 시간대 가중치','파라미터 처방환자 추가구매율 0.18'],r:['E003'],z:3.5},
+ a_ex:{t:'건너편 휴진으로 넘어온 환자',d:'기존 이비인후과가 쉬는 날 같은 건물 이비인후과로 넘어온 환자입니다. 넘어오는 배율은 임시 가정입니다.',b:['건너편 휴진 배율(직접 입력한 임시값)','L45 이비인후과 처방건수 × L55 시간대 가중치'],r:['E025','R08'],z:3.5},
+ a_oth:{t:'1층 의원 처방 환자',d:'1층에서 진료를 받고 2층 약국으로 올라옵니다.',b:['L45 내과 처방건수 × L55 시간대 가중치'],r:['E017','E018'],z:3.5},
+ a_walk:{t:'일반약 방문(워크인)',d:'처방 없이 일반약을 사러 오는 손님입니다.',b:['L47 워크인 구매자 (평일 12.5명, 인터뷰 10~15명)'],r:['E012'],z:3.5},
+ a_inq:{t:'문의·비구매 방문',d:'물어만 보고 가는 방문입니다.',b:['L55 문의 방문 = 워크인의 25%'],r:['G02'],z:3.5}
 };
 /* ───────── 시뮬레이션(가상) ───────── */
 const WD=['일','월','화','수','목','금','토'];
@@ -441,6 +458,46 @@ FLOORS.forEach((f,i)=>{
   // 건물 입구
   reg(box(g,1.6,2.3,.08,0x6aa5c0,-1.2,.25,D/2-.04,{mo:{transparent:true,opacity:.5}}),'front',i);
 })();
+/* F12 얼굴 텍스처·makeChar — 2층 IIFE가 약사 생성 때 동기 호출하므로
+   "F12 인물" 블록(한참 아래)보다 먼저 와야 한다(TDZ 회피). */
+function f12FaceTex(kind){
+  const c=document.createElement('canvas'); c.width=c.height=64;
+  let x=null; try{x=c.getContext('2d');}catch(e){} if(!x) return null;
+  x.lineWidth=5; x.lineCap='round'; x.strokeStyle='#2a2320'; x.fillStyle='#2a2320';
+  const dot=(cx,cy)=>{x.beginPath();x.arc(cx,cy,4.5,0,7);x.fill();};
+  const ln=(x1,y1,x2,y2)=>{x.beginPath();x.moveTo(x1,y1);x.lineTo(x2,y2);x.stroke();};
+  const arc=(cx,cy,r,a,b)=>{x.beginPath();x.arc(cx,cy,r,a*Math.PI,b*Math.PI);x.stroke();};
+  if(kind===0){arc(20,28,6,1,2);arc(44,28,6,1,2);arc(32,38,11,.15,.85);}
+  else if(kind===1){dot(20,26);dot(44,26);arc(32,36,10,.2,.8);}
+  else if(kind===2){dot(20,26);dot(44,26);ln(24,46,40,46);}
+  else if(kind===3){ln(14,27,26,27);ln(38,27,50,27);arc(32,54,10,1.2,1.8);}
+  else if(kind===4){ln(12,15,27,22);ln(52,15,37,22);dot(20,30);dot(44,30);arc(32,57,11,1.2,1.8);}
+  else{ln(12,21,26,15);ln(52,21,38,15);dot(20,29);dot(44,29);x.beginPath();x.arc(32,48,5,0,7);x.stroke();x.fillStyle='#4aa3df';x.beginPath();x.arc(57,24,4,0,7);x.fill();}
+  return new T.CanvasTexture(c);
+}
+const F12_EMO=['😊','🙂','😐','😕','😠','😰'];
+const F12_FACES=[0,1,2,3,4,5].map(f12FaceTex);
+const F12_SKIN=0xe8c9a0;
+function f12MakeChar(o){
+  const g=new T.Group(), parts=[];
+  const add=(w,h,d,c,x,y,z)=>{const m=box(g,w,h,d,c,x,y,z);parts.push(m);return m;};
+  if(o.coat){ add(.3,.16,.22,0x39424a,0,0,0); add(.42,.66,.3,0xffffff,0,.14,0); add(.14,.22,.02,o.top,0,.56,.151); add(.1,.06,.02,0x0f7f73,.12,.5,.156); }
+  else { add(.3,.36,.22,o.bottom,0,0,0); add(.38,.42,.26,o.top,0,.36,0); }
+  add(.28,.28,.28,F12_SKIN,0,.8,0);
+  add(.3,.09,.3,o.hair,0,1.05,0); add(.3,.2,.06,o.hair,0,.88,-.15);
+  const f=new T.Mesh(new T.PlaneGeometry(.26,.26),new T.MeshBasicMaterial({map:F12_FACES[2],transparent:true}));
+  f.position.set(0,.94,.143); f.visible=!!F12_FACES[2]; g.add(f);
+  if(o.mask) add(.24,.12,.02,0xf4f7f8,0,.82,.148);
+  if(o.umb){ const u=new T.Group(); box(u,.03,.75,.03,0x444444,.22,.7,0);
+    const cn=new T.Mesh(new T.ConeGeometry(.6,.24,10),mat(o.umb)); cn.position.set(.22,1.55,0); u.add(cn); u.visible=false; g.add(u); g.userData.umb=u; }
+  if(o.status){ const mt=new T.MeshBasicMaterial({color:0xffffff});
+    const dc=new T.Mesh(new T.CircleGeometry(.42,20),mt); dc.rotation.x=-Math.PI/2; dc.position.y=.03;
+    const mk=new T.Mesh(new T.SphereGeometry(.11,10,8),mt); mk.position.y=1.38;
+    dc.visible=mk.visible=false; g.add(dc,mk); g.userData.st=[dc,mk,mt]; }
+  g.scale.setScalar(o.scale||1);
+  g.userData.parts=parts; g.userData.face=f; return g;
+}
+function f12SetFace(g,k){const f=g.userData.face; if(f&&F12_FACES[k]&&f.material.map!==F12_FACES[k]){f.material.map=F12_FACES[k];f.material.needsUpdate=true;}}
 /* 2층 약국 + ENT */
 const shelfMeshes=[]; const custPh=[], entPh=[]; let phA,phB;
 (()=>{const g=FG[1],i=1;
@@ -451,11 +508,15 @@ const shelfMeshes=[]; const custPh=[], entPh=[]; let phA,phB;
   reg(box(g,3.8,1.75,.12,0xbfd3d6,-5.1,.25,-.95,{mo:{transparent:true,opacity:.55}}),'dispense',i);
   reg(box(g,.12,1.75,2.9,0xbfd3d6,-3.35,.25,-2.45,{mo:{transparent:true,opacity:.55}}),'dispense',i);
   reg(box(g,3.5,.9,.6,0xcdd6d8,-5.2,.25,-1.5),'dispense',i); // 조제대(floor12 치수)
-  phA=person(0x2f6fb5,1.15); phA.position.set(-5.0,.25,-2.2); g.add(phA); reg(phA.children[0],'phA',i); reg(phA.children[1],'phA',i);
+  // 약사 A·B — floor12.html의 makeChar()(가운·표정·1.6배)로 교체(person() 대신). 실제
+  // 생성은 F12.f12MakeChar()가 스크립트 아래쪽에 정의돼 있지만 function 선언이라
+  // 호이스팅되어 여기서 바로 호출해도 된다.
+  phA=f12MakeChar({coat:true,top:0x0f7f73,hair:0x2a2320,scale:1.6,status:true});
+  phA.position.set(-5.0,.25,-2.2); g.add(phA); phA.userData.parts.forEach(m=>reg(m,'phA',i));
   // 카운터 — floor12.html 치수(3.4×1×.6, 색 0xb98d5a)로 교체
   reg(box(g,3.4,1,.6,0xb98d5a,-2.2,.25,-.7),'counter',i);
-  phB=person(0xffffff,1.15); phB.position.set(-2.2,.25,-1.7); g.add(phB); reg(phB.children[0],'phB',i); reg(phB.children[1],'phB',i);
-  phB.children[0].material=mat(0xf4f4f4);
+  phB=f12MakeChar({coat:true,top:0x6b8fb5,hair:0x5a4632,scale:1.6});
+  phB.position.set(-2.2,.25,-1.7); g.add(phB); phB.userData.parts.forEach(m=>reg(m,'phB',i));
   reg(box(g,1.2,.45,.6,0x7fb5ae,-1.3,.25,3.3),'sofa',i); // 대기 소파
   box(g,1.5,2.3,.08,0x6aa5c0,-1.4,.25,D/2-.04,{mo:{transparent:true,opacity:.35}});
   for(let k=0;k<6;k++){const p=person([0xd9534f,0x5b8def,0xe0a030,0x58a55c,0xa06cc4,0x555b66][k],1);p.visible=false;g.add(p);custPh.push(p);}
@@ -535,8 +596,9 @@ fetch('../data/floor12.json').then(r=>r.json()).then(data=>{
   itemMaxWeight2F=Math.max(...data.items.map(it=>it.sales_weight));
   buildItems2F(data.items);
   f12Days=data.days;
-  F12S.di=f12Idx('2026-10-06');
-  f12SyncCtl(); f12RenderStats();
+  f12Items=data.items;
+  f12Base=(()=>{const li=38,le=32,walk=12.5;return li*F12_PER_IM+le*F12_PER_ENT+(walk+.18*(li+le))*F12_QTY*f12MixOf(1,true).avg;})(); // 평시 화요일, 호흡기지수 1.0 — floor12.html BASE 그대로
+  f12SetDate(f12Idx('2026-10-06'));
   applyDay(); // O003 품목 메시가 방금 'cold'로 등록됐으니, 지금 H[day] 기준으로 바로 색칠한다
 }).catch(err=>console.error('data/floor12.json 로드 실패(로컬 서버로 열어야 fetch가 됩니다):',err));
 /* ─────────────────────────────────────────────────────────────
@@ -547,7 +609,7 @@ fetch('../data/floor12.json').then(r=>r.json()).then(data=>{
    ───────────────────────────────────────────────────────────── */
 const F12={
   active:false,
-  FLOOR_OBJ_KEYS:['elev','front','ortho','dispense','phA','phB','counter','cold','sofa','ent','exent','nbph'],
+  FLOOR_OBJ_KEYS:['elev','front','ortho','dispense','phA','phB','counter','cold','sofa','ent','exent','nbph','a_ent','a_ex','a_oth','a_walk','a_inq'],
   belongsKey(key){
     if(!key) return false;
     if(key.indexOf('item:')===0||key.indexOf('zone:')===0) return true;
@@ -573,6 +635,8 @@ const F12={
     const teamTabs=document.getElementById('tabs'); if(teamTabs) teamTabs.style.display='flex';
     const teamPbody=document.getElementById('pbody'); if(teamPbody) teamPbody.style.display='block';
     const f12Panel=document.getElementById('f12Panel'); if(f12Panel) f12Panel.style.display='none';
+    if(typeof f12ClearAgents==='function') f12ClearAgents();
+    if(typeof phAEl!=='undefined'&&phAEl){phAEl.style.display='none';phBEl.style.display='none';}
   },
   sync(){
     const floorOn=selected&&selected.type==='floor'&&(selected.i===0||selected.i===1);
@@ -583,6 +647,7 @@ const F12={
   tick(dt){
     if(!this.active) return;
     f12Tick(dt);
+    if(typeof f12AgentsTick==='function'){ f12AgentsTick(dt); f12UpdateHud(); f12PlaceBubbles(dt); }
   }
 };
 /* F12 오른쪽 패널: 탭 3개(① 현 상태 ② 예상 매출 ③ 매출 달력).
@@ -641,7 +706,13 @@ function f12RenderStats(){
 }
 function f12SetDate(i){
   if(!f12Days.length||i<0||i>=f12Days.length) return;
-  F12S.di=i; F12S.min=540; f12SyncCtl(); f12RenderStats();
+  F12S.di=i; F12S.min=540;
+  const d=f12Days[i];
+  F12S.wd=d.weekday_idx; F12S.closed=d.business_code===0; F12S.after=d.holiday_adjacent_code;
+  F12S.entClosed=d.ent_closed; F12S.ili=d.ili; F12S.eq=d.equipment_down; F12S.staff=d.staff_absent;
+  const mo=+d.date.slice(5,7); F12S.dust=mo>=3&&mo<=5;
+  F12S.rx=0; F12S.out=[0,0,0];
+  f12ClearAgents(); f12SyncCtl(); f12RenderStats();
 }
 function f12Tick(dt){
   if(!F12S.playing||!f12Days.length) return;
@@ -653,7 +724,215 @@ function f12Tick(dt){
 document.getElementById('f12Play').onclick=()=>{F12S.playing=!F12S.playing;document.getElementById('f12Play').textContent=F12S.playing?'❚❚ 정지':'▶ 재생';};
 document.getElementById('f12Speed').onchange=e=>{F12S.speed=+e.target.value;};
 document.getElementById('f12DateInput').onchange=e=>{const i=f12Idx(e.target.value); if(i>=0&&i<f12Days.length) f12SetDate(i); else f12SyncCtl();};
-document.getElementById('f12Time').oninput=e=>{F12S.min=Math.min(+e.target.value,f12EndMin()-1); f12SyncCtl();};
+document.getElementById('f12Time').oninput=e=>{F12S.min=Math.min(+e.target.value,f12EndMin()-1); f12ClearAgents(); f12SyncCtl();};
+/* ─────────────────────────────────────────────────────────────
+   F12 인물: 약사 2명(가운·표정·말풍선) + 2층 손님 5종(ent/ex/oth/walk/inq).
+   floor12.html의 makeChar()/수요모형(model 등)/보행 에이전트를 그대로 옮기되,
+   팀 건물 치수·기존 box()/reg()/mat() 헬퍼에 맞춰 썼다. 거리 보행자·트럭
+   기사는 교체 범위 밖이라 기존 person()을 그대로 둔다(건드리지 않음).
+   약사 B에게는 판단·말풍선을 추가하지 않는다(G07). 약사 A 말풍선은 EV
+   사전의 인터뷰 원문만 쓴다.
+   ───────────────────────────────────────────────────────────── */
+/* ── 말풍선 (얼굴 텍스처·f12MakeChar는 2층 IIFE가 동기 호출하므로 1층 바로 뒤로 옮겼다) ── */
+function f12Bubble(cls){const el=document.createElement('div');el.className='f12-bub'+(cls?' '+cls:'');el.innerHTML='<span></span><b style="font-weight:400"></b>';document.getElementById('bubs').appendChild(el);return el;}
+function f12SetBub(el,emo,text){if(el._e!==emo){el._e=emo;el.lastChild.textContent=emo;} if(el._t!==text){el._t=text;el.firstChild.textContent=text||'';}}
+let phAEl=f12Bubble('ph'), phBEl=f12Bubble();
+
+/* ── 수요 모형(floor12.html 상수·식 그대로) ── */
+let f12Items=[], f12Base=0;
+const F12_WK=[.7,1.2,1,.97,.98,1.02,.7];
+const F12_RXW=[8,14,14,12,5,9,10,10,11,7];
+const F12_WKW=[6,9,10,12,11,8,8,9,12,15], F12_SATW=[15,22,23,22,18];
+const F12_PER_IM=55507, F12_PER_ENT=17886;
+const F12_QTY=1.62;
+function f12Seas(it,resp){
+  const mo=+f12Iso(F12S.di).slice(5,7);
+  switch(it.season_key){
+    case 'cold': return resp;
+    case 'coldw': return .85+.15*resp;
+    case 'eve15': return F12S.after===2?1.5:1;
+    case 'eve3': return F12S.after===2?3:1;
+    case 'sum78': return (mo===7||mo===8)?1.5:1;
+    case 'sum68': return (mo>=6&&mo<=8)?1.3:1;
+    case 'dust': return F12S.dust?1.6:1;
+    default: return 1;
+  }
+}
+function f12MixOf(resp,flat){
+  let Wt=0,R=0; const v=f12Items.map(it=>{const sv=flat?1:f12Seas(it,resp), x=it.sales_weight*sv; Wt+=x; R+=x*it.price_krw; return [x,sv];});
+  return {avg:R/Wt,p:v.map(x=>[x[0]/Wt,x[1]])};
+}
+const f12RxSvc=()=>3*(F12S.eq?1.3:1)+(F12S.staff?.5:0);
+function f12Model(){
+  const resp=0.03035*F12S.ili+0.281;
+  const mix=f12MixOf(resp);
+  if(F12S.closed) return {resp,mix,li:0,le:0,walk:0,units:0,rxS:0,nonS:0,tot:0};
+  const w=F12_WK[F12S.wd], hf=F12S.after===1?1.25:F12S.after===2?1.12:1;
+  const li=38*w*hf;
+  const le=32*w*resp*hf*(F12S.wd===3?.6:1)*(F12S.entClosed?.05:1)*(F12S.early?.4:1)*(F12S.exClosed?F12S.exK:1);
+  const walk=12.5*(F12S.wd===6?.85:1)*(.85+.15*resp)*(F12S.after===1?1.1:1)*(F12S.wx?F12S.wxK:1);
+  const units=(walk+.18*(li+le))*F12_QTY, rxS=li*F12_PER_IM+le*F12_PER_ENT, nonS=units*mix.avg;
+  return {resp,mix,li,le,walk,units,rxS,nonS,tot:rxS+nonS,w,hf};
+}
+function f12Share(arr,h){const i=h-9;return i>=0&&i<arr.length?arr[i]/arr.reduce((a,b)=>a+b,0):0;}
+function f12Rates(h){
+  const m=f12Model(); if(F12S.closed) return {ent:0,oth:0,walk:0,inq:0};
+  const sat=F12S.wd===6, rxw=sat?F12_RXW.slice(0,5):F12_RXW;
+  let es=f12Share(rxw,h);
+  if(F12S.wd===3){ es=h>=14?F12_RXW[h-9]/47:0; }
+  const ws=f12Share(sat?F12_SATW:F12_WKW,h);
+  return {ent:m.le*es, oth:m.li*f12Share(rxw,h), walk:m.walk*ws, inq:m.walk*.25*ws};
+}
+
+/* ── 연령대·경로색·결과색 ── */
+const F12_AGE={child:{name:'어린이',scale:.72,hair:0x6b4a2b,bottom:0x4b6cb7,sp:1},adult:{name:'성인',scale:1,hair:0x2a2320,bottom:0x3a3f47,sp:1},senior:{name:'고령',scale:.95,hair:0xc9c9c9,bottom:0x6b5b4b,sp:.7}};
+const F12_AGEP={ent:[.3,.55,.15],oth:[.05,.5,.45],walk:[.1,.7,.2],inq:[.05,.65,.3]};
+const F12_COL={ent:0x0f9b8c,ex:0xe0569b,oth:0xd4881f,walk:0x8b5cf6,inq:0x3b82f6};
+const F12_UMB=[0xd23b2a,0x2f6fb5,0xe0a100,0x3a3f47,0x2f8f4e];
+const F12_OUTC=[0x2f8f4e,0xe0a100,0xd23b2a], F12_OUTN=['만족 이용','지연 이용','이탈'];
+function f12Outcome(a,k){a.out=k;F12S.out[k]++;const st=a.g.userData.st;if(st){st[2].color.set(F12_OUTC[k]);st[0].visible=st[1].visible=true;}}
+
+/* ── 동선(팀 건물 좌표로 재배치: 위치는 인터뷰에 없어 임의 배치, floor12와 같은 가정) ── */
+const f12V=(x,z,floor)=>new T.Vector3(x,floor*FH+.25,z);
+const f12P={
+  outF:f12V(-1.2,9,0), front:f12V(-1.2,4.3,0), e1:f12V(-.6,-1.6,0), e2:f12V(-.6,-1.6,1), lobby:f12V(-1.2,1,0),
+  oDoor:f12V(1.3,0,0), oIn:f12V(3,2.5,0), hall:f12V(-.6,-.8,1), phDoor:f12V(-1.4,3.4,1), phIn:f12V(-2.2,1,1),
+  entDoor:f12V(5,3.4,1), entIn:f12V(4,1.5,1),
+  shelf:f12V(-2.5,1.2,1), shelf2:f12V(-6.3,-.4,1), shelf3:f12V(-2.2,3,1), shelf4:f12V(-5,3.5,1)
+};
+const f12OrthoSeats=[]; for(let i=0;i<4;i++)for(let j=0;j<2;j++) f12OrthoSeats.push(f12V(2.2+i*.7,2.6+j*.9+.5,0));
+const f12EntSeats=[]; for(let i=0;i<4;i++)for(let j=0;j<3;j++) f12EntSeats.push(f12V(3+i*.95,.2+j*1.05+.5,1));
+const f12Rnd=(a,b)=>a+Math.random()*(b-a);
+const f12Jit=v=>v.clone().add(new T.Vector3(f12Rnd(-.25,.25),0,f12Rnd(-.25,.25)));
+const f12St=p=>({p:f12Jit(p)});
+const f12Up=()=>[f12St(f12P.outF),f12St(f12P.front),f12St(f12P.e1),f12St(f12P.e2),f12St(f12P.hall)];
+const f12Down=()=>[f12St(f12P.hall),f12St(f12P.e2),f12St(f12P.e1),f12St(f12P.front),f12St(f12P.outF)];
+const f12ToPh=()=>[f12St(f12P.phDoor),f12St(f12P.phIn)], f12FromPh=()=>[f12St(f12P.phIn),f12St(f12P.phDoor)];
+const f12AnyShelf=()=>[f12P.shelf,f12P.shelf2,f12P.shelf3,f12P.shelf4][Math.floor(Math.random()*4)];
+const f12AddOn=()=>Math.random()<.18?[{p:f12Jit(f12AnyShelf()),stay:f12Rnd(1,3)}]:[];
+function f12Build(type){
+  if(type==='ent'){
+    const seat=f12EntSeats[Math.floor(Math.random()*f12EntSeats.length)];
+    return f12Up().concat([f12St(f12P.entDoor),f12St(f12P.entIn),{p:f12Jit(seat),stay:f12Rnd(12,30),say:'진료 대기 중'},f12St(f12P.entIn),f12St(f12P.entDoor)],f12ToPh(),f12AddOn(),[{queue:true,svc:f12RxSvc()}],f12FromPh(),f12Down());
+  }
+  if(type==='oth'){
+    const seat=f12OrthoSeats[Math.floor(Math.random()*f12OrthoSeats.length)];
+    return [f12St(f12P.outF),f12St(f12P.front),f12St(f12P.lobby),f12St(f12P.oDoor),f12St(f12P.oIn),{p:f12Jit(seat),stay:f12Rnd(12,25),say:'진료 대기 중'},f12St(f12P.oIn),f12St(f12P.oDoor),f12St(f12P.lobby),f12St(f12P.e1),f12St(f12P.e2),f12St(f12P.hall)]
+      .concat(f12ToPh(),f12AddOn(),[{queue:true,svc:f12RxSvc()}],f12FromPh(),f12Down());
+  }
+  if(type==='walk') return f12Up().concat(f12ToPh(),[{p:f12Jit(f12AnyShelf()),stay:f12Rnd(2,5)},{queue:true,svc:1.5}],f12FromPh(),f12Down());
+  return f12Up().concat(f12ToPh(),[{queue:true,svc:1}],f12FromPh(),f12Down());
+}
+
+/* ── 에이전트 ── */
+const f12Agents=[], f12Queue=[];
+function f12Say(a,t){a.say=t;a.sayT=4;}
+function f12Mood(a,k){if(a.mood!==k){a.mood=k;f12SetFace(a.g,k);}}
+function f12PickItem(){const p=f12Model().mix.p; let u=Math.random(); for(let i=0;i<p.length;i++){u-=p[i][0]; if(u<=0) return f12Items[i].name_ko.split(' ')[0];} return f12Items[0]?f12Items[0].name_ko:'';}
+function f12Kill(a){
+  scene.remove(a.g);
+  if(a.guard){scene.remove(a.guard);a.guard.userData.parts.forEach(m=>{const k=pick.indexOf(m);if(k>=0)pick.splice(k,1);});}
+  if(a.el&&a.el.parentNode)a.el.parentNode.removeChild(a.el);
+  a.g.userData.face.geometry.dispose(); a.g.userData.face.material.dispose();
+  a.g.userData.parts.forEach(m=>{const k=pick.indexOf(m);if(k>=0)pick.splice(k,1);m.geometry.dispose();});
+  const q=f12Queue.indexOf(a); if(q>=0)f12Queue.splice(q,1);
+}
+function f12ClearAgents(){f12Agents.forEach(f12Kill);f12Agents.length=0;f12Queue.length=0;}
+const f12Qpos=k=>f12V(-1.9+Math.floor(k/5)*.5,(k%5)*.4,1);
+function f12MoveTo(a,tp,step){
+  const d=tp.clone().sub(a.g.position), L=d.length();
+  if(L<=step){a.g.position.copy(tp);return true;}
+  if(Math.abs(d.x)+Math.abs(d.z)>1e-4) a.g.rotation.y=Math.atan2(d.x,d.z);
+  a.g.position.add(d.multiplyScalar(step/L));
+  return false;
+}
+function f12Spawn(type){
+  if(f12Agents.length>80) return;
+  const pr=F12_AGEP[type], u=Math.random(), age=u<pr[0]?'child':u<pr[0]+pr[1]?'adult':'senior', A=F12_AGE[age];
+  const route=(type==='ent'&&F12S.exClosed&&Math.random()<(F12S.exK-1)/F12S.exK)?'ex':type, col=F12_COL[route], dark=new T.Color(col).multiplyScalar(.55).getHex();
+  const pm=F12S.ili>=15?Math.min(.8,F12S.ili/60):.05, umbC=F12_UMB[Math.floor(Math.random()*F12_UMB.length)];
+  const path=f12Build(type), g=f12MakeChar({top:col,bottom:dark,hair:A.hair,scale:A.scale,mask:Math.random()<pm,umb:age==='child'?0:umbC,status:true});
+  g.position.copy(path[0].p); scene.add(g);
+  const a={type,route,age,g,path,i:1,wait:0,inQ:false,serve:0,svc:0,qwait:0,mood:(type==='ent'||type==='oth')?2:1,say:'',sayT:0,sp:A.sp,el:f12Bubble(),
+    pat:(type==='ent'||type==='oth')?25:12,out:-1,umb:g.userData.umb||null,guard:null};
+  g.userData.parts.forEach(m=>{reg(m,'a_'+route,1);m.userData.agent=a;});
+  if(age==='child'){
+    const gd=f12MakeChar({top:col,bottom:dark,hair:0x2a2320,scale:1,mask:Math.random()<pm,umb:umbC});
+    gd.position.copy(g.position); scene.add(gd); gd.userData.parts.forEach(m=>{reg(m,'a_'+route,1);m.userData.agent=a;}); a.guard=gd;
+  }
+  f12SetFace(g,a.mood); f12Agents.push(a);
+}
+function f12AgentsTick(dt){
+  if(!f12Days.length) return;
+  const dSim=dt*3*F12S.speed, step=dt*2.4*F12S.speed;
+  const r=f12Rates(Math.floor(F12S.min/60));
+  for(const k in r){ if(Math.random()<r[k]/60*dSim) f12Spawn(k); }
+  for(let n=f12Agents.length-1;n>=0;n--){
+    const a=f12Agents[n];
+    if(a.inQ){
+      const k=f12Queue.indexOf(a), at=f12MoveTo(a,f12Qpos(k),step*a.sp);
+      a.qwait+=dSim;
+      const mk=a.qwait<5?Math.min(a.mood,2):a.qwait<10?2:a.qwait<20?3:4;
+      if(mk>a.mood)f12Mood(a,mk);
+      if(!(k===0&&a.serve>0)&&a.qwait>=a.pat){f12Queue.splice(k,1);a.inQ=false;a.i++;f12Mood(a,4);f12Outcome(a,2);continue;}
+      if(k===0&&at){a.serve+=dSim; if(a.serve>=a.svc){f12Queue.shift();if(a.type==='ent'||a.type==='oth')F12S.rx++;a.inQ=false;a.i++;if(a.qwait<5)f12Mood(a,0);f12Outcome(a,a.qwait<10?0:1);}}
+      continue;
+    }
+    if(a.wait>0){a.wait-=dSim;continue;}
+    const s=a.path[a.i];
+    if(!s){f12Kill(a);f12Agents.splice(n,1);continue;}
+    if(s.queue){a.inQ=true;a.serve=0;a.svc=s.svc;f12Queue.push(a);f12Say(a,a.type==='walk'?f12PickItem()+' 있나요?':a.type==='inq'?'이거 어디에 좋아요?':'처방전이요');continue;}
+    if(f12MoveTo(a,s.p,step*a.sp)){a.wait=s.stay||0;if(s.say)f12Say(a,s.say);a.i++;}
+  }
+}
+
+/* ── 약사 상태(표정·말풍선) — EV 사전 원문만 사용 ── */
+function f12PhState(){
+  const d=f12Day(), m=f12Model(), q=f12Queue.length, dos=d?d.o003_days_of_supply:null, rev=F12S.closed?0:(m.tot/(f12Base||1)-1)*100;
+  const F=['대기 인원 '+q+'명 (3명 이상 바쁨, 6명 이상 걱정)','예상 매출 평시 대비 '+(rev>=0?'+':'')+rev.toFixed(0)+'% (±25% 넘으면 표정 변화)',
+    '판콜에스 잔여 '+(dos==null?'-':dos+'일분')+' (1.5일 미만이면 걱정 · L48, R02)','조제장비 '+(F12S.eq?'고장':'정상')+' · 직원 '+(F12S.staff?'부재':'근무')+' (L55)'];
+  let k=2, line='';
+  if(F12S.closed){k=1;line='휴무';}
+  else if(q>=6){k=5;line='대기 '+q+'명';}
+  else if(F12S.eq){k=5;line='조제장비 고장';}
+  else if(dos!=null&&dos<1.5){k=5;line='판콜에스 '+dos+'일분 · 발주 필요';}
+  else if(q>=3){k=3;line='대기 '+q+'명';}
+  else if(F12S.staff){k=3;line='직원 부재';}
+  else if(F12S.entClosed){k=2;line='이비인후과 휴진 · 한산';}
+  else if(F12S.exClosed){k=1;}
+  else if(rev>=25){k=0;line='예상 매출 평시 +'+rev.toFixed(0)+'%';}
+  else if(rev<=-25){k=3;line='예상 매출 평시 '+rev.toFixed(0)+'%';}
+  let inPh=0; f12Agents.forEach(a=>{const p=a.g.position; if(p.y>FH-.5&&p.x<0) inPh++;});
+  let qid=null;
+  if(!F12S.closed){ if(F12S.exClosed) qid='E025'; else if(F12S.wd===6) qid='E022'; else if(F12S.early) qid='E003'; else if(q===0&&inPh===0) qid='E012'; }
+  const useQ=qid&&k!==5, text=useQ?EV[qid].b+' '+qid:line;
+  return {k,line,text,isQ:!!useQ,qid,F,kb:q>=6?3:q>=3?2:1};
+}
+let f12HudN=0;
+function f12UpdateHud(){
+  const c={ent:0,ex:0,oth:0,walk:0,inq:0}; let inPh=0,entW=0;
+  f12Agents.forEach(a=>{c[a.route]++;const p=a.g.position;if(p.y>FH-.5){if(p.x<0)inPh++;else if(p.x>1.5&&a.type==='ent')entW++;}});
+  const set=(id,v)=>{const el=document.getElementById(id); if(el) el.textContent=v;};
+  set('f12SIn',inPh); set('f12SQ',f12Queue.length); set('f12SEnt',entW); set('f12SRx',F12S.rx);
+  set('f12NEnt',c.ent); set('f12NEx',c.ex); set('f12NOth',c.oth); set('f12NWalk',c.walk); set('f12NInq',c.inq);
+  if(f12HudN++%20===0){
+    const ps=f12PhState();
+    f12SetFace(phA,ps.k); f12SetFace(phB,ps.kb);
+    f12SetBub(phAEl,F12_EMO[ps.k],ps.text); phAEl.classList.toggle('st',!ps.isQ);
+    f12SetBub(phBEl,F12_EMO[ps.kb],'');
+  }
+}
+const f12Tmp=new T.Vector3();
+function f12PlaceBubbles(dt){
+  const w=stage.clientWidth,h=stage.clientHeight;
+  const put=(el,g)=>{
+    g.getWorldPosition(f12Tmp); const hide=!g.visible; f12Tmp.y+=1.25*g.scale.y; f12Tmp.project(cam);
+    if(hide||f12Tmp.z>1){el.style.display='none';return;}
+    el.style.display=''; el.style.left=((f12Tmp.x+1)/2*w)+'px'; el.style.top=((1-f12Tmp.y)/2*h)+'px';
+  };
+  f12Agents.forEach(a=>{ if(a.sayT>0){a.sayT-=dt;} f12SetBub(a.el,'',a.sayT>0?a.say:''); put(a.el,a.g); });
+  put(phAEl,phA); put(phBEl,phB);
+}
 /* 3층 판단실 */
 let screenC, screenTx, screenMesh; const cards=[];
 (()=>{const g=FG[2],i=2;
