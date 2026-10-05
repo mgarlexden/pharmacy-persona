@@ -22,7 +22,7 @@ export const dayLabel = (iso) => `${Number(iso.slice(5, 7))}/${Number(iso.slice(
 export function buildObservation(c) {
   return {
     asOf: AS_OF,
-    item: { id: 'DEMO_PACK_01', label: '가상 발주판단용 단일 품목', unit: 'pack' },
+    item: { id: 'DEMO_PACK_01', label: '종합감기약(정제 10정/갑, 1팩=3갑)', unit: 'pack' },
     stock: { book: c.book, ageH: c.ageH, status: 'not_checked' },
     recentUse: [5, 5, 5],
     cashKrw: c.cash,

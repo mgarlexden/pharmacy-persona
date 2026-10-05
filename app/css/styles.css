@@ -646,8 +646,8 @@ kbd { font-family: var(--mono); font-size: .8125rem; padding: 1px 6px; border: 1
 .seg.small span { min-height: 30px; padding: 0 10px; font-size: .8125rem; }
 
 /* ---------- 시뮬레이터 틀: 3D + 오른쪽 창 ---------- */
-.sim2 { display: grid; grid-template-columns: minmax(0, 1fr) clamp(360px, 30vw, 440px); grid-template-rows: minmax(0, 1fr); flex: 1 1 auto; min-height: 0; height: calc(100dvh - var(--hdr-h)); }
-.sim2[data-mode="sim"] { grid-template-columns: minmax(0, 1fr) clamp(400px, 36vw, 560px); }
+.sim2 { display: grid; grid-template-columns: minmax(0, 7fr) minmax(400px, 3fr); grid-template-rows: minmax(0, 1fr); flex: 1 1 auto; min-height: 0; height: calc(100dvh - var(--hdr-h)); }
+
 .side { overflow-y: auto; overscroll-behavior: contain; border-left: 1px solid var(--line); background: var(--surface); min-height: 0; }
 .side-head { position: sticky; top: 0; z-index: 2; padding: 18px 22px 12px; background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--line-2); }
 .side-head h1 { font-size: 1.25rem; margin: 0; letter-spacing: -0.015em; line-height: 1.3; }
@@ -690,11 +690,19 @@ kbd { font-family: var(--mono); font-size: .8125rem; padding: 1px 6px; border: 1
 .mix-legend li { display: grid; grid-template-columns: 12px 1fr auto; gap: 8px; align-items: center; font-size: .875rem; }
 .mix-legend i { width: 12px; height: 12px; border-radius: 3px; }
 .mix-legend b { font-variant-numeric: tabular-nums; }
-.hour-chart { width: 100%; height: auto; display: block; }
+.hour-chart { width: 100%; height: auto; max-height: 230px; display: block; }
 .hour-chart text { font-size: 9px; fill: var(--muted); }
 .hour-chart text.tiny { font-size: 7px; fill: var(--t-orange); }
 .hour-chart .grid { stroke: var(--line-2); stroke-width: 1; }
 .hour-chart .closed { fill: var(--surface-3); }
+.fc-chart text.val { font-size: 8.5px; fill: var(--ink-2); font-weight: 600; }
+.fc-chart text.red { fill: var(--t-red, #c0392b); }
+.fc-bar { fill: var(--brand); opacity: .55; }
+.fc-bar.sel { opacity: 1; }
+.fc-range { stroke: var(--ink-2); stroke-width: 1.2; }
+.fc-item { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin-top: 10px; padding: 10px 12px; border-radius: var(--r2); background: var(--surface-2); }
+.fc-item > span { flex: 1 1 100%; font-size: .8125rem; color: var(--ink-2); font-weight: 600; }
+.fc-item b { font-size: 1.25rem; }
 .tbl.fx td { padding: 8px 10px; vertical-align: middle; }
 .tbl.fx tr.fx-note td { padding-top: 0; font-size: .75rem; color: var(--muted); border-bottom: 1px solid var(--line-2); }
 .tbl.fx tr:not(.fx-note) td { border-bottom: 0; }
@@ -819,7 +827,11 @@ kbd { font-family: var(--mono); font-size: .8125rem; padding: 1px 6px; border: 1
 .intro-steps span { font-size: .875rem; color: var(--ink-2); }
 
 /* ---------- 사용 가이드 ---------- */
-.guide { display: grid; gap: 16px; max-width: 860px; padding-bottom: 48px; }
+.guide { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; padding-bottom: 48px; }
+.guide .faq { grid-column: 1 / -1; }
+.guide .faq-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 32px; align-items: start; }
+.guide .how { grid-template-columns: 1fr; }
+@media (max-width: 1000px) { .guide, .guide .faq-list { grid-template-columns: 1fr; } }
 .g-card { padding: 22px 24px; border-radius: var(--r3); background: var(--surface-2); }
 .g-card h2 { font-size: 1.25rem; margin: 0 0 12px; }
 .g-card h3 { font-size: 1rem; margin: 0 0 8px; }

@@ -4,7 +4,7 @@
 // 판단은 AI(저장된 실행 결과)가 한다. 화면에서 답을 고르지 않는다. 약사 답은 data/5_validation/pharmacist_answers.csv 에서 읽는다.
 import { lookup, obsLines, CARDS, cardById, OBJ_INFO, SCENE_LABELS, parseCSV } from './data.js';
 import * as E from './engine.js';
-import { loadDemand, computeDay, flowHours, dayDefaults, model as dmodel, BASE_VISITS, ITEM_BASE, HOURS } from './demand.js';
+import { loadDemand, computeDay, forecast, flowHours, dayDefaults, model as dmodel, BASE_VISITS, ITEM_BASE, HOURS } from './demand.js';
 import { createScene } from '../design/building3d.js';
 import { $, $$, esc, store, badge, VIRT, PUB, INTV, ASSUME, chip, chips, toast, reduceMotion, ACTION_LABEL, qidOf, layerName, srcTag, flagText } from './ui.js';
 
@@ -101,6 +101,37 @@ function hourSVG(day) {
   });
   return `<svg class="hour-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="시간대별 예상 손님. 막대 색은 3D 손님 옷 색과 같습니다.">${g}</svg>`;
 }
+function forecastSVG(fc, sel) {
+  const W = 320, H = 150, L = 26, B = 34, T = 10, n = fc.list.length, bw = (W - L - 4) / n;
+  const ymax = Math.max(40, Math.ceil(Math.max(...fc.list.map((x) => x.hi)) / 20) * 20);
+  const Y = (v) => T + (1 - v / ymax) * (H - T - B);
+  let g = '';
+  [0, ymax / 2, ymax].forEach((v) => { g += `<line class="grid" x1="${L}" x2="${W}" y1="${Y(v)}" y2="${Y(v)}"/><text x="${L - 4}" y="${Y(v) + 3}" text-anchor="end">${Math.round(v)}</text>`; });
+  fc.list.forEach((x, i) => {
+    const x0 = L + 2 + i * bw, cx = x0 + (bw - 4) / 2, md = x.date.slice(5).replace(/^0/, '').replace('-', '/');
+    if (!x.open) g += `<rect x="${x0}" y="${T}" width="${bw - 4}" height="${H - T - B}" class="closed"><title>${md}: 약국 쉬는 날 (가상 달력)</title></rect><text x="${cx}" y="${H - B - 4}" text-anchor="middle" class="tiny">휴무</text>`;
+    else {
+      g += `<rect x="${x0}" y="${Y(x.base)}" width="${bw - 4}" height="${H - B - Y(x.base)}" rx="2" class="${x.date === sel ? 'fc-bar sel' : 'fc-bar'}"><title>${md}(${x.dow}) 기준 약 ${Math.round(x.base)}명 · 범위 ${Math.round(x.lo)}~${Math.round(x.hi)}명</title></rect>`;
+      g += `<line class="fc-range" x1="${cx}" x2="${cx}" y1="${Y(x.hi)}" y2="${Y(x.lo)}"/><line class="fc-range" x1="${cx - 3}" x2="${cx + 3}" y1="${Y(x.hi)}" y2="${Y(x.hi)}"/><line class="fc-range" x1="${cx - 3}" x2="${cx + 3}" y1="${Y(x.lo)}" y2="${Y(x.lo)}"/>`;
+      g += `<text x="${cx}" y="${Y(x.hi) - 3}" text-anchor="middle" class="val">${Math.round(x.base)}</text>`;
+    }
+    g += `<text x="${cx}" y="${H - 20}" text-anchor="middle">${md}</text><text x="${cx}" y="${H - 8}" text-anchor="middle" class="${x.holiday || x.dow === '일' ? 'red' : ''}">${x.holiday ? '휴일' : x.dow}</text>`;
+  });
+  return `<svg class="hour-chart fc-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="앞으로 ${n}일 예상 손님. 막대는 기준값, 세로선은 가정한 반응 크기를 흔든 범위입니다.">${g}</svg>`;
+}
+function forecastSection(fc) {
+  const it = fc.item;
+  return `<section class="side-sec">
+    <h2 class="side-h">앞으로 일주일 수요 예측 ${ASSUME}</h2>
+    <p class="small">고른 날부터 하루 예상 손님입니다. 막대는 기준값, 세로선은 범위입니다.</p>
+    ${forecastSVG(fc, S.env.date)}
+    <div class="fc-item">
+      <span>판단 품목 수요 ${VIRT} <small>(고른 날부터 영업 ${fc.itemDays}일)</small></span>
+      <b>약 ${it.base}팩</b><small>범위 ${it.lo}~${it.hi}팩</small>
+    </div>
+    <p class="xs muted" style="margin-top:6px">위 독감·기온 막대 값이 일주일 전체에 적용됩니다(기온은 바꾼 만큼 모든 날에 더합니다). 요일별 날씨는 그날 공공 값입니다. 범위는 독감·기온·연휴·비가 손님을 얼마나 늘리는지(가정한 값)를 절반~1.5배로 바꿔 계산했습니다. 통계로 만든 예측이 아닙니다. 품목 수요는 하루 ${ITEM_BASE}팩을 손님 수에 비례시킨 값입니다.</p>
+  </section>`;
+}
 function slider(id, label, unit, val, min, max, step, pub, pubNote) {
   const changed = pub != null && Math.abs(val - pub) > 1e-9;
   return `<div class="sl">
@@ -152,6 +183,7 @@ function basicSide() {
     ${hourSVG(day)}
     <p class="xs muted">막대 색은 3D 손님의 옷 색과 같습니다. 회색 칸은 약국이 닫힌 시간입니다.</p>
   </section>
+  ${forecastSection(forecast({ date: S.env.date, ili: S.env.ili, temp: S.env.temp, rain: S.env.rain }))}
   <section class="side-sec">
     <h2 class="side-h">왜 이 숫자인가</h2>
     <div class="tbl-wrap"><table class="tbl fx">${fx}</table></div>
@@ -340,6 +372,7 @@ function renderDropdown() {
   const real = S.mode === 'sim' && S.checked ? `${c.physical}팩 (확인함)` : '확인 전 (모름)';
   $('#dd-body').innerHTML = `
     <p class="dd-k">판단 품목 ${VIRT}</p>
+    <p class="small" style="margin:0 0 6px">종합감기약(정제). 한 갑 10정, 한 팩은 3갑 묶음입니다.</p>
     <ul class="dd-facts"><li><i class="sw ghost"></i><span>전산 기록</span><b>${c.book}팩</b></li><li><i class="sw solid"></i><span>실제 선반</span><b>${real}</b></li></ul>
     <p class="dd-k">손님 옷 색 = 들어온 길</p>
     <ul class="dd-leg">${Object.values(ROUTE).map((r) => `<li><i class="sw" style="background:${r.c}"></i>${r.t}</li>`).join('')}</ul>

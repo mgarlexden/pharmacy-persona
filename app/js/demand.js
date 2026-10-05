@@ -111,10 +111,12 @@ export function computeDay(env) {
   const rain = env.rain ?? (def.rainMm != null && def.rainMm >= 1);
   const month = env.date.slice(5, 7);
   const fSeason = M.season[month] || 1;
-  const fIli = Math.max(0.6, 1 + K.ili * (ili / M.iliRef - 1));
-  const fTemp = Math.max(0.7, 1 + K.temp * (M.tempRef - temp));
+  const km = env.kMul ?? 1; // 가정한 반응 크기를 몇 배로 볼지 (예측 범위 계산용)
+  const fIli = Math.max(0.6, 1 + K.ili * km * (ili / M.iliRef - 1));
+  const fTemp = Math.max(0.7, 1 + K.temp * km * (M.tempRef - temp));
   const after = /연휴 후|연휴 다음/.test(c.holiday_adjacency || '');
-  const fAfter = after ? K.afterHoliday : 1;
+  const fAfter = after ? 1 + (K.afterHoliday - 1) * km : 1;
+  const fRain = 1 - (1 - K.rainWalk) * km;
   const mult = fSeason * fIli * fTemp * fAfter;
   const dowKey = def.holiday ? '공휴일' : def.dow;
   const entH = M.entHours[dowKey] || null;
@@ -127,8 +129,8 @@ export function computeDay(env) {
       h, open: true, entOpen,
       oth: b * M.mix.oth * M.rxW[i],
       ent: entOpen ? b * M.mix.ent * M.rxW[i] : 0,
-      walk: b * M.mix.walk * M.walkW[i] * (rain ? K.rainWalk : 1),
-      inq: b * M.mix.inq * M.walkW[i] * (rain ? K.rainWalk : 1),
+      walk: b * M.mix.walk * M.walkW[i] * (rain ? fRain : 1),
+      inq: b * M.mix.inq * M.walkW[i] * (rain ? fRain : 1),
     };
   });
   const sum = (k) => hours.reduce((a, x) => a + x[k], 0);
@@ -147,6 +149,32 @@ export function computeDay(env) {
     item: Math.max(0, Math.round(ITEM_BASE * (open ? total / BASE_VISITS : 0))),
     pharmHoursKnown: false,
   };
+}
+
+export const FORECAST_SPREAD = [0.5, 1.5]; // 가정한 반응 크기를 절반 ~ 1.5배로 흔든 범위
+
+/**
+ * 선택한 날부터 앞으로 며칠의 예상 손님과 판단 품목 수요.
+ * 독감 값을 직접 바꿨으면 모든 날에 적용하고, 기온을 바꿨으면 바꾼 만큼을 모든 날에 더한다. 비는 선택한 날에만 적용한다.
+ * 범위는 값을 지어내지 않고, 가정한 반응 크기(K)만 FORECAST_SPREAD 배로 흔들어 만든다.
+ */
+export function forecast(env, days = 7) {
+  const i0 = Math.max(0, M.dates.indexOf(env.date));
+  const def0 = dayDefaults(env.date);
+  const dT = env.temp != null && def0.temp != null ? env.temp - def0.temp : 0;
+  const list = M.dates.slice(i0, i0 + days).map((date) => {
+    const d = dayDefaults(date);
+    const e = { date, ili: env.ili ?? undefined, temp: d.temp != null && dT ? d.temp + dT : undefined, rain: date === env.date ? env.rain : undefined };
+    const vals = [1, ...FORECAST_SPREAD].map((kMul) => computeDay({ ...e, kMul }));
+    const tot = vals.map((v) => v.total);
+    const base = computeDay(e);
+    return { date, dow: d.dow, holiday: d.holiday, open: base.open, base: base.total, lo: Math.min(...tot), hi: Math.max(...tot) };
+  });
+  const k = ITEM_BASE / BASE_VISITS;
+  // 선택한 날부터 영업하는 사흘의 판단 품목 수요 합계
+  const three = list.filter((x) => x.open).slice(0, 3);
+  const sum = (key) => three.reduce((a, x) => a + x[key] * k, 0);
+  return { list, itemDays: three.length, item: { lo: Math.round(sum('lo')), base: Math.round(sum('base')), hi: Math.round(sum('hi')) } };
 }
 
 /** 3D 손님 흐름에 넘길 시간대별 값 (손님 수/시간) */
