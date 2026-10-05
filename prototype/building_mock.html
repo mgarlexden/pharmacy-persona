@@ -113,7 +113,8 @@ ul.plain li{margin:2px 0}
   .tools{flex-direction:row;flex-wrap:wrap;left:10px;right:auto;top:auto;bottom:34px}
   .hint{display:none}
 }
-.lg{position:absolute;right:10px;bottom:8px;max-width:270px;font-size:11px;line-height:1.5;background:rgba(255,255,255,.9);color:#1f2a2a;border:1px solid rgba(0,0,0,.15);border-radius:6px;padding:6px 9px}
+.lg{display:none;position:absolute;right:10px;bottom:8px;max-width:270px;font-size:11px;line-height:1.5;background:rgba(255,255,255,.9);color:#1f2a2a;border:1px solid rgba(0,0,0,.15);border-radius:6px;padding:6px 9px}
+#bColor2F{display:none}
 .lg b{display:block;font-size:11px;margin-top:2px}
 .lg i{display:inline-block;vertical-align:middle;margin-right:4px}
 .lg i.gr{width:70px;height:9px;border-radius:2px}
@@ -459,6 +460,36 @@ fetch('../data/floor12.json').then(r=>r.json()).then(data=>{
   itemMaxWeight2F=Math.max(...data.items.map(it=>it.sales_weight));
   buildItems2F(data.items);
 }).catch(err=>console.error('data/floor12.json 로드 실패(로컬 서버로 열어야 fetch가 됩니다):',err));
+/* ─────────────────────────────────────────────────────────────
+   F12: 1~2층(floor12.html 이식분) 전용 모듈 네임스페이스.
+   이 지점부터 새로 추가하는 1~2층 코드는 전부 이 객체 안에 둔다.
+   그 앞(위)의 ...2F 접미사 전역들은 이전 단계에서 이미 만든 것이라
+   그대로 둔다(지시: 기존 작업은 고치지 않는다).
+   ───────────────────────────────────────────────────────────── */
+const F12={
+  active:false,
+  FLOOR_OBJ_KEYS:['elev','front','ortho','dispense','phA','phB','counter','cold','sofa','ent','exent','nbph'],
+  belongsKey(key){
+    if(!key) return false;
+    if(key.indexOf('item:')===0||key.indexOf('zone:')===0) return true;
+    return F12.FLOOR_OBJ_KEYS.indexOf(key)>=0;
+  },
+  enter(){
+    if(this.active) return; this.active=true;
+    const lg=document.getElementById('lg'); if(lg) lg.style.display='block';
+    const bc=document.getElementById('bColor2F'); if(bc) bc.style.display='block';
+  },
+  leave(){
+    if(!this.active) return; this.active=false;
+    const lg=document.getElementById('lg'); if(lg) lg.style.display='none';
+    const bc=document.getElementById('bColor2F'); if(bc) bc.style.display='none';
+  },
+  sync(){
+    const floorOn=selected&&selected.type==='floor'&&(selected.i===0||selected.i===1);
+    const objOn=selected&&selected.type==='obj'&&F12.belongsKey(selected.key);
+    if(floorOn||objOn) F12.enter(); else F12.leave();
+  }
+};
 /* 3층 판단실 */
 let screenC, screenTx, screenMesh; const cards=[];
 (()=>{const g=FG[2],i=2;
@@ -581,6 +612,7 @@ function renderPanel(){
   else { h=trustHtml(); }
   el.innerHTML=h;
   el.querySelectorAll('[data-ev]').forEach(b=>b.onclick=()=>{evKey=evKey===b.dataset.ev?null:b.dataset.ev;renderPanel();});
+  F12.sync();
 }
 function objDyn(k){const s=H[day];
   if(k==='cold')return `<div class="sec"><h4>지금 값 <span class="badge">가상</span></h4><p>재고 ${s.stock}개 · 내일 예상 수요 ${s.fc}개 → <b>${s.dos.toFixed(1)}일치</b> ${s.so>0?'<span class="badge bad">오늘 품절 '+s.so+'개</span>':''}</p></div>`;
