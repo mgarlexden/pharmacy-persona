@@ -136,6 +136,8 @@ ul.plain li{margin:2px 0}
 .f12-ctl{display:none;border-top:1px solid var(--line);background:var(--panel);padding:10px 16px}
 .f12-ctl h2{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 6px;font-weight:600}
 .f12-row{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-top:6px}
+.f12-ctl input[type=range]{accent-color:var(--accent)}
+.f12-clk{font-variant-numeric:tabular-nums;font-size:14px}
 .lg b{display:block;font-size:11px;margin-top:2px}
 .lg i{display:inline-block;vertical-align:middle;margin-right:4px}
 .lg i.gr{width:70px;height:9px;border-radius:2px}
@@ -196,7 +198,7 @@ ul.plain li{margin:2px 0}
               <div class="f12-stat"><b id="f12SStock">–</b><span id="f12SStockL">판콜에스 재고</span></div>
               <div class="f12-stat"><b id="f12SRho">–</b><span id="f12SRhoL">이 시간대 혼잡도</span></div>
             </div>
-            <p class="mut" style="margin:8px 0 0;font-size:11px">손님 인원·대기·재고·혼잡도 수치는 인물·날짜 이식 단계에서 연결합니다.</p>
+            <p class="mut" style="margin:8px 0 0;font-size:11px">판콜에스 재고는 선택한 날짜 값입니다(가상데이터). 손님 인원·대기·혼잡도는 인물 이식 단계에서 연결합니다.</p>
           </section>
           <section>
             <h2>유입 경로별 옷 색 (화면에 있는 수)</h2>
@@ -257,7 +259,15 @@ ul.plain li{margin:2px 0}
   <div class="f12-ctl" id="f12Ctl">
     <h2>1~2층 날짜·재생</h2>
     <div class="f12-note">1~2층 날짜와 3층 발주 판단의 "타임라인 · 14일"은 서로 다른 가상 기간입니다. 두 값을 서로 연동하지 않습니다.</div>
-    <div class="f12-row"><span class="mut" style="font-size:12px">날짜 선택 · 하루 시각(09~19시) 재생은 다음 단계에서 연결합니다.</span></div>
+    <div class="f12-row">
+      <button class="btn pri" id="f12Play">▶ 재생</button>
+      <select id="f12Speed" class="btn"><option value="1">1×</option><option value="2" selected>2×</option><option value="5">5×</option></select>
+      <input type="date" id="f12DateInput" min="2026-01-01" max="2026-12-31">
+    </div>
+    <div class="f12-row">
+      <input type="range" id="f12Time" min="540" max="1140" step="5" value="540" style="width:200px">
+      <b class="f12-clk" id="f12Clk">09:00</b>
+    </div>
   </div>
 </div>
 
@@ -530,6 +540,9 @@ fetch('../data/floor12.json').then(r=>r.json()).then(data=>{
   data.items.forEach(it=>{itemData2F[it.code]=it;});
   itemMaxWeight2F=Math.max(...data.items.map(it=>it.sales_weight));
   buildItems2F(data.items);
+  f12Days=data.days;
+  F12S.di=f12Idx('2026-10-06');
+  f12SyncCtl(); f12RenderStats();
 }).catch(err=>console.error('data/floor12.json 로드 실패(로컬 서버로 열어야 fetch가 됩니다):',err));
 /* ─────────────────────────────────────────────────────────────
    F12: 1~2층(floor12.html 이식분) 전용 모듈 네임스페이스.
@@ -554,6 +567,7 @@ const F12={
     const teamTabs=document.getElementById('tabs'); if(teamTabs) teamTabs.style.display='none';
     const teamPbody=document.getElementById('pbody'); if(teamPbody) teamPbody.style.display='none';
     const f12Panel=document.getElementById('f12Panel'); if(f12Panel) f12Panel.style.display='flex';
+    f12SyncCtl(); f12RenderStats();
   },
   leave(){
     if(!this.active) return; this.active=false;
@@ -570,6 +584,10 @@ const F12={
     const objOn=selected&&selected.type==='obj'&&F12.belongsKey(selected.key);
     if(floorOn||objOn) F12.enter(); else F12.leave();
     f12Render();
+  },
+  tick(dt){
+    if(!this.active) return;
+    f12Tick(dt);
   }
 };
 /* F12 오른쪽 패널: 탭 3개(① 현 상태 ② 예상 매출 ③ 매출 달력).
@@ -605,6 +623,42 @@ function f12Render(){
   }
 }
 document.getElementById('f12Tabs').onclick=e=>{if(e.target.dataset.t){f12SetTab(e.target.dataset.t);f12Render();}};
+/* F12 날짜·시간축: 1~2층 전용, 09~19시 하루 재생. 팀의 day/H[]/P/14일
+   타임라인과는 완전히 분리된 별도 상태(F12S)다 — 결정 1(시간 축 공존). */
+let f12Days=[];
+const f12D0=Date.UTC(2026,0,1);
+const f12Iso=i=>new Date(f12D0+i*864e5).toISOString().slice(0,10);
+const f12Idx=s=>Math.round((Date.parse(s+'T00:00:00Z')-f12D0)/864e5);
+const F12S={di:0,min:540,playing:false,speed:2};
+function f12Day(){return f12Days[F12S.di];}
+function f12EndMin(){const d=f12Day();if(!d)return 1140;if(d.business_code===0)return 600;if(d.business_code===2)return 840;return 1140;}
+function f12Clock(){const m=Math.floor(F12S.min),h=Math.floor(m/60);return String(h).padStart(2,'0')+':'+String(m%60).padStart(2,'0');}
+function f12SyncCtl(){
+  const dateEl=document.getElementById('f12DateInput'); if(dateEl&&f12Days.length) dateEl.value=f12Iso(F12S.di);
+  const timeEl=document.getElementById('f12Time'); if(timeEl&&document.activeElement!==timeEl) timeEl.value=F12S.min;
+  const clkEl=document.getElementById('f12Clk'); if(clkEl) clkEl.textContent=f12Clock();
+}
+function f12RenderStats(){
+  const d=f12Day(); if(!d) return;
+  const stock=document.getElementById('f12SStock'), stockL=document.getElementById('f12SStockL');
+  if(stock) stock.textContent=d.o003_closing_stock==null?'–':d.o003_closing_stock+'개';
+  if(stockL) stockL.textContent='판콜에스 재고'+(d.o003_days_of_supply==null?'':' · '+d.o003_days_of_supply+'일분');
+}
+function f12SetDate(i){
+  if(!f12Days.length||i<0||i>=f12Days.length) return;
+  F12S.di=i; F12S.min=540; f12SyncCtl(); f12RenderStats();
+}
+function f12Tick(dt){
+  if(!F12S.playing||!f12Days.length) return;
+  F12S.min+=dt*3*F12S.speed;
+  const end=f12EndMin();
+  if(F12S.min>=end){ f12SetDate((F12S.di+1)%f12Days.length); return; }
+  f12SyncCtl();
+}
+document.getElementById('f12Play').onclick=()=>{F12S.playing=!F12S.playing;document.getElementById('f12Play').textContent=F12S.playing?'❚❚ 정지':'▶ 재생';};
+document.getElementById('f12Speed').onchange=e=>{F12S.speed=+e.target.value;};
+document.getElementById('f12DateInput').onchange=e=>{const i=f12Idx(e.target.value); if(i>=0&&i<f12Days.length) f12SetDate(i); else f12SyncCtl();};
+document.getElementById('f12Time').oninput=e=>{F12S.min=Math.min(+e.target.value,f12EndMin()-1); f12SyncCtl();};
 /* 3층 판단실 */
 let screenC, screenTx, screenMesh; const cards=[];
 (()=>{const g=FG[2],i=2;
@@ -854,6 +908,7 @@ function theme(){const d=isDark();if(d===lastDark)return;lastDark=d;
 const clock=new T.Clock();let frame=0;
 function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.05),t=clock.elapsedTime;frame++;
   if(frame%20===1)theme();
+  F12.tick(dt);
   const k=1-Math.pow(.0005,dt);cur.th+=(goal.th-cur.th)*k;cur.ph+=(goal.ph-cur.ph)*k;cur.r+=(goal.r-cur.r)*k;cur.t.lerp(goal.t,k);
   explode+=(explodeGoal-explode)*(1-Math.pow(.001,dt));FG.forEach((g,i)=>g.position.y=yOf(i));
   cam.position.set(cur.t.x+cur.r*Math.sin(cur.ph)*Math.sin(cur.th),cur.t.y+cur.r*Math.cos(cur.ph),cur.t.z+cur.r*Math.sin(cur.ph)*Math.cos(cur.th));cam.lookAt(cur.t);
@@ -884,7 +939,7 @@ document.getElementById('bPreset0').onclick=()=>preset(25,false,false,false);
 document.getElementById('bPlay').onclick=()=>{if(!playing&&day>=13)day=0;playing=!playing;setPlayBtn();onDay();};
 document.getElementById('bStep').onclick=()=>{playing=false;setPlayBtn();day=day<13?day+1:0;onDay();};
 document.getElementById('bLabels').classList.toggle('on',showLabels);resize();theme();renderNav();applyDay();VIEWS.all();loop();
-window.__lab={cam,goal,cur,selectFloor,selectObj,get day(){return day},set day(v){day=v;onDay()}};
+window.__lab={cam,goal,cur,selectFloor,selectObj,get day(){return day},set day(v){day=v;onDay()},F12,F12S};
 })();
 </script>
 </body></html>
