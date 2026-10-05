@@ -115,6 +115,27 @@ ul.plain li{margin:2px 0}
 }
 .lg{display:none;position:absolute;right:10px;bottom:8px;max-width:270px;font-size:11px;line-height:1.5;background:rgba(255,255,255,.9);color:#1f2a2a;border:1px solid rgba(0,0,0,.15);border-radius:6px;padding:6px 9px}
 #bColor2F{display:none}
+/* F12 1~2층 전용 패널 — 팀 스타일과 안 겹치게 f12- 접두어만 쓴다 */
+.f12-panel{display:none;flex-direction:column;flex:1;min-height:0}
+.f12-tabs{display:flex;border-bottom:1px solid var(--line)}
+.f12-tabs button{flex:1;background:transparent;border:0;border-bottom:2px solid transparent;padding:9px 4px;font-size:12px;color:var(--muted);cursor:pointer;font:inherit}
+.f12-tabs button.on{color:var(--fg);border-bottom-color:var(--accent);font-weight:600}
+.f12-pane{overflow:auto;padding:14px;flex:1}
+.f12-pane section{margin-bottom:18px}
+.f12-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.f12-stat{border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+.f12-stat b{display:block;font-size:19px;font-weight:600}
+.f12-stat span{font-size:11px;color:var(--muted)}
+.f12-leg{display:grid;gap:5px}
+.f12-leg div{display:flex;align-items:center;gap:8px;font-size:13px}
+.f12-leg i{width:12px;height:12px;border-radius:3px;flex:none}
+.f12-leg b{margin-left:auto}
+#f12Sel h3{margin:0 0 4px;font-size:15px}
+#f12Sel p{margin:0 0 8px;color:var(--muted);font-size:13px}
+.f12-note{border:1px solid var(--warn);border-radius:6px;padding:8px 10px;font-size:12px;margin-bottom:14px}
+.f12-ctl{display:none;border-top:1px solid var(--line);background:var(--panel);padding:10px 16px}
+.f12-ctl h2{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 6px;font-weight:600}
+.f12-row{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-top:6px}
 .lg b{display:block;font-size:11px;margin-top:2px}
 .lg i{display:inline-block;vertical-align:middle;margin-right:4px}
 .lg i.gr{width:70px;height:9px;border-radius:2px}
@@ -158,6 +179,51 @@ ul.plain li{margin:2px 0}
         <button data-t="trust">신뢰</button>
       </div>
       <div class="pbody" id="pbody"></div>
+      <div class="f12-panel" id="f12Panel">
+        <div class="f12-tabs" id="f12Tabs">
+          <button data-t="1" class="on">① 현 상태</button>
+          <button data-t="2">② 예상 매출</button>
+          <button data-t="3">③ 매출 달력</button>
+        </div>
+        <div class="f12-pane" id="f12Pane1">
+          <section>
+            <h2>지금 상태</h2>
+            <div class="f12-stats">
+              <div class="f12-stat"><b id="f12SIn">0</b><span>약국 안 손님</span></div>
+              <div class="f12-stat"><b id="f12SQ">0</b><span>카운터 대기</span></div>
+              <div class="f12-stat"><b id="f12SEnt">0</b><span>이비인후과 대기</span></div>
+              <div class="f12-stat"><b id="f12SRx">0</b><span>오늘 조제 건수(장면)</span></div>
+              <div class="f12-stat"><b id="f12SStock">–</b><span id="f12SStockL">판콜에스 재고</span></div>
+              <div class="f12-stat"><b id="f12SRho">–</b><span id="f12SRhoL">이 시간대 혼잡도</span></div>
+            </div>
+            <p class="mut" style="margin:8px 0 0;font-size:11px">손님 인원·대기·재고·혼잡도 수치는 인물·날짜 이식 단계에서 연결합니다.</p>
+          </section>
+          <section>
+            <h2>유입 경로별 옷 색 (화면에 있는 수)</h2>
+            <div class="f12-leg">
+              <div><i style="background:#0f9b8c"></i>같은 층 이비인후과에서 온 환자<b id="f12NEnt">0</b></div>
+              <div><i style="background:#e0569b"></i>건너편 휴진으로 넘어온 환자<b id="f12NEx">0</b></div>
+              <div><i style="background:#d4881f"></i>1층 의원에서 온 환자<b id="f12NOth">0</b></div>
+              <div><i style="background:#8b5cf6"></i>거리에서 온 워크인<b id="f12NWalk">0</b></div>
+              <div><i style="background:#3b82f6"></i>문의·비구매 방문<b id="f12NInq">0</b></div>
+            </div>
+          </section>
+          <section>
+            <h2>인물 읽는 법</h2>
+            <p class="mut" style="margin:0;font-size:12px">약국을 나가는 손님은 발밑 원과 머리 위 점의 색으로 결과를 표시합니다. 초록은 10분 안에 받은 만족 이용, 노랑은 10분 넘게 기다린 지연 이용, 빨강은 기다리다 그냥 나간 이탈입니다. 이탈 기준(처방 25분, 일반약·문의 12분)은 데이터가 없어 가정값입니다.</p>
+            <p class="mut" style="margin:6px 0 0;font-size:12px">옷 색은 유입 경로, 키와 머리색은 연령대입니다. 독감이 유행하면 마스크를 쓰고, 비가 오면 건물 밖에서 우산을 쓰며, 어린이는 보호자와 함께 옵니다. 마스크 착용률과 연령대 비율은 가정값입니다.</p>
+            <p class="mut" style="margin:6px 0 0;font-size:12px">약사 A의 초록 말풍선은 조건이 맞을 때 띄우는 인터뷰 원문이고, 흰 말풍선은 상태값입니다.</p>
+            <p class="mut" style="margin:6px 0 0;font-size:11px">※ 약사·손님 인물은 아직 이식 전이라, 위 설명은 다음 단계부터 실제로 보입니다.</p>
+          </section>
+          <section id="f12Sel"></section>
+        </div>
+        <div class="f12-pane" id="f12Pane2" hidden>
+          <div class="f12-note">예상 매출 탭(요인별 계수·근거, 전후 2주 추이)은 날짜·시간축 데이터 연동 단계에서 채웁니다 — 가상데이터 기준.</div>
+        </div>
+        <div class="f12-pane" id="f12Pane3" hidden>
+          <div class="f12-note">매출 달력 탭(월별 히트맵)은 날짜 데이터 연동 단계에서 채웁니다 — 가상데이터 기준.</div>
+        </div>
+      </div>
     </aside>
   </div>
 
@@ -187,6 +253,11 @@ ul.plain li{margin:2px 0}
       <div class="tl" id="tl"></div>
       <div class="legend"><span><i style="background:#9a9a90"></i>유지</span><span><i style="background:#d4881f"></i>소량</span><span><i style="background:#0f9b8c"></i>표준</span><span><i style="background:#8b5cf6"></i>대량·조정</span><span><i style="background:var(--bad)"></i>품절 발생일(아래 선)</span></div>
     </div>
+  </div>
+  <div class="f12-ctl" id="f12Ctl">
+    <h2>1~2층 날짜·재생</h2>
+    <div class="f12-note">1~2층 날짜와 3층 발주 판단의 "타임라인 · 14일"은 서로 다른 가상 기간입니다. 두 값을 서로 연동하지 않습니다.</div>
+    <div class="f12-row"><span class="mut" style="font-size:12px">날짜 선택 · 하루 시각(09~19시) 재생은 다음 단계에서 연결합니다.</span></div>
   </div>
 </div>
 
@@ -478,18 +549,62 @@ const F12={
     if(this.active) return; this.active=true;
     const lg=document.getElementById('lg'); if(lg) lg.style.display='block';
     const bc=document.getElementById('bColor2F'); if(bc) bc.style.display='block';
+    const sim=document.querySelector('.sim'); if(sim) sim.style.display='none';
+    const f12Ctl=document.getElementById('f12Ctl'); if(f12Ctl) f12Ctl.style.display='block';
+    const teamTabs=document.getElementById('tabs'); if(teamTabs) teamTabs.style.display='none';
+    const teamPbody=document.getElementById('pbody'); if(teamPbody) teamPbody.style.display='none';
+    const f12Panel=document.getElementById('f12Panel'); if(f12Panel) f12Panel.style.display='flex';
   },
   leave(){
     if(!this.active) return; this.active=false;
     const lg=document.getElementById('lg'); if(lg) lg.style.display='none';
     const bc=document.getElementById('bColor2F'); if(bc) bc.style.display='none';
+    const sim=document.querySelector('.sim'); if(sim) sim.style.display='grid';
+    const f12Ctl=document.getElementById('f12Ctl'); if(f12Ctl) f12Ctl.style.display='none';
+    const teamTabs=document.getElementById('tabs'); if(teamTabs) teamTabs.style.display='flex';
+    const teamPbody=document.getElementById('pbody'); if(teamPbody) teamPbody.style.display='block';
+    const f12Panel=document.getElementById('f12Panel'); if(f12Panel) f12Panel.style.display='none';
   },
   sync(){
     const floorOn=selected&&selected.type==='floor'&&(selected.i===0||selected.i===1);
     const objOn=selected&&selected.type==='obj'&&F12.belongsKey(selected.key);
     if(floorOn||objOn) F12.enter(); else F12.leave();
+    f12Render();
   }
 };
+/* F12 오른쪽 패널: 탭 3개(① 현 상태 ② 예상 매출 ③ 매출 달력).
+   ②③은 날짜 데이터(F12 날짜·시간축) 이식 단계에서 채운다. 지금은 ①만 동작하며,
+   팀의 기존 OBJ/FINFO/EV/refsHtml/evHtml을 그대로 재사용해 "클릭하면 근거가 뜨는"
+   방식과 근거 ID를 그대로 유지한다. */
+let f12Tab='1';
+function f12SetTab(t){
+  f12Tab=t;
+  document.querySelectorAll('#f12Tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+  const p1=document.getElementById('f12Pane1'),p2=document.getElementById('f12Pane2'),p3=document.getElementById('f12Pane3');
+  if(p1) p1.hidden=t!=='1'; if(p2) p2.hidden=t!=='2'; if(p3) p3.hidden=t!=='3';
+}
+function f12SelHtml(){
+  if(!selected) return `<h3>1층·2층을 둘러보세요</h3><p class="mut">가구·진열·인물을 클릭하면 연결된 데이터와 근거가 여기 나옵니다.</p>`;
+  if(selected.type==='floor'&&(selected.i===0||selected.i===1)){
+    const f=FINFO[selected.i];
+    return `<h3>${f.t}</h3><p>${f.d}</p><div class="sec"><h4>근거</h4>${refsHtml(f.r)}</div>${evHtml()}`;
+  }
+  if(selected.type==='obj'&&F12.belongsKey(selected.key)){
+    const o=OBJ[selected.key]; if(!o) return '';
+    return `<h3>${o.t}</h3><p>${o.d}</p>${objDyn(selected.key)}<div class="sec"><h4>연결되는 데이터</h4><ul class="bind">${o.b.map(x=>`<li>${x}</li>`).join('')}</ul></div><div class="sec"><h4>근거</h4>${refsHtml(o.r)}</div>${evHtml()}`;
+  }
+  return `<h3>1층·2층을 둘러보세요</h3><p class="mut">가구·진열·인물을 클릭하면 연결된 데이터와 근거가 여기 나옵니다.</p>`;
+}
+function f12Render(){
+  if(!F12.active) return;
+  document.querySelectorAll('#f12Tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===f12Tab));
+  const sel=document.getElementById('f12Sel');
+  if(sel){
+    sel.innerHTML=f12SelHtml();
+    sel.querySelectorAll('[data-ev]').forEach(b=>b.onclick=()=>{evKey=evKey===b.dataset.ev?null:b.dataset.ev;f12Render();});
+  }
+}
+document.getElementById('f12Tabs').onclick=e=>{if(e.target.dataset.t){f12SetTab(e.target.dataset.t);f12Render();}};
 /* 3층 판단실 */
 let screenC, screenTx, screenMesh; const cards=[];
 (()=>{const g=FG[2],i=2;
