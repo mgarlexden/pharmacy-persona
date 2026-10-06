@@ -146,7 +146,7 @@ async function opsPage() {
       <div class="tbl-wrap"><table class="tbl"><tbody>
         <tr><th>AI 다시 실행</th><td><code>python scripts/run_persona.py --mode sync --cards all --reps 3 --yes</code><br><span class="xs muted">먼저 --dry-run 으로 요청 수와 토큰을 확인합니다. 키는 .env 의 ANTHROPIC_API_KEY.</span></td></tr>
         <tr><th>공공데이터 다시 받기</th><td><code>python scripts/build_public.py --refresh</code><br><span class="xs muted">키는 .env 의 DATA_GO_KR_KEY. 원본은 fetched/ (저장소에 올라가지 않음).</span></td></tr>
-        <tr><th>약사 답 넣기</th><td><code>data/5_validation/pharmacist_answers.csv</code> 에 한 줄씩. first_action·final_choice 는 check_physical_stock, Q_0, Q_5, Q_10, order_open(주문하지만 수량은 답하지 않음), defer, other 중 하나. 묻지 않은 칸은 비워 둔다. 이유는 약사가 한 말 그대로, 팀원이 정리한 답은 answer_ko 에 그대로.</td></tr>
+        <tr><th>약사 답 넣기</th><td><code>data/5_validation/pharmacist_answers.csv</code> 에 한 줄씩. first_action·final_choice 는 check_physical_stock, Q_<수량>(예: Q_0, Q_7), order_open(주문하지만 수량은 답하지 않음), defer, other 중 하나. 묻지 않은 칸은 비워 둔다. 이유는 약사가 한 말 그대로, 팀원이 정리한 답은 answer_ko 에 그대로.</td></tr>
         <tr><th>근거 반영</th><td>근거 후보를 source/ Excel 에 옮기고 <code>python scripts/build.py</code> → <code>python scripts/validate.py</code></td></tr>
       </tbody></table></div></section>`;
 }
@@ -248,7 +248,7 @@ function factorSummaryHTML(d) {
 }
 function ablationHTML(d) {
   const rows = d.ablation_summary || []; if (!rows.length) return '';
-  const fin = (k) => (k === 'split' ? '시도가 갈림' : k === 'commit_choice' ? '바로 주문 결정' : k === 'commit_0' ? '보류' : k === 'commit_5' ? '5팩 주문' : k === 'commit_10' ? '10팩 주문' : (ACTION_LABEL[k] || k || '-'));
+  const fin = (k) => { const m = /^commit_(\d+)$/.exec(k || ''); return k === 'split' ? '시도가 갈림' : k === 'commit_choice' ? '바로 주문 결정' : m ? (Number(m[1]) === 0 ? '보류' : `${Number(m[1])}팩 주문`) : (ACTION_LABEL[k] || k || '-'); };
   const res = (c) => (c === 'yes' ? badge('bad', '판단이 바뀜') : c === 'no' ? badge('neutral', '그대로') : badge('unknown', '시도가 갈려 판단 보류'));
   const body = rows.map((r) => `<tr><td>${chip(r.rule)}</td><td>${esc(cardById(r.card).title)}</td><td>${esc(fin(r.base_first))} → ${esc(fin(r.base_final))}</td><td>${esc(fin(r.ablated_first))} → ${esc(fin(r.ablated_final))}</td><td>${res(r.changed)}</td></tr>`).join('');
   const removed = Object.entries(d.ablations || {}).map(([l, ids]) => `<li><b>${esc(l.slice(3))}</b> 묶음: ${ids.map((i) => chip(i)).join(' ')}</li>`).join('');

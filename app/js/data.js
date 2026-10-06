@@ -55,7 +55,9 @@ export const lookup = (id) => DB.byId.get(id) || null;
 /* 관측 줄 고르기: scripts/run_persona.py 의 obs_lines 와 같은 규칙.
    카드 전용 줄이 같은 순서의 공통(*) 줄을 덮고, scene=false 면 장면 입력 줄을 뺀다. hidden 줄은 따로 돌려준다. */
 export function obsLines(cardId, cond, checked, scene = true) {
-  const want = new Set(['always', checked ? 'checked' : 'unchecked', cond.prior ? 'prior' : 'no_prior']);
+  const want = new Set(['always', checked ? 'checked' : 'unchecked', cond.prior ? 'prior' : 'no_prior', cond.bulk ? 'bulk' : 'no_bulk', cond.ret ? 'ret_ok' : 'ret_no', cond.hint ? 'hint' : 'no_hint']);
+  if (cond.cutoff) want.add('cutoff');
+  if (cond.tight) want.add('tight');
   const rows = new Map();
   DB.obsRows.forEach((r) => {
     if ((r.card_id !== '*' && r.card_id !== cardId) || !want.has(r.show_when)) return;
@@ -73,7 +75,8 @@ export function obsLines(cardId, cond, checked, scene = true) {
 // 10/6 통화 뒤 조정: 통장 잔액·외상 한도는 판단 조건에서 뺐다(소액 품목 발주를 잔액에 맞춰 정하지 않는다는 응답).
 // 대신 수량별 단가(대량 할인)를 조건으로 넣었고, 재고는 선반+창고 합계로 정했다. 원본 값은 data/4_bridge/cards.csv.
 // bulk: 10팩 이상을 한 번에 주문할 때의 팩당 단가. null 이면 수량과 관계없이 같은 단가.
-const mk = (arrival, extra = {}) => ({ bulk: null, arrival, book: 8, physical: 8, ageH: 12, prior: false, ...extra });
+// ret: 반품 가능, hint: 도매 사이트에 '재고 부족 예정' 표시, cutoff: 한글날 연휴 전 주문 마감, tight: 창고가 거의 찬 상태
+const mk = (arrival, extra = {}) => ({ bulk: null, arrival, book: 8, physical: 8, ageH: 12, prior: false, ret: true, hint: false, cutoff: false, tight: false, ...extra });
 export const D1 = '2026-10-07';
 export const D2 = '2026-10-08';
 
@@ -153,6 +156,64 @@ export const CARDS = [
     invented: '기존 주문 5팩과 그 입고일은 가정입니다. 이런 상황에서 어떻게 했는지는 인터뷰에 직접 나오지 않습니다.',
     tags: ['할인 없음', '내일 입고', '기존 주문 5팩'], cond: mk(D1, { prior: true }),
   },
+  // ---- 할인율 스윕 지점 (화면의 시나리오 목록에는 나오지 않는다. 0% = C01, 10% = C03) ----
+  {
+    id: 'S05', kind: 'sweep', title: '할인율 5%', short: '스윕 지점',
+    story: '기본 장면에서 10팩 이상 주문할 때 팩당 9,500원(5% 할인)만 다릅니다.', test: '할인율이 몇 %부터 주문량을 바꾸는지 보는 스윕 지점입니다.',
+    support: 'none', basis: [{ ids: ['R03'], why: '할인과 남는 재고의 부담이 맞서는 장면입니다.' }],
+    invented: '할인 구간(10팩 이상)과 5%는 가정입니다.', tags: ['10팩 5% 할인'], cond: mk(D1, { bulk: 9500 }),
+  },
+  {
+    id: 'S15', kind: 'sweep', title: '할인율 15%', short: '스윕 지점',
+    story: '기본 장면에서 10팩 이상 주문할 때 팩당 8,500원(15% 할인)만 다릅니다.', test: '할인율 스윕 지점입니다.',
+    support: 'none', basis: [{ ids: ['R03'], why: '할인과 남는 재고의 부담이 맞서는 장면입니다.' }],
+    invented: '할인 구간(10팩 이상)과 15%는 가정입니다.', tags: ['10팩 15% 할인'], cond: mk(D1, { bulk: 8500 }),
+  },
+  {
+    id: 'S20', kind: 'sweep', title: '할인율 20%', short: '스윕 지점',
+    story: '기본 장면에서 10팩 이상 주문할 때 팩당 8,000원(20% 할인)만 다릅니다.', test: '할인율 스윕 지점입니다.',
+    support: 'none', basis: [{ ids: ['R03'], why: '할인과 남는 재고의 부담이 맞서는 장면입니다.' }],
+    invented: '할인 구간(10팩 이상)과 20%는 가정입니다.', tags: ['10팩 20% 할인'], cond: mk(D1, { bulk: 8000 }),
+  },
+  // ---- 평가용: 10/6 약사 응답에 없는 조합. 약사 답을 받은 적이 없어 AI 가 약사와 비슷한 방향인지 볼 때 쓴다 ----
+  {
+    id: 'E1', kind: 'eval', hypo: 'C03(할인만 있는 날)보다 같거나 줄어듭니다. 반품 불가가 더 사 두는 부담을 키우기 때문입니다. 다만 인터뷰는 반품을 피하려 한다는 것(R04)까지만 말해, 얼마나 줄지는 가정할 수 없습니다.', title: '할인은 있지만 반품이 안 되는 약', short: '할인 + 반품 불가',
+    story: '도매상이 10팩 이상 주문하면 팩당 9천원(10% 할인)에 주지만, 이 약은 한 번 받으면 반품할 수 없습니다.',
+    test: '할인(더 사는 이유)과 반품 불가(덜 사는 이유)가 맞서는 장면입니다. 10/6 응답에는 이 조합이 없습니다.',
+    support: 'partial',
+    basis: [
+      { ids: ['R04', 'E038'], why: '반품을 쉽게 되돌릴 수 있는 선택으로 보지 않는다고 말했습니다.' },
+      { ids: ['R03'], why: '할인과 남는 재고의 부담이 맞서는 장면입니다.' },
+    ],
+    invented: '반품 불가 설정과 할인 구간·할인율은 가정입니다.', tags: ['10팩 할인', '반품 불가'], cond: mk(D1, { bulk: 9000, ret: false }),
+  },
+  {
+    id: 'E2', kind: 'eval', hypo: 'C03(할인만 있는 날)보다 같거나 줄어듭니다. 공간이 없으면 한꺼번에 많이 받기 어렵기 때문입니다(E035).', title: '할인은 있지만 창고가 거의 찬 상태', short: '할인 + 보관 공간 부족',
+    story: '도매상이 10팩 이상 주문하면 팩당 9천원에 주지만, 창고가 거의 차 있어 한꺼번에 많이 들어오면 둘 곳이 마땅치 않습니다.',
+    test: '할인과 보관 공간 부담이 맞서는 장면입니다. 10/6 응답에는 이 조합이 없습니다.',
+    support: 'partial',
+    basis: [
+      { ids: ['E035'], why: '의약품 보유에는 유효기간과 보관 공간 제약이 있다고 말했습니다.' },
+      { ids: ['R03'], why: '할인과 남는 재고의 부담이 맞서는 장면입니다.' },
+    ],
+    invented: '공간이 부족한 정도와 할인 구간·할인율은 가정입니다.', tags: ['10팩 할인', '창고 거의 참'], cond: mk(D1, { bulk: 9000, tight: true }),
+  },
+  {
+    id: 'E3', kind: 'eval', hypo: 'C01(품절 조짐 없는 날)보다 늘어납니다. 품절을 피하려는 쪽이 자연스럽지만, 인터뷰에는 이 표시에 어떻게 반응하는지가 없어 가설입니다.', title: '도매 사이트에 "재고 부족 예정"이 뜬 날', short: '품절 조짐 (할인 없음)',
+    story: '기본 장면과 같습니다. 다만 도매상 주문 사이트에 이 약이 "재고 부족 예정"으로 표시되어 있습니다. 언제 품절될지는 알 수 없습니다.',
+    test: '품절 조짐이 주문량을 늘리는지 봅니다. 공급중단·부족 공개자료에서 감기 관련 품목은 약 2~3%로 드물어, 낮은 빈도의 별도 조건으로 둡니다. 독감과의 연동은 가설입니다.',
+    support: 'partial',
+    basis: [{ ids: ['E033', 'I06'], why: '유행기에 주문처 품절로 보충이 막힐 수 있다고 설명했습니다. 얼마나 자주인지는 인터뷰에 없습니다.' }],
+    invented: '"재고 부족 예정" 표시와 그 의미는 가정입니다.', tags: ['할인 없음', '품절 조짐'], cond: mk(D1, { hint: true }),
+  },
+  {
+    id: 'E4', kind: 'eval', hypo: 'C01(연휴 마감 없는 날)보다 같거나 늘어납니다. 연휴 전에 미리 받아 두려는 쪽이 자연스럽지만 인터뷰에 직접 근거는 없어 가설입니다.', title: '한글날 연휴 전 마지막 주문일', short: '연휴 전 도매 주문 마감',
+    story: '기본 장면과 같습니다. 다만 한글날 연휴로 도매상이 쉬어서, 연휴 전 마지막 주문은 내일 오후까지이고 연휴 뒤 첫 도착은 10/12(월) 아침입니다.',
+    test: '연휴 전에 미리 주문하는지, 수량이 늘어나는지 봅니다. 10/6 응답에는 이 상황이 없습니다.',
+    support: 'none',
+    basis: [{ ids: ['E033', 'R02'], why: '오늘·내일을 버틸지 판단하는 방식은 기본 장면과 같고, 도매 휴무는 인터뷰에 없습니다.' }],
+    invented: '도매상 휴무일과 연휴 뒤 도착일은 가정입니다.', tags: ['할인 없음', '연휴 전 마감'], cond: mk(D1, { cutoff: true }),
+  },
 ];
 
 export const SUPPORT = {
@@ -161,7 +222,19 @@ export const SUPPORT = {
   none: { cls: 'hyp', label: '인터뷰에 없는 대조용 장면' },
 };
 
+CARDS.forEach((c) => { c.kind = c.kind || 'practice'; });
 export const cardById = (id) => CARDS.find((c) => c.id === id);
+export const KIND_KO = { practice: '연습용', eval: '평가용', sweep: '스윕용' };
+/** 10/6 약사 응답에 T01, T02... 번호를 붙여 근거 칩으로 열 수 있게 한다 (번호 규칙은 scripts/run_persona.py 의 answer_items 와 같다) */
+export function registerAnswerIds(rows) {
+  let n = 0;
+  rows.forEach((r) => {
+    const text = [r.realism_ko, r.answer_ko].filter((x) => x && x.trim()).join(' / ');
+    if (!text) return;
+    const id = `T${String(++n).padStart(2, '0')}`;
+    DB.byId.set(id, { kind: '10/6 통화 응답', id, title: r.question_ko || '원래 질문지에 대한 응답', quote: '', summary: text, type: '팀원이 정리해 전달한 답 (약사 직접 인용 아님)', where: '2026-10-06 통화' });
+  });
+}
 
 export const PAIRS = [
   { a: 'C01', b: 'C03', changed: '수량 할인만 변경' },

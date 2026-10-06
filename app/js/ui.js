@@ -28,9 +28,18 @@ export function toast(msg) {
 }
 
 // AI 답 표기
-export const ACTION_LABEL = { check_physical_stock: '실물 확인 (선반·창고)', Q_0: '보류 (0팩)', Q_5: '5팩 주문', Q_10: '10팩 주문', order_open: '주문 (수량은 답하지 않음)', defer: '판단 유보', other: '후보 밖' };
+const ACTION_FIXED = { check_physical_stock: '실물 확인 (선반·창고)', order_open: '주문 (수량은 답하지 않음)', defer: '판단 유보', other: '후보 밖' };
+// Q_<수량>: 0~20 사이 어떤 정수여도 라벨이 나온다 (예전에는 0·5·10 세 가지뿐이었다)
+export const ACTION_LABEL = new Proxy(ACTION_FIXED, {
+  get(t, k) {
+    if (k in t) return t[k];
+    const m = typeof k === 'string' && /^Q_(\d+)$/.exec(k);
+    return m ? (Number(m[1]) === 0 ? '보류 (0팩)' : `${Number(m[1])}팩 주문`) : undefined;
+  },
+});
+export const qtyOf = (k) => { const m = typeof k === 'string' && /^Q_(\d+)$/.exec(k); return m ? Number(m[1]) : null; };
 export const qidOf = (a, qty) => (a === 'commit_choice' ? `Q_${qty ?? 0}` : a);
-export const layerName = (l) => (l === 'B1' ? 'B1 · 인터뷰 없이' : l === 'P0' ? 'P0 · 인터뷰 근거' : l === 'P1' ? 'P1 · 인터뷰 + 그날 환경' : l.startsWith('P1-') ? `P1에서 ${l.slice(3)} 근거 뺌` : l);
+export const layerName = (l) => (l === 'B1' ? 'B1 · 인터뷰 없이' : l === 'P0' ? 'P0 · 인터뷰 근거' : l === 'P1' ? 'P1 · 인터뷰 + 그날 환경' : l === 'P2' ? 'P2 · P1 + 10/6 약사 응답' : l.startsWith('P1-') ? `P1에서 ${l.slice(3)} 근거 뺌` : l);
 export const SRC_KO = { interview: '인터뷰', scene: '그날 환경', observation: '화면에 보인 값', assumption: '추론', general_knowledge: '일반 상식' };
 export const srcTag = (k) => `<span class="src-tag src-${esc(k)}">${esc(SRC_KO[k] || k)}</span>`;
 export const FLAG_TEXT = {
@@ -44,10 +53,13 @@ export const FLAG_TEXT = {
   interview_factor_in_b1: '인터뷰 자료가 없는데 인터뷰 요인을 댔습니다',
   scene_factor_without_scene: '그날 환경 정보를 받지 않았는데 환경 요인을 댔습니다',
   output_reshaped: '답의 형식이 틀려 목록으로 펴서 읽었습니다',
+  strategy_missing: '주문인데 전략(필요한 만큼만·할인 구간까지)을 적지 않았습니다',
+  discount_tag_without_discount: '할인이 없는 장면인데 "할인 구간까지"를 골랐습니다',
 };
 export const flagText = (f) => {
   const k = f.replace(/^r\d+:/, '');
   if (FLAG_TEXT[k]) return FLAG_TEXT[k];
+  if (k.startsWith('period_mismatch')) return `관측값은 "사흘"인데 다른 기간(${k.split(':').slice(1).join(':')}일)으로 적었습니다`;
   if (k.startsWith('unknown_ids')) return `데이터에 없는 근거 번호: ${k.split(':').slice(1).join(':')}`;
   if (k.startsWith('cites_removed_id')) return `이번 실행에서 뺀 근거를 인용했습니다: ${k.split(':').slice(1).join(':')}`;
   return k;

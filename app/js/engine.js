@@ -7,31 +7,56 @@
 export const CAL = ['2026-10-06', '2026-10-07', '2026-10-08'];
 export const AS_OF = '2026-10-06T08:50:00+09:00';
 export const UNIT_COST = 10000;
+export const CAPACITY_NOTE = '최대 수량을 10에서 20으로 올렸다: 10이 선택의 상한이라 AI 답이 10으로 몰렸다.';
 export const BULK_MIN = 10; // 이 수량 이상을 한 번에 주문하면 카드의 bulk 단가를 쓴다 (가정)
 export const DEMAND = [5, 5, 5];
-export const OFFER = { id: 'OFFER_A', supplier: 'DEMO_A', capacity: 10, unitCost: UNIT_COST, terms: 'credit', due: '2026-11-05' };
+export const OFFER = { id: 'OFFER_A', supplier: 'DEMO_A', capacity: 20, unitCost: UNIT_COST, terms: 'credit', due: '2026-11-05' };
+// 참고용 세 가지(기본 보기의 표). AI 의 선택은 0~OFFER.capacity 사이 어떤 정수여도 된다.
 export const OPTIONS = [
   { id: 'Q_0', packs: 0, label: '보류 (0팩)' },
   { id: 'Q_5', packs: 5, label: '5팩 주문' },
   { id: 'Q_10', packs: 10, label: '10팩 주문' },
 ];
+const packsOf = (q) => (typeof q === 'number' ? q : OPTIONS.find((o) => o.id === q)?.packs ?? (/^Q_(\d+)$/.test(q) ? Number(q.slice(2)) : null));
+export const STRATEGY_KO = { need_only: '필요한 만큼만', fill_discount: '할인 구간까지', other: '그 밖' };
 export const PRIOR_ORDER = { id: 'PRIOR_001', origin: 'preexisting', packs: 5, arrival: '2026-10-07', due: '2026-11-05', unitCost: UNIT_COST };
 
 export const won = (n) => n.toLocaleString('ko-KR') + '원';
 /** 이번 주문의 팩당 단가. 카드에 수량 할인(bulk)이 있고 BULK_MIN 이상이면 할인 단가 */
 export const unitCostFor = (c, q) => (c.bulk && q >= BULK_MIN ? c.bulk : UNIT_COST);
+export const discountPct = (c) => (c.bulk ? Math.round((1 - c.bulk / UNIT_COST) * 100) : 0);
+/** 재고 위치 = 보유(선반+창고) + 이미 넣은 주문. checked 면 실제 재고, 아니면 전산 기록 */
+export const positionOf = (c, checked = false) => (checked ? c.physical : c.book) + (c.prior ? PRIOR_ORDER.packs : 0);
+
+/** 교과서 기준선 B0 (AI 에게는 숨긴다. 정답이 아니라 비교 기준이다).
+ *  주기 점검: 목표재고 S = d×(R+L) + SS,  필요량 g = max(0, S − 재고 위치).
+ *  d 하루 5팩 (카드 가정), R 점검 주기 1일, L 주문부터 입고까지 일수(카드의 입고일 − 판단일), SS 안전재고 2팩.
+ *  R·SS 와 d 는 설명용 가정이고 값을 바꾸면 기준선도 바뀐다. 재고 위치는 확인한 실제 재고로 계산한다(교과서는 재고를 안다고 본다).
+ *  할인이 있으면 보유비용을 무시할 만큼 회전이 빠르다고 보고(이 수요에서는 10팩이 이틀 안에 소진) 할인 구간까지 채우는 값도 같이 낸다.
+ *  반품 가능 여부, 보관 공간, 품절 조짐은 이 공식에 들어 있지 않다. 그 조건들에서 AI 가 B0 와 달라지는지를 보는 것이 평가용 카드의 목적이다. */
+export const B0_PARAM = { d: 5, R: 1, SS: 2 };
+export function b0(c) {
+  const { d, R, SS } = B0_PARAM;
+  const L = Math.round((Date.parse(c.arrival) - Date.parse(CAL[0])) / 86400000);
+  const target = d * (R + L) + SS;
+  const pos = positionOf(c, true);
+  const need = Math.min(OFFER.capacity, Math.max(0, target - pos));
+  const withTier = c.bulk && need < BULK_MIN ? BULK_MIN : need;
+  return { d, R, L, SS, target, pos, need, withTier };
+}
 export const dayLabel = (iso) => `${Number(iso.slice(5, 7))}/${Number(iso.slice(8, 10))}`;
 
 /** 모델과 화면에 보여도 되는 값만 만든다. 실물 재고·미래 수요·선택별 결과는 넣지 않는다. */
 export function buildObservation(c) {
   return {
+    position: positionOf(c),
+    options: { qtyRange: [0, OFFER.capacity], strategies: Object.keys(STRATEGY_KO) },
     asOf: AS_OF,
     item: { id: 'DEMO_PACK_01', label: '종합감기약(정제 10정/갑, 1팩=3갑)', unit: 'pack' },
     stock: { book: c.book, ageH: c.ageH, scope: 'shelf+storage', status: 'not_checked' },
     recentUse: [5, 5, 5],
     offer: { ...OFFER, arrival: c.arrival, priceTiers: c.bulk ? [{ minPacks: 1, unitCost: UNIT_COST }, { minPacks: BULK_MIN, unitCost: c.bulk }] : [{ minPacks: 1, unitCost: UNIT_COST }] },
     knownUnreceived: c.prior ? [{ id: PRIOR_ORDER.id, packs: PRIOR_ORDER.packs, arrival: PRIOR_ORDER.arrival }] : [],
-    options: OPTIONS,
     calendar: CAL,
   };
 }
@@ -45,9 +70,8 @@ export function checkPhysical(obs, c) {
 }
 
 export function constraints(c, qid) {
-  const opt = OPTIONS.find((o) => o.id === qid);
-  if (!opt) return [];
-  const q = opt.packs;
+  const q = packsOf(qid);
+  if (q == null || q < 0) return [];
   if (q === 0) {
     return [
       { id: 'none', label: '주문 없음', pass: true, detail: '구매약정과 채무가 생기지 않습니다.' },
@@ -63,12 +87,11 @@ export function constraints(c, qid) {
 /** 선택 하나를 적용해 3일을 한 번 진행한다. 제약을 어기면 자르지 않고 오류를 돌려준다.
     demand: 날짜별 수요(팩). 기본은 카드 가정값 [5,5,5] 이고, 팀 검증표도 이 값으로 맞춘다. */
 export function runBranch(c, qid, demand = DEMAND) {
-  const opt = OPTIONS.find((o) => o.id === qid);
-  if (!opt) return { error: '알 수 없는 선택지입니다.' };
+  const q = packsOf(qid);
+  if (q == null || q < 0) return { error: '알 수 없는 선택지입니다.' };
   const failed = constraints(c, qid).filter((x) => !x.pass);
   if (failed.length) return { error: `제약 위반: ${failed.map((f) => f.label).join(', ')}` };
 
-  const q = opt.packs;
   const unit = unitCostFor(c, q);
   const orders = c.prior ? [{ ...PRIOR_ORDER }] : [];
   if (q > 0) {
@@ -118,6 +141,6 @@ export function runBranch(c, qid, demand = DEMAND) {
   };
 }
 
-export function runAll(c, demand = DEMAND) {
-  return OPTIONS.map((o) => runBranch(c, o.id, demand));
+export function runAll(c, demand = DEMAND, qtys = OPTIONS.map((o) => o.packs)) {
+  return qtys.map((q) => runBranch(c, q, demand));
 }

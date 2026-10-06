@@ -24,6 +24,7 @@ import datetime as dt
 import hashlib
 import json
 import os
+import re
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -64,12 +65,14 @@ load_dotenv()
 BRIDGE = ROOT / "data" / "4_bridge"
 CAL = ["2026-10-06", "2026-10-07", "2026-10-08"]
 # 10/6 통화 뒤: 통장 잔액·외상 한도는 판단 조건에서 뺐고, 수량 할인(10팩 이상 bulk 단가)을 넣었다. 재고는 선반+창고 합계.
-UNIT_COST, BULK_MIN, CAPACITY, DUE = 10000, 10, 10, "2026-11-05"
+UNIT_COST, BULK_MIN, CAPACITY, DUE = 10000, 10, 20, "2026-11-05"  # 최대 수량 10→20: 10이 상한이라 AI 답이 10으로 몰렸다
 PRIOR_ARRIVAL = "2026-10-07"
+PRIOR_PACKS = 5
 ACTIONS_R1 = ["check_physical_stock", "commit_choice", "defer"]
 ACTIONS_R2 = ["commit_choice", "defer"]
 # B1 일반 약사 / P0 +인터뷰 근거 / P1 +장면 입력(공공·민간·가상 달력). 약사 본인은 P1 과 같은 정보를 본다.
-LAYERS = ["B1", "P0", "P1"]
+LAYERS = ["B1", "P0", "P1", "P2"]  # P2 = P1 + 10/6 약사 통화 응답을 근거로 포함
+STRATEGIES = ["need_only", "fill_discount", "other"]  # 필요한 만큼만 / 할인 구간까지 / 그 외
 FACTOR_SOURCES = ["interview", "scene", "observation", "assumption", "general_knowledge"]
 EMPTY = {"action": "none", "reason": "", "priorities": [], "cited_ids": [], "missing_info": [], "factors": []}
 DROPS = {}  # 하나씩 빼 보기 층 -> 뺀 ID 집합 (main 에서 채운다)
@@ -85,6 +88,7 @@ def load_cards():
     for r in _read(BRIDGE / "cards.csv"):
         out[r["card_id"]] = dict(bulk=int(r["bulk_unit_krw"]) if r["bulk_unit_krw"] else None, arrival=r["arrival_date"], book=int(r["book_packs"]),
                                  physical=int(r["physical_packs"]), ageH=int(r["record_age_h"]), prior=r["prior_order"] == "Y",
+                                 ret=r["return_ok"] != "N", hint=r["shortage_hint"] == "Y", cutoff=r["cutoff"] == "Y", tight=r["tight_space"] == "Y",
                                  kind=r["kind"], changed=[x for x in r["changed_variable_ids"].split(";") if x])
     return out
 
@@ -106,14 +110,22 @@ def day_label(iso):
 def fill(tpl, c):
     """card_variables.csv 의 {형식:이름} 자리표시를 채운다. app/js/app.js 의 fillObs 와 같은 규칙이다."""
     import re
-    ctx = dict(c, UNIT=UNIT_COST, CAP=CAPACITY, DUE=DUE, PRIOR_ARR=PRIOR_ARRIVAL, D0=CAL[0], D1=CAL[1], D2=CAL[2])
+    prior_n = PRIOR_PACKS if c["prior"] else 0
+    ctx = dict(c, UNIT=UNIT_COST, CAP=CAPACITY, DUE=DUE, PRIOR_ARR=PRIOR_ARRIVAL, D0=CAL[0], D1=CAL[1], D2=CAL[2], BULK_MIN=BULK_MIN,
+               PRIOR_N=prior_n, POS_BOOK=c["book"] + prior_n, POS_PHYS=c["physical"] + prior_n,
+               DISC=round((1 - c["bulk"] / UNIT_COST) * 100) if c["bulk"] else 0)
     fmt = {"won": won, "date": day_label, "n": str}
     return re.sub(r"\{(\w+):(\w+)\}", lambda m: fmt[m.group(1)](ctx[m.group(2)]), tpl)
 
 
 def obs_lines(card_id, c, checked, scene):
     """보여 줄 관측 줄. 카드 전용 줄이 같은 순서의 공통(*) 줄을 덮는다. scene=False 면 장면 입력 줄을 뺀다."""
-    want = {"always", "checked" if checked else "unchecked", "prior" if c["prior"] else "no_prior"}
+    want = {"always", "checked" if checked else "unchecked", "prior" if c["prior"] else "no_prior",
+            "bulk" if c["bulk"] else "no_bulk", "ret_ok" if c["ret"] else "ret_no", "hint" if c["hint"] else "no_hint"}
+    if c["cutoff"]:
+        want.add("cutoff")
+    if c["tight"]:
+        want.add("tight")
     rows = {}
     for r in OBS_ROWS:
         if r["card_id"] not in ("*", card_id) or r["show_when"] not in want:
@@ -133,7 +145,7 @@ def observation_text(card_id, c, checked=False, scene=True):
 
 
 def has_scene(layer):
-    return layer.startswith("P1")
+    return layer.startswith("P1") or layer == "P2"
 
 
 # ---------------------------------------------------------------- 인터뷰 자료
@@ -151,6 +163,7 @@ def load_db():
         | {r["case_id"] for r in db["cases"]} | {r["guardrail_id"] for r in db["guardrails"]}
     db["ids"] = ids
     db["links"] = read_csv("evidence_links.csv")
+    db["answer_ids"] = {a["id"] for a in answer_items()}
     return db
 
 
@@ -193,15 +206,43 @@ def interview_package(db, drop=frozenset()):
     return "\n".join(out)
 
 
+ANSWERS_CSV = ROOT / "data" / "5_validation" / "pharmacist_answers.csv"
+
+
+def answer_items():
+    """10/6 통화 응답 중 판단에 쓸 수 있는 줄. 파일 순서대로 T01, T02... 번호를 붙인다 (화면도 같은 규칙이다).
+    약사가 한 말을 팀원이 정리해 전달한 것이다. 문구는 바꾸지 않고, 내부 카드 번호·파일 이름이 든 문장만 뺀다."""
+    out = []
+    for r in _read(ANSWERS_CSV):
+        text = " / ".join(x for x in ((r.get("realism_ko") or "").strip(), (r.get("answer_ko") or "").strip()) if x)
+        if not text:
+            continue
+        sents = [x.strip() for x in re.split(r"(?<=[.다])\s+", (r.get("note_ko") or "").strip()) if x.strip()]
+        premise = " ".join(re.sub(r"\s*\(C\d+[^)]*\)", "", x) for x in sents if not re.search(r"card_id|카드|일치율|당시 C|통장 잔액 60", x))
+        out.append(dict(id=f"T{len(out) + 1:02d}", question=(r.get("question_ko") or "").strip(), text=text, premise=premise,
+                        source="2026-10-06 통화 (전사 또는 팀원이 정리해 전달, 약사 직접 인용 아님)"))
+    return out
+
+
+def answers_package():
+    out = ["", "## 10/6 추가 통화 응답 (T##)  같은 약사에게 따로 물은 답. 팀원이 정리해 전달한 것이며 약사 직접 인용이 아니다",
+           "형식: ID | 질문 | 답 | 질문의 전제 · 출처. 답하지 않은 수량을 만들어 내지 않는다."]
+    for a in answer_items():
+        out.append(f"{a['id']} | {a['question'] or '(원래 질문지에 대한 전체 평가)'} | {a['text']} | {a['premise']} {a['source']}".rstrip())
+    return "\n".join(out)
+
+
 SYSTEM_COMMON = """당신은 한국의 동네 약국에서 약품 주문(발주)을 판단하는 약사 역할을 한다. 아래 '관측값'에 보이는 정보만으로 판단한다.
 
 규칙
 - 관측값에 없는 값(확인 전의 실제 재고, 앞으로 올 손님 수, 선택별 결과)은 모른다. 추측한 숫자를 사실처럼 쓰지 않는다.
-- 선택지는 정해져 있다: 실물 확인(선반과 창고, check_physical_stock), 보류 0팩·5팩 주문·10팩 주문(commit_choice), 판단 유보(defer).
+- 선택지는 정해져 있다: 실물 확인(선반과 창고, check_physical_stock), 주문(commit_choice: qty_packs 를 0~20 사이 정수로 적는다. 0은 보류), 판단 유보(defer).
+- 주문이면 strategy 도 고른다. need_only: 필요한 만큼만 최소로 / fill_discount: 할인 구간 수량까지 채워서 / other: 그 밖. 할인이 없으면 fill_discount 를 쓰지 않는다.
+- 관측값의 숫자(기간, 수량, 날짜)를 바꾸어 쓰지 않는다. 최근 판매 기간은 관측값에 적힌 그대로다. 재고는 '재고 위치'(보유 + 이미 넣은 주문)를 기준으로 본다.
 - 실물 확인은 한 번만 할 수 있다. 확인하면 선반과 창고를 합친 실제 재고가 공개되고 다시 판단한다.
 - reason 은 2~4문장으로 쓴다. priorities 는 가장 중요하게 본 것 두 가지를 짧은 문구로 쓴다.
 - factors 에는 이번 판단에 실제로 쓴 요인을 1~5개 적고, 요인마다 출처를 하나 고른다.
-  interview: 아래 인터뷰 근거에서 온 것 (ids 에 E###/R##/I## 를 반드시 적는다)
+  interview: 아래 인터뷰 근거에서 온 것 (ids 에 E###/R##/I##/T## 를 반드시 적는다)
   scene: 관측값 중 날짜 사정·독감·주변 의원 같은 외부 환경 줄에서 온 것
   observation: 관측값의 재고·판매량·도매상 조건(단가·입고일) 숫자에서 온 것
   assumption: 관측값에 없어 스스로 가정한 것
@@ -217,7 +258,7 @@ SYSTEM_P0 = """
 
 아래 '인터뷰 근거'는 판단 대상인 약사 1명을 인터뷰해 정리한 것이다. 이 약사가 말한 판단 방식과 제약을 따른다.
 - 판단의 근거는 인터뷰 근거와 관측값이다. 이 둘로 정할 수 없는 부분만 일반 상식으로 채우고, 그때는 factors 에 general_knowledge 로 표시한다.
-- 근거로 삼은 ID(E###, R##, I##)를 cited_ids 에 적는다. 목록에 없는 ID 를 만들지 않는다.
+- 근거로 삼은 ID(E###, R##, I##, 있으면 T##)를 cited_ids 에 적는다. 목록에 없는 ID 를 만들지 않는다.
 - 인터뷰가 직접 말하지 않은 수량 기준이나 임계값을 만들어 내지 않는다. 이번 상황에 적용한 추론이면 reason 에 '추론'이라고 밝힌다.
 - '과거 근무처'나 '다른 약국'으로 표시된 내용을 현재 약국의 판단 근거로 단정하지 않는다.
 - 주의 규칙(G01~G07)을 지킨다."""
@@ -231,7 +272,8 @@ def tool_schema(actions):
             "type": "object",
             "properties": {
                 "action": {"type": "string", "enum": actions, "description": "첫 행동 또는 최종 선택"},
-                "qty_packs": {"type": "integer", "enum": [0, 5, 10], "description": "action 이 commit_choice 일 때만. 보류는 0"},
+                "qty_packs": {"type": "integer", "minimum": 0, "maximum": CAPACITY, "description": "action 이 commit_choice 일 때만. 0~%d 정수. 보류는 0" % CAPACITY},
+                "strategy": {"type": "string", "enum": STRATEGIES, "description": "commit_choice 이고 수량이 1 이상일 때: need_only 필요한 만큼만 / fill_discount 할인 구간까지 / other"},
                 "reason": {"type": "string", "description": "2~4문장"},
                 "priorities": {"type": "array", "items": {"type": "string"}, "maxItems": 2, "description": "가장 중요하게 본 것 두 가지"},
                 "cited_ids": {"type": "array", "items": {"type": "string"}, "description": "근거 ID. 개인 자료가 없으면 빈 배열"},
@@ -268,7 +310,7 @@ def build_params(model, layer, card_id, rnd, prev, pkg):
     else:
         user = ("관측값\n" + observation_text(card_id, c, True, scene) +
                 f"\n\n처음 판단에서 실물 확인(선반과 창고)을 택했습니다. 그때 이유: {prev['reason']}\n"
-                "이제 확인한 실제 재고를 반영해 최종 선택을 하세요. (보류·5팩·10팩 주문 중 하나이거나 판단 유보) submit_decision 으로 답하세요.")
+                "이제 확인한 실제 재고를 반영해 최종 선택을 하세요. (0~20팩 중 수량을 정해 주문하거나, 판단 유보) submit_decision 으로 답하세요.")
         actions = ACTIONS_R2
     return dict(model=model, max_tokens=CFG["max_tokens"], system=system,
                 messages=[{"role": "user", "content": user}],
@@ -276,20 +318,30 @@ def build_params(model, layer, card_id, rnd, prev, pkg):
 
 
 # ---------------------------------------------------------------- 검증과 집계
-def validate(step, layer, db, rnd):
+def validate(step, layer, db, rnd, card):
     flags = []
     a = step.get("action")
     allowed = ACTIONS_R1 if rnd == 1 else ACTIONS_R2
     if a not in allowed:
         flags.append("action_not_allowed")
-    if a == "commit_choice" and step.get("qty_packs") not in (0, 5, 10):
+    q = step.get("qty_packs")
+    if a == "commit_choice" and not (isinstance(q, int) and not isinstance(q, bool) and 0 <= q <= CAPACITY):
         flags.append("invalid_qty")
+    if a == "commit_choice" and isinstance(q, int) and q > 0:
+        if step.get("strategy") not in STRATEGIES:
+            flags.append("strategy_missing")
+        elif step.get("strategy") == "fill_discount" and not CARDS[card]["bulk"]:
+            flags.append("discount_tag_without_discount")
+    text = " ".join([step.get("reason") or ""] + list(step.get("priorities") or []))
+    bad = [m for m in re.findall(r"(\d+)\s*일(?:간|\s*(?:동안|연속|내내))", text) if m != "3"]
+    if bad:
+        flags.append("period_mismatch:" + ",".join(sorted(set(bad))))  # 관측값은 '사흘'이다 (검토본 D11)
     factors = step.get("factors") or []
     if step.get("_malformed"):
         flags.append("output_reshaped")
     fids = [i for f in factors for i in (f.get("ids") or [])]
     ids = list(dict.fromkeys((step.get("cited_ids") or []) + fids))
-    unknown = [i for i in ids if i not in db["ids"] and i != "U001"]
+    unknown = [i for i in ids if i not in db["ids"] and i != "U001" and not (layer == "P2" and i in db["answer_ids"])]
     if unknown:
         flags.append("unknown_ids:" + ",".join(unknown))
     removed = [i for i in ids if i in DROPS.get(layer, ())]
@@ -455,22 +507,42 @@ def make_client():
     return anthropic.Anthropic()
 
 
+PARTIAL = None  # 끝난 결과를 한 건씩 적어 두는 파일 (중간에 멈춰도 --resume 으로 이어서 한다)
+AUTO_TOOL = set()  # 도구 선택을 강제할 수 없는 모델 (claude-sonnet-5-5 등). 이 모델은 tool_choice=auto 로 부르고 시스템 지시로 도구 사용을 요구한다
+
+
+def create(client, **p):
+    if p["model"] in AUTO_TOOL:
+        p = dict(p, tool_choice={"type": "auto"})
+    try:
+        return client.messages.create(**p)
+    except Exception as e:
+        if "tool_choice" in str(e):
+            AUTO_TOOL.add(p["model"])
+            return client.messages.create(**dict(p, tool_choice={"type": "auto"}))
+        raise
+
+
 def run_sync(client, model, tasks, layers_pkg, db):
     def one(task):
         card, layer, rep = task
         pkg = layers_pkg.get(layer)
         steps = []
         p1 = build_params(model, layer, card, 1, None, pkg)
-        m1 = client.messages.create(**p1)
+        m1 = create(client, **p1)
         d1 = parse_message(m1) or dict(EMPTY)
-        steps.append(dict(round=1, **d1, usage=usage_of(m1), stop=m1.stop_reason, flags=validate(d1, layer, db, 1)))
+        steps.append(dict(round=1, **d1, usage=usage_of(m1), stop=m1.stop_reason, flags=validate(d1, layer, db, 1, card)))
         if d1.get("action") == "check_physical_stock":
             p2 = build_params(model, layer, card, 2, d1, pkg)
-            m2 = client.messages.create(**p2)
+            m2 = create(client, **p2)
             d2 = parse_message(m2) or dict(EMPTY)
-            steps.append(dict(round=2, **d2, usage=usage_of(m2), stop=m2.stop_reason, flags=validate(d2, layer, db, 2)))
+            steps.append(dict(round=2, **d2, usage=usage_of(m2), stop=m2.stop_reason, flags=validate(d2, layer, db, 2, card)))
         print(f"  {card} {layer} #{rep}: {' → '.join(str(s.get('action')) + (':' + str(s.get('qty_packs')) if s.get('qty_packs') is not None else '') for s in steps)}", flush=True)
-        return finalize(task, steps, layer, db, model)
+        res = finalize(task, steps, layer, db, model)
+        if PARTIAL:
+            with open(PARTIAL, "a", encoding="utf-8") as f:
+                f.write(json.dumps(res, ensure_ascii=False) + "\n")
+        return res
     with ThreadPoolExecutor(max_workers=CFG["sync_concurrency"]) as ex:
         return list(ex.map(one, tasks))
 
@@ -501,7 +573,7 @@ def run_batch(client, model, tasks, layers_pkg, db):
         m = got1.get(cid(t, 1))
         d = (parse_message(m) if m else None) or dict(EMPTY)
         steps[t] = [dict(round=1, **d, usage=usage_of(m) if m else dict(input=0, output=0, cache_write=0, cache_read=0),
-                         stop=m.stop_reason if m else "error", flags=validate(d, t[1], db, 1))]
+                         stop=m.stop_reason if m else "error", flags=validate(d, t[1], db, 1, t[0]))]
         if d.get("action") == "check_physical_stock":
             need2.append((t, d))
     batch_ids = [bid1]
@@ -513,7 +585,7 @@ def run_batch(client, model, tasks, layers_pkg, db):
             m = got2.get(cid(t, 2))
             d2 = (parse_message(m) if m else None) or dict(EMPTY)
             steps[t].append(dict(round=2, **d2, usage=usage_of(m) if m else dict(input=0, output=0, cache_write=0, cache_read=0),
-                                 stop=m.stop_reason if m else "error", flags=validate(d2, t[1], db, 2)))
+                                 stop=m.stop_reason if m else "error", flags=validate(d2, t[1], db, 2, t[0])))
     return [finalize(t, steps[t], t[1], db, model) for t in tasks], batch_ids
 
 
@@ -532,7 +604,8 @@ def check_cards():
         phys = int(re.search(r"physical:\s*(\d+)", extra).group(1)) if "physical" in extra else 8
         age = int(re.search(r"ageH:\s*(\d+)", extra).group(1)) if "ageH" in extra else 12
         prior = "prior: true" in extra
-        same = (bulk, arr, phys, age, prior) == (c["bulk"], c["arrival"], c["physical"], c["ageH"], c["prior"])
+        ret, hint, cutoff, tight = "ret: false" not in extra, "hint: true" in extra, "cutoff: true" in extra, "tight: true" in extra
+        same = (bulk, arr, phys, age, prior, ret, hint, cutoff, tight) == (c["bulk"], c["arrival"], c["physical"], c["ageH"], c["prior"], c["ret"], c["hint"], c["cutoff"], c["tight"])
         print(f"{cid}: data.js 와 cards.csv {'일치' if same else '불일치'}"); ok &= same
     roles = {r["variable_id"]: r for r in _read(BRIDGE / "variable_roles.csv")}
     used = [(f"card_variables {r['card_id']}/{r['line_order']}", v) for r in OBS_ROWS for v in r["variable_ids"].split(";") if v]
@@ -594,6 +667,7 @@ def main():
     ap.add_argument("--dry-run", action="store_true", help="요청 수와 토큰만 계산한다. 호출 비용 없음")
     ap.add_argument("--yes", action="store_true", help="비용이 드는 실행을 확인했다")
     ap.add_argument("--ablate", default="", help="하나씩 빼 보기: 규칙 ID 를 쉼표로 (예: R01,R03) 또는 'cards' (카드 근거에 쓰인 규칙 전부). 규칙마다 'P1-규칙' 층이 추가된다")
+    ap.add_argument("--resume", action="store_true", help="같은 --run-id 의 partial.jsonl 에 있는 결과는 다시 부르지 않고 이어서 한다")
     ap.add_argument("--check-cards", action="store_true")
     a = ap.parse_args()
 
@@ -612,7 +686,7 @@ def main():
         sys.exit(f"알 수 없는 값: {bad}")
     db = load_db()
     pkg = interview_package(db)
-    layers_pkg = {"P0": pkg, "P1": pkg}
+    layers_pkg = {"P0": pkg, "P1": pkg, "P2": pkg + "\n" + answers_package()}
     rules = sorted({r["rule_id"] for r in db["rules"]})
     abl = CARD_RULES if a.ablate == "cards" else [x.strip() for x in a.ablate.split(",") if x.strip()]
     if [x for x in abl if x not in rules]:
@@ -627,7 +701,9 @@ def main():
     tasks = [(c, l, r) for c in cards for l in layers for r in range(1, a.reps + 1)]
 
     print(f"모델 {model} · 방식 {a.mode} · 층 {layers} · 카드 {len(cards)}장 · 반복 {a.reps} → 요청 {len(tasks)}건 (+선반 확인 후 재판단 최대 {len(tasks)}건)")
-    print(f"인터뷰 자료 {len(pkg):,}자 (P0·P1 에서만 전송, 전사 원문과 약사 응답은 전송하지 않음)")
+    if "P2" in layers:
+        print(f"P2: 10/6 약사 통화 응답 {len(answer_items())}줄을 근거에 추가 ({', '.join(x['id'] for x in answer_items())})")
+    print(f"인터뷰 자료 {len(pkg):,}자 (P0·P1·P2 에서만 전송, 전사 원문은 전송하지 않음. 약사 통화 응답 T## 는 P2 에서만 전송)")
     for l, ids in DROPS.items():
         print(f"  {l}: {len(ids)}개 ID 를 뺌 ({', '.join(sorted(ids))})")
 
@@ -664,8 +740,18 @@ def main():
     out_dir.mkdir(parents=True, exist_ok=True)
     started = dt.datetime.now().isoformat(timespec="seconds")
     batch_ids = []
+    global PARTIAL
+    done = []
     if a.mode == "sync":
-        results = run_sync(client, model, tasks, layers_pkg, db)
+        PARTIAL = out_dir / "partial.jsonl"
+        if a.resume and PARTIAL.exists():
+            done = [json.loads(x) for x in PARTIAL.read_text(encoding="utf-8").splitlines() if x.strip()]
+            have = {(r["card"], r["layer"], r["rep"]) for r in done}
+            tasks = [t for t in tasks if t not in have]
+            print(f"이어서 실행: 끝난 {len(done)}건은 건너뛰고 {len(tasks)}건을 다시 부릅니다")
+        elif PARTIAL.exists():
+            PARTIAL.unlink()
+        results = done + run_sync(client, model, tasks, layers_pkg, db)
     else:
         results, batch_ids = run_batch(client, model, tasks, layers_pkg, db)
 
