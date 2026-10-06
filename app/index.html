@@ -87,7 +87,7 @@
     <div class="container">
       <div class="section-head"><h2>이렇게 진행합니다</h2></div>
       <ol class="flow">
-        <li><a href="#/simulate" data-go-sim="1"><span class="n">1단계</span><b>시나리오 고르기</b><span class="small muted">"어느 날 아침의 약국 사정"을 고릅니다. 재고, 통장 잔액, 입고일, 그날의 독감·연휴 같은 조건이 들어 있습니다.</span></a></li>
+        <li><a href="#/simulate" data-go-sim="1"><span class="n">1단계</span><b>시나리오 고르기</b><span class="small muted">"어느 날 아침의 약국 사정"을 고릅니다. 재고, 도매 단가, 입고일, 그날의 독감·연휴 같은 조건이 들어 있습니다.</span></a></li>
         <li><a href="#/simulate" data-go-sim="2"><span class="n">2단계</span><b>AI 판단 따라가기</b><span class="small muted">약사의 눈으로 AI가 본 것, 먼저 한 행동, 최종 판단을 순서대로 보고, 어떤 인터뷰 내용을 근거로 했는지 확인합니다.</span></a></li>
         <li><a href="#/simulate" data-go-sim="3"><span class="n">3단계</span><b>약사 답과 비교</b><span class="small muted">같은 시나리오를 실제 약사에게 물은 답을 AI 답과 나란히 놓고 어디가 같고 다른지 봅니다.</span></a></li>
         <li><a href="#/simulate" data-go-sim="4"><span class="n">4단계</span><b>근거에 추가할지 정하기</b><span class="small muted">약사 답에서 인터뷰에 없던 판단 기준이 나오면 근거 후보로 올립니다. 페르소나가 다음에 참고합니다.</span></a></li>
@@ -108,7 +108,7 @@
       <section class="g-card" id="g-terms">
         <h2>먼저 알아 둘 말</h2>
         <dl class="terms">
-          <dt>시나리오</dt><dd>약사와 AI에게 똑같이 보여 주는 "어느 날 아침의 약국 사정"입니다. 남은 재고, 통장 잔액, 도매상이 언제 가져다주는지가 들어 있고 "몇 팩 주문할까요?"를 묻습니다.</dd>
+          <dt>시나리오</dt><dd>약사와 AI에게 똑같이 보여 주는 "어느 날 아침의 약국 사정"입니다. 남은 재고(선반과 창고 합계), 도매 단가, 도매상이 언제 가져다주는지가 들어 있고 "몇 팩 주문할까요?"를 묻습니다.</dd>
           <dt>페르소나 (AI)</dt><dd>인터뷰한 약사의 말을 근거로 판단하는 AI입니다.</dd>
           <dt>약사 답</dt><dd>같은 시나리오를 실제 약사에게 물어 받은 답입니다. 비교의 기준이 됩니다.</dd>
           <dt>근거</dt><dd>인터뷰에서 약사가 한 말(E 번호), 그 말에서 읽은 판단 방식(R 번호), 실제로 있었던 일(I 번호)입니다. 번호를 누르면 원문이 열립니다.</dd>
@@ -151,7 +151,7 @@
         <details><summary>사흘 계산은 무엇인가요?</summary><p>주문한 약은 하루나 이틀 뒤에 들어옵니다. 그 사이 몇 명이 약을 못 사는지, 들어온 뒤 얼마나 남는지 보려고 사흘을 계산합니다. 참고용이고, AI와 약사 답을 비교할 때는 쓰지 않습니다.</p></details>
         <details><summary>못 판 손님이 0명이면 좋은 선택인가요?</summary><p>그렇지 않습니다. 반품, 유효기간, 결제 부담은 계산에 없습니다. 인터뷰한 약사는 이런 부담 때문에 많이 사 두기를 꺼린다고 했습니다.</p></details>
         <details><summary>근거에 추가한다는 건 무슨 뜻인가요?</summary><p>약사 답에서 인터뷰에 없던 판단 기준이 나오면, 운영진이 검토한 뒤 페르소나가 참고하는 자료에 넣습니다. AI 답은 넣지 않습니다.</p></details>
-        <details><summary>화면의 숫자는 실제 약국 값인가요?</summary><p>"공공" 표시가 붙은 값(공휴일, 독감, 날씨, 미세먼지, 주변 의원·약국 수)은 실제 자료입니다. 재고, 현금, 주문량, 시간대별 손님 분포는 가상입니다.</p></details>
+        <details><summary>화면의 숫자는 실제 약국 값인가요?</summary><p>"공공" 표시가 붙은 값(공휴일, 독감, 날씨, 미세먼지, 주변 의원·약국 수)은 실제 자료입니다. 재고, 도매 단가, 주문량, 시간대별 손님 분포는 가상입니다.</p></details>
         </div>
       </section>
     </div>

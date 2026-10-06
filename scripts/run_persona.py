@@ -63,7 +63,8 @@ load_dotenv()
 # app/js/data.js 의 CARDS 도 같은 값을 가진다 (--check-cards 로 대조).
 BRIDGE = ROOT / "data" / "4_bridge"
 CAL = ["2026-10-06", "2026-10-07", "2026-10-08"]
-UNIT_COST, LIMIT_KRW, CAPACITY, DUE = 10000, 120000, 10, "2026-11-05"
+# 10/6 통화 뒤: 통장 잔액·외상 한도는 판단 조건에서 뺐고, 수량 할인(10팩 이상 bulk 단가)을 넣었다. 재고는 선반+창고 합계.
+UNIT_COST, BULK_MIN, CAPACITY, DUE = 10000, 10, 10, "2026-11-05"
 PRIOR_ARRIVAL = "2026-10-07"
 ACTIONS_R1 = ["check_physical_stock", "commit_choice", "defer"]
 ACTIONS_R2 = ["commit_choice", "defer"]
@@ -82,7 +83,7 @@ def _read(p):
 def load_cards():
     out = {}
     for r in _read(BRIDGE / "cards.csv"):
-        out[r["card_id"]] = dict(cash=int(r["cash_krw"]), arrival=r["arrival_date"], book=int(r["book_packs"]),
+        out[r["card_id"]] = dict(bulk=int(r["bulk_unit_krw"]) if r["bulk_unit_krw"] else None, arrival=r["arrival_date"], book=int(r["book_packs"]),
                                  physical=int(r["physical_packs"]), ageH=int(r["record_age_h"]), prior=r["prior_order"] == "Y",
                                  kind=r["kind"], changed=[x for x in r["changed_variable_ids"].split(";") if x])
     return out
@@ -105,7 +106,7 @@ def day_label(iso):
 def fill(tpl, c):
     """card_variables.csv 의 {형식:이름} 자리표시를 채운다. app/js/app.js 의 fillObs 와 같은 규칙이다."""
     import re
-    ctx = dict(c, LIMIT=LIMIT_KRW, UNIT=UNIT_COST, CAP=CAPACITY, DUE=DUE, PRIOR_ARR=PRIOR_ARRIVAL, D0=CAL[0], D1=CAL[1], D2=CAL[2])
+    ctx = dict(c, UNIT=UNIT_COST, CAP=CAPACITY, DUE=DUE, PRIOR_ARR=PRIOR_ARRIVAL, D0=CAL[0], D1=CAL[1], D2=CAL[2])
     fmt = {"won": won, "date": day_label, "n": str}
     return re.sub(r"\{(\w+):(\w+)\}", lambda m: fmt[m.group(1)](ctx[m.group(2)]), tpl)
 
@@ -196,13 +197,13 @@ SYSTEM_COMMON = """당신은 한국의 동네 약국에서 약품 주문(발주)
 
 규칙
 - 관측값에 없는 값(확인 전의 실제 재고, 앞으로 올 손님 수, 선택별 결과)은 모른다. 추측한 숫자를 사실처럼 쓰지 않는다.
-- 선택지는 정해져 있다: 선반 확인(check_physical_stock), 보류 0팩·5팩 주문·10팩 주문(commit_choice), 판단 유보(defer).
-- 선반 확인은 한 번만 할 수 있다. 확인하면 실제 재고가 공개되고 다시 판단한다.
+- 선택지는 정해져 있다: 실물 확인(선반과 창고, check_physical_stock), 보류 0팩·5팩 주문·10팩 주문(commit_choice), 판단 유보(defer).
+- 실물 확인은 한 번만 할 수 있다. 확인하면 선반과 창고를 합친 실제 재고가 공개되고 다시 판단한다.
 - reason 은 2~4문장으로 쓴다. priorities 는 가장 중요하게 본 것 두 가지를 짧은 문구로 쓴다.
 - factors 에는 이번 판단에 실제로 쓴 요인을 1~5개 적고, 요인마다 출처를 하나 고른다.
   interview: 아래 인터뷰 근거에서 온 것 (ids 에 E###/R##/I## 를 반드시 적는다)
   scene: 관측값 중 날짜 사정·독감·주변 의원 같은 외부 환경 줄에서 온 것
-  observation: 관측값의 재고·현금·도매상 조건 숫자에서 온 것
+  observation: 관측값의 재고·판매량·도매상 조건(단가·입고일) 숫자에서 온 것
   assumption: 관측값에 없어 스스로 가정한 것
   general_knowledge: 인터뷰와 관측값 어디에도 없는 일반 상식에서 온 것
   일반 상식이나 가정을 썼으면 숨기지 말고 그대로 표시한다. 그렇게 표시하는 것은 감점이 아니다.
@@ -266,7 +267,7 @@ def build_params(model, layer, card_id, rnd, prev, pkg):
         actions = ACTIONS_R1
     else:
         user = ("관측값\n" + observation_text(card_id, c, True, scene) +
-                f"\n\n처음 판단에서 선반 확인을 택했습니다. 그때 이유: {prev['reason']}\n"
+                f"\n\n처음 판단에서 실물 확인(선반과 창고)을 택했습니다. 그때 이유: {prev['reason']}\n"
                 "이제 확인한 실제 재고를 반영해 최종 선택을 하세요. (보류·5팩·10팩 주문 중 하나이거나 판단 유보) submit_decision 으로 답하세요.")
         actions = ACTIONS_R2
     return dict(model=model, max_tokens=CFG["max_tokens"], system=system,
@@ -522,15 +523,16 @@ def check_cards():
     js = (ROOT / "app" / "js" / "data.js").read_text(encoding="utf-8")
     ok = True
     for cid, c in CARDS.items():
-        m = re.search(r"id: '%s'.*?cond: mk\((\d+), D(\d)(?:, \{([^}]*)\})?\)" % cid, js, re.S)
+        m = re.search(r"id: '%s'.*?cond: mk\(D(\d)(?:, \{([^}]*)\})?\)" % cid, js, re.S)
         if not m:
             print(f"{cid}: data.js 에서 찾지 못함"); ok = False; continue
-        cash, d, extra = int(m.group(1)), m.group(2), m.group(3) or ""
+        d, extra = m.group(1), m.group(2) or ""
+        bulk = int(re.search(r"bulk:\s*(\d+)", extra).group(1)) if "bulk" in extra else None
         arr = CAL[int(d)]
         phys = int(re.search(r"physical:\s*(\d+)", extra).group(1)) if "physical" in extra else 8
         age = int(re.search(r"ageH:\s*(\d+)", extra).group(1)) if "ageH" in extra else 12
         prior = "prior: true" in extra
-        same = (cash, arr, phys, age, prior) == (c["cash"], c["arrival"], c["physical"], c["ageH"], c["prior"])
+        same = (bulk, arr, phys, age, prior) == (c["bulk"], c["arrival"], c["physical"], c["ageH"], c["prior"])
         print(f"{cid}: data.js 와 cards.csv {'일치' if same else '불일치'}"); ok &= same
     roles = {r["variable_id"]: r for r in _read(BRIDGE / "variable_roles.csv")}
     used = [(f"card_variables {r['card_id']}/{r['line_order']}", v) for r in OBS_ROWS for v in r["variable_ids"].split(";") if v]

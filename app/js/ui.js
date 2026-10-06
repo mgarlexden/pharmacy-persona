@@ -28,7 +28,7 @@ export function toast(msg) {
 }
 
 // AI 답 표기
-export const ACTION_LABEL = { check_physical_stock: '선반 확인', Q_0: '보류 (0팩)', Q_5: '5팩 주문', Q_10: '10팩 주문', defer: '판단 유보', other: '후보 밖' };
+export const ACTION_LABEL = { check_physical_stock: '실물 확인 (선반·창고)', Q_0: '보류 (0팩)', Q_5: '5팩 주문', Q_10: '10팩 주문', order_open: '주문 (수량은 답하지 않음)', defer: '판단 유보', other: '후보 밖' };
 export const qidOf = (a, qty) => (a === 'commit_choice' ? `Q_${qty ?? 0}` : a);
 export const layerName = (l) => (l === 'B1' ? 'B1 · 인터뷰 없이' : l === 'P0' ? 'P0 · 인터뷰 근거' : l === 'P1' ? 'P1 · 인터뷰 + 그날 환경' : l.startsWith('P1-') ? `P1에서 ${l.slice(3)} 근거 뺌` : l);
 export const SRC_KO = { interview: '인터뷰', scene: '그날 환경', observation: '화면에 보인 값', assumption: '추론', general_knowledge: '일반 상식' };

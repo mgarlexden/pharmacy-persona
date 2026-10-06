@@ -212,7 +212,7 @@ function scenarioEnv() {
 }
 function obsTable(cardId, checked) {
   const k = cardById(cardId), c = k.cond;
-  const ctx = { ...c, LIMIT: E.LIMIT_KRW, UNIT: E.UNIT_COST, CAP: E.OFFER.capacity, DUE: E.OFFER.due, PRIOR_ARR: E.PRIOR_ORDER.arrival, D0: E.CAL[0], D1: E.CAL[1], D2: E.CAL[2] };
+  const ctx = { ...c, UNIT: E.UNIT_COST, CAP: E.OFFER.capacity, DUE: E.OFFER.due, PRIOR_ARR: E.PRIOR_ORDER.arrival, D0: E.CAL[0], D1: E.CAL[1], D2: E.CAL[2] };
   const fmt = { won: E.won, date: E.dayLabel, n: String };
   const fill = (t) => String(t).replace(/\{(\w+):(\w+)\}/g, (_, f, key) => fmt[f](ctx[key]));
   const { shown, hidden } = obsLines(cardId, c, checked, true);
@@ -248,7 +248,7 @@ function scenarioStep() {
 }
 function seenFacts(k) {
   const c = k.cond;
-  return [['전산 재고', `${c.book}팩 (${c.ageH}시간 전 기록)`], ['최근 판매', '하루 5팩'], ['통장 잔액', E.won(c.cash)], ['입고', `${E.dayLabel(c.arrival)} 아침`], ['이미 넣은 주문', c.prior ? '5팩 (내일 도착)' : '없음']];
+  return [['전산 재고', `${c.book}팩 · 선반+창고 (${c.ageH}시간 전 기록)`], ['최근 판매', '하루 5팩'], ['도매 단가', c.bulk ? `5팩 팩당 ${E.won(E.UNIT_COST)} · 10팩 팩당 ${E.won(c.bulk)}` : `팩당 ${E.won(E.UNIT_COST)} (할인 없음)`], ['입고', `${E.dayLabel(c.arrival)} 아침`], ['이미 넣은 주문', c.prior ? '5팩 (내일 도착)' : '없음']];
 }
 function factorRows(fs) {
   if (!fs || !fs.length) return '<p class="small muted">요인을 적지 않았습니다.</p>';
@@ -283,7 +283,7 @@ function aiStep() {
     ${layerStrip()}
     <ol class="flow-v">
       <li class="${show(0)}"><span class="dot">1</span><div><p class="fv-k">본 것</p><ul class="seen">${seenFacts(k).map(([a, b]) => `<li><span>${a}</span><b>${esc(b)}</b></li>`).join('')}</ul></div></li>
-      ${checked ? `<li class="${show(1)}"><span class="dot">2</span><div><p class="fv-k">먼저 한 행동</p><p class="fv-act">선반 확인</p><p class="fv-why">${esc(first.reason)}</p><p class="fv-res">확인 결과: 실제 선반 <b>${k.cond.physical}팩</b>${k.cond.physical !== k.cond.book ? ` (전산보다 ${k.cond.book - k.cond.physical}팩 적음)` : ' (전산과 같음)'}</p></div></li>` : ''}
+      ${checked ? `<li class="${show(1)}"><span class="dot">2</span><div><p class="fv-k">먼저 한 행동</p><p class="fv-act">실물 확인 (선반·창고)</p><p class="fv-why">${esc(first.reason)}</p><p class="fv-res">확인 결과: 선반과 창고 합계 <b>${k.cond.physical}팩</b>${k.cond.physical !== k.cond.book ? ` (전산보다 ${k.cond.book - k.cond.physical}팩 적음)` : ' (전산과 같음)'}</p></div></li>` : ''}
       <li class="${show(checked ? 2 : 1)}"><span class="dot">${checked ? 3 : 2}</span><div><p class="fv-k">최종 판단</p><p class="fv-final">${esc(ACTION_LABEL[fin] || fin)}</p><p class="fv-why">${esc(last.reason)}</p>
         ${(last.priorities || []).length ? `<p class="fv-pri"><span>중요하게 본 것</span>${last.priorities.map((p) => `<em>${esc(p)}</em>`).join('')}</p>` : ''}</div></li>
       <li class="${show(checked ? 2 : 1)}"><span class="dot">${checked ? 4 : 3}</span><div><p class="fv-k">무엇을 근거로</p>${factorRows(last.factors)}
@@ -306,19 +306,21 @@ function compareStep() {
   const wait = '<span class="muted">대기 중</span>';
   const qty = aiFin && /^Q_\d+$/.test(aiFin) ? Number(aiFin.slice(2)) : null;
   const inRange = ans && qty != null && ans.qty_min !== '' && ans.qty_max !== '' ? qty >= Number(ans.qty_min) && qty <= Number(ans.qty_max) : null;
-  const m1 = ans && run ? badge(ans.first_action === aiFirst ? 'good' : 'bad', ans.first_action === aiFirst ? '같음' : '다름') : '';
+  const m1 = ans && run && ans.first_action ? badge(ans.first_action === aiFirst ? 'good' : 'bad', ans.first_action === aiFirst ? '같음' : '다름') : '';
+  const notAsked = '<span class="muted">묻지 않음</span>';
   const m2 = inRange == null ? '' : badge(inRange ? 'good' : 'bad', inRange ? '약사 범위 안' : '약사 범위 밖');
   return `
     <h2 class="side-h">AI 답과 약사 답</h2>
     <p class="small muted">같은 시나리오, 같은 정보에 대한 두 답입니다. AI는 정보 수준 P1(약사와 같은 정보)입니다.</p>
     <div class="cmp">
       <div class="cmp-head"><span></span><b>AI ${badge('hyp', '페르소나')}</b><b>약사 ${INTV}</b></div>
-      ${cmpRow('먼저 한 행동', run ? esc(ACTION_LABEL[aiFirst]) : none, ans ? esc(ACTION_LABEL[ans.first_action] || ans.first_action) : wait, m1)}
+      ${cmpRow('먼저 한 행동', run ? esc(ACTION_LABEL[aiFirst]) : none, ans ? (ans.first_action ? esc(ACTION_LABEL[ans.first_action] || ans.first_action) : notAsked) : wait, m1)}
       ${cmpRow('최종 판단', run ? `<b>${esc(ACTION_LABEL[aiFin])}</b>` : none, ans ? `<b>${esc(ACTION_LABEL[ans.final_choice] || ans.final_choice)}</b>${ans.qty_min !== '' ? `<br><span class="xs muted">괜찮다고 본 범위 ${esc(ans.qty_min)}~${esc(ans.qty_max)}팩</span>` : ''}` : wait, m2)}
       ${cmpRow('중요하게 본 것', last && last.priorities ? last.priorities.map(esc).join('<br>') : none, ans ? [ans.priority_1_ko, ans.priority_2_ko].filter(Boolean).map(esc).join('<br>') || none : wait)}
-      ${cmpRow('이유', last ? `<span class="clip">${esc(last.reason)}</span>` : none, ans ? (ans.reason_quote_ko ? `"${esc(ans.reason_quote_ko)}"` : none) : wait)}
+      ${cmpRow('이유', last ? `<span class="clip">${esc(last.reason)}</span>` : none, ans ? (ans.reason_quote_ko ? `"${esc(ans.reason_quote_ko)}"` : ans.answer_ko ? esc(ans.answer_ko) : none) : wait)}
       ${cmpRow('더 알고 싶은 것', last && last.missing_info ? last.missing_info.map(esc).join('<br>') : none, ans ? esc(ans.need_more_ko) || none : wait)}
     </div>
+    ${ans && ans.question_ko ? `<details class="help" style="margin-top:12px"><summary>약사에게 실제로 물은 것과 답</summary><p class="small"><b>질문</b> ${esc(ans.question_ko)}</p><p class="small"><b>답</b> ${esc(ans.answer_ko)}</p>${ans.source_kind_ko ? `<p class="xs muted">${esc(ans.source_kind_ko)}</p>` : ''}${ans.note_ko ? `<p class="xs muted">${esc(ans.note_ko)}</p>` : ''}</details>` : ''}
     ${ans ? '' : `<div class="empty" style="margin-top:12px"><b>약사 답이 아직 없습니다.</b><p>약사에게 이 시나리오를 물어 받은 답을 운영진이 입력하면 오른쪽 칸이 채워집니다. 약사에게는 AI 답을 먼저 보여 주지 않습니다.</p></div>`}
     <p class="xs muted" style="margin-top:10px">맞고 틀림을 판정하지 않습니다. 응답자가 1명이라 어디서 다른지 찾는 용도입니다.</p>
     <div class="side-cta"><button class="btn btn-primary" type="button" data-step="4">근거에 추가할지 정하기</button></div>`;
@@ -331,7 +333,7 @@ function evidenceStep() {
     <p class="small">약사 답에 <b>인터뷰에 없던 판단 기준이나 경험</b>이 있으면 근거 후보로 올립니다. 페르소나가 다음에 참고하는 학습 데이터가 됩니다.</p>
     <div class="callout" style="margin:10px 0"><p><b>AI 답은 근거가 되지 않습니다.</b> 근거는 약사 본인의 말에서만 나옵니다. 후보로 올린 내용은 운영진이 검토해 원본 인터뷰 자료에 넣은 뒤에 반영되고, 그때부터 이 시나리오는 연습용이 됩니다.</p></div>`;
   if (!ans) return `${head}<div class="empty"><b>검토할 약사 답이 없습니다.</b><p>약사 답이 들어오면 약사가 한 말이 여기에 항목별로 나옵니다.</p></div>`;
-  const items = [['reason_quote_ko', '약사가 한 말'], ['priority_1_ko', '중요하게 본 것 1'], ['priority_2_ko', '중요하게 본 것 2'], ['need_more_ko', '더 알고 싶다고 한 것']].filter(([f]) => ans[f]);
+  const items = [['reason_quote_ko', '약사가 한 말'], ['answer_ko', '약사 답 (팀원이 정리해 전달)'], ['priority_1_ko', '중요하게 본 것 1'], ['priority_2_ko', '중요하게 본 것 2'], ['need_more_ko', '더 알고 싶다고 한 것']].filter(([f]) => ans[f]);
   const d = decisions();
   return `${head}<ul class="ev-dec">${items.map(([f, lab]) => {
     const key = `${S.cardId}|${ans.round}|${f}`, v = d[key] || '';
@@ -355,7 +357,7 @@ function startReplay() {
   const fin = finalOf(run);
   const seq = [
     () => { sc && sc.firstPerson('front'); caption(`<b>AI</b> 카운터 전산을 봅니다 · 전산 재고 ${k.cond.book}팩 (${k.cond.ageH}시간 전 기록)`); },
-    ...(checked ? [() => { S.checked = true; sc && sc.firstPerson('shelf'); applyScene(); caption(`<b>AI</b> 선반부터 확인합니다 · 실제로는 <b>${k.cond.physical}팩</b>`); }] : []),
+    ...(checked ? [() => { S.checked = true; sc && sc.firstPerson('shelf'); applyScene(); caption(`<b>AI</b> 선반과 창고부터 확인합니다 · 실제로는 합계 <b>${k.cond.physical}팩</b>`); }] : []),
     () => { sc && sc.firstPerson('front'); caption(`<b>AI 최종 판단</b> ${esc(ACTION_LABEL[fin] || fin)}`); },
   ];
   const go = (i) => {
@@ -372,8 +374,8 @@ function renderDropdown() {
   const real = S.mode === 'sim' && S.checked ? `${c.physical}팩 (확인함)` : '확인 전 (모름)';
   $('#dd-body').innerHTML = `
     <p class="dd-k">판단 품목 ${VIRT}</p>
-    <p class="small" style="margin:0 0 6px">종합감기약(정제). 한 갑 10정, 한 팩은 3갑 묶음입니다.</p>
-    <ul class="dd-facts"><li><i class="sw ghost"></i><span>전산 기록</span><b>${c.book}팩</b></li><li><i class="sw solid"></i><span>실제 선반</span><b>${real}</b></li></ul>
+    <p class="small" style="margin:0 0 6px">종합감기약(정제). 한 갑 10정, 한 팩은 3갑 묶음입니다. 재고는 선반과 창고를 합친 수량입니다.</p>
+    <ul class="dd-facts"><li><i class="sw ghost"></i><span>전산 기록</span><b>${c.book}팩</b></li><li><i class="sw solid"></i><span>실제 (선반·창고)</span><b>${real}</b></li></ul>
     <p class="dd-k">손님 옷 색 = 들어온 길</p>
     <ul class="dd-leg">${Object.values(ROUTE).map((r) => `<li><i class="sw" style="background:${r.c}"></i>${r.t}</li>`).join('')}</ul>
     <p class="dd-k">나갈 때 발 아래 원 ${ASSUME}</p>

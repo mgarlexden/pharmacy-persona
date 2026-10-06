@@ -100,7 +100,7 @@ $('#profile-root').addEventListener('input', (e) => { if (e.target.id === 'pf-q'
 
 /* ---------- 운영 메모 ---------- */
 const TODO = [
-  ['약사 답 0건', '시나리오 6개를 약사에게 물어 받은 답을 data/5_validation/pharmacist_answers.csv 에 넣어야 비교가 시작됩니다. 답을 받으면 Claude에게 전달해 입력합니다.'],
+  ['약사 답의 주문 수량 없음', '10/6에 약사 답 2건(C01·C05와 비슷한 조건)을 받았지만 주문 수량은 답하지 않았습니다. 수량이나 괜찮은 범위를 받아야 AI 답과 숫자로 비교할 수 있습니다. C02·C03·C04·C06은 아직 묻지 않았습니다.'],
   ['평가용 시나리오 없음', '지금 6개는 모두 인터뷰가 다룬 요소로 만든 연습용입니다. 재현도를 재려면 인터뷰에 없던 새 상황이 필요합니다.'],
   ['통과 기준 미정', '몇 개가 같으면 "재현했다"고 볼지 정하지 않았습니다. 화면은 같음·다름만 보여 줍니다.'],
   ['AI 실행이 가벼운 수준', '가장 싼 모델(haiku)로 1회씩만 돌렸습니다. 같은 답이 나오는지 보려면 3회 반복, 판단 품질을 보려면 상위 모델 실행이 필요합니다.'],
@@ -146,7 +146,7 @@ async function opsPage() {
       <div class="tbl-wrap"><table class="tbl"><tbody>
         <tr><th>AI 다시 실행</th><td><code>python scripts/run_persona.py --mode sync --cards all --reps 3 --yes</code><br><span class="xs muted">먼저 --dry-run 으로 요청 수와 토큰을 확인합니다. 키는 .env 의 ANTHROPIC_API_KEY.</span></td></tr>
         <tr><th>공공데이터 다시 받기</th><td><code>python scripts/build_public.py --refresh</code><br><span class="xs muted">키는 .env 의 DATA_GO_KR_KEY. 원본은 fetched/ (저장소에 올라가지 않음).</span></td></tr>
-        <tr><th>약사 답 넣기</th><td><code>data/5_validation/pharmacist_answers.csv</code> 에 한 줄씩. first_action·final_choice 는 check_physical_stock, Q_0, Q_5, Q_10, defer, other 중 하나. 이유는 약사가 한 말 그대로.</td></tr>
+        <tr><th>약사 답 넣기</th><td><code>data/5_validation/pharmacist_answers.csv</code> 에 한 줄씩. first_action·final_choice 는 check_physical_stock, Q_0, Q_5, Q_10, order_open(주문하지만 수량은 답하지 않음), defer, other 중 하나. 묻지 않은 칸은 비워 둔다. 이유는 약사가 한 말 그대로, 팀원이 정리한 답은 answer_ko 에 그대로.</td></tr>
         <tr><th>근거 반영</th><td>근거 후보를 source/ Excel 에 옮기고 <code>python scripts/build.py</code> → <code>python scripts/validate.py</code></td></tr>
       </tbody></table></div></section>`;
 }

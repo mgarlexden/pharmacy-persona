@@ -30,7 +30,7 @@ const LINKS = [
   ['감기약 계절 수요', '-', '구리시 약효분류 3종 월별 사용량', '기본 보기 손님 수(계절)', '연결됨'],
   ['주변 의원·약국 수', 'P011, X012', '반경 100·200·300m 의료기관·약국 수, 같은 건물 3곳', '이 탭과 약사 프로필에만 표시', '표시만'],
   ['하루 손님 규모', '-', '공공 자료 없음. 인터뷰의 "하루 약 100건"(가정 허용값)', '기본 보기 손님 수의 기준', '인터뷰 가정'],
-  ['재고·현금·도매 조건', 'S·C 계열', '공공 자료 없음 (인터뷰 정성 근거)', '시나리오의 가정값', '해당 없음'],
+  ['재고·도매 조건(단가)', 'S·C 계열', '공공 자료 없음 (인터뷰 정성 근거)', '시나리오의 가정값', '해당 없음'],
 ];
 // 출처별 연결 상태 (data_sources.csv 의 ID). 이름·제공기관은 그 파일에서 읽는다.
 const SRC = [
@@ -82,7 +82,7 @@ function overview() {
   </div>`;
   const body = LINKS.map(([name, v, src, where, st]) => `<tr><td><b>${esc(name)}</b>${v !== '-' ? ` <span class="xs muted">${esc(v)}</span>` : ''}</td><td>${st === '연결됨' || st === '표시만' ? `${PUB} ` : ''}${esc(src)}</td><td>${esc(where)}</td><td>${badge(st === '연결됨' ? 'good' : st === '인터뷰 가정' ? 'interview' : 'neutral', st)}</td></tr>`).join('');
   return `${tiles}
-  <div class="callout" style="margin:16px 0"><p>시뮬레이터의 기본 보기(하루 손님 흐름)와 시나리오 문구가 아래 공공 값을 씁니다. 재고·현금·주문량과 시간대별 손님 분포는 가상입니다.</p></div>
+  <div class="callout" style="margin:16px 0"><p>시뮬레이터의 기본 보기(하루 손님 흐름)와 시나리오 문구가 아래 공공 값을 씁니다. 재고·도매 단가·주문량과 시간대별 손님 분포는 가상입니다.</p></div>
   <h2 class="dp-h">시뮬레이션 변수별 데이터 연결 상태</h2>
   <div class="tbl-wrap"><table class="tbl"><thead><tr><th>변수</th><th>쓰는 값</th><th>어디에 쓰나</th><th>상태</th></tr></thead><tbody>${body}</tbody></table></div>
   <p class="xs muted" style="margin-top:8px">"하루 약 100건"은 인터뷰에서 약사가 신규 약국의 초기 상황을 가정할 때 써도 된다고 한 값입니다. 실제 평균이 아니며, 응답자 1명의 의견입니다.</p>`;

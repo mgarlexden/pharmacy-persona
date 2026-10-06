@@ -14,8 +14,8 @@ P016,fixed_attribute,영업일 방침,context,고정 맥락,Y,profile,world_link
 P018,fixed_attribute,운영 중심,context,고정 맥락,Y,profile,world_linked,DT_L01;DT_L03;DT_L45;DT_L46,R06,E010;E088;E089,,카드가 바꾸지 않는다. 프로필로 항상 준다.
 P020,fixed_attribute,워크인 유입,context,고정 맥락,Y,profile,world_linked,DT_L59,R06,E012,,카드가 바꾸지 않는다. 프로필로 항상 준다.
 P022,fixed_attribute,사용 전산의 성격,context,고정 맥락,Y,profile,world_linked,DT_L54,,E059,,카드가 바꾸지 않는다. 프로필로 항상 준다.
-C001,structural_constraint,재고 구매대금 부담,manipulable,조작 변수,Y,at_decision,world_linked,DT_L01;DT_L02;DT_L03;DT_L06;DT_L08;DT_L49,R03,E034,통장 잔액·외상 한도,카드에서 값(금액·기한·공간·조건)을 정해 관측값으로 준다. 값은 가정 또는 가상.
-C002,structural_constraint,결제 주기 부담,manipulable,조작 변수,Y,at_decision,world_linked,DT_L09;DT_L50,,E034,외상 한도·결제일,카드에서 값(금액·기한·공간·조건)을 정해 관측값으로 준다. 값은 가정 또는 가상.
+C001,structural_constraint,재고 구매대금 부담,manipulable,조작 변수,Y,at_decision,world_linked,DT_L01;DT_L02;DT_L03;DT_L06;DT_L08;DT_L49,R03,E034,도매 단가·수량 할인(C03·C04),카드에서 값(금액·기한·공간·조건)을 정해 관측값으로 준다. 값은 가정 또는 가상.
+C002,structural_constraint,결제 주기 부담,manipulable,조작 변수,Y,at_decision,world_linked,DT_L09;DT_L50,,E034,결제일,카드에서 값(금액·기한·공간·조건)을 정해 관측값으로 준다. 값은 가정 또는 가상.
 C003,structural_constraint,거래처별 반품 조건,manipulable,조작 변수,Y,at_decision,world_linked,DT_L51,R04,E038,,카드에서 값(금액·기한·공간·조건)을 정해 관측값으로 준다. 값은 가정 또는 가상.
 C005,structural_constraint,반품 가능 기간,manipulable,조작 변수,Y,at_decision,world_linked,DT_L51,R04,E038,,카드에서 값(금액·기한·공간·조건)을 정해 관측값으로 준다. 값은 가정 또는 가상.
 C006,structural_constraint,보관 공간,manipulable,조작 변수,Y,at_decision,world_linked,DT_L39;DT_L53,R03,E035;E068,,카드에서 값(금액·기한·공간·조건)을 정해 관측값으로 준다. 값은 가정 또는 가상.
@@ -31,13 +31,13 @@ C015,structural_constraint,공급정보 분산,manipulable,조작 변수,Y,at_de
 C016,structural_constraint,추가 설명 부담,context,고정 맥락,Y,profile,interview_only,,,E081;E084;E085,,약사의 인식·수용 조건 서술이다. 인터뷰 근거로만 주고 카드가 값을 바꾸지 않는다.
 C017,structural_constraint,고객별 기록 부담,context,고정 맥락,Y,profile,interview_only,,R09,E054;E056,,약사의 인식·수용 조건 서술이다. 인터뷰 근거로만 주고 카드가 값을 바꾸지 않는다.
 C018,structural_constraint,의료기관 안내에 대한 인식,context,고정 맥락,Y,profile,interview_only,,,E020,,약사의 인식·수용 조건 서술이다. 인터뷰 근거로만 주고 카드가 값을 바꾸지 않는다.
-S001,internal_state,전산 재고 정보,manipulable,조작 변수,Y,at_decision,world_linked,DT_L48,R01,E028;E030;E042,남은 재고(전산 기록),판단 시점의 약국 상태. 카드가 값을 정한다.
-S002,internal_state,실물 재고 확인,manipulable,조작 변수,Y,after_check,world_linked,DT_L48,R01,E030;E031,남은 재고(선반 확인 결과),판단 시점의 약국 상태. 카드가 값을 정한다. 선반 확인 전에는 숨긴다.
+S001,internal_state,전산 재고 정보,manipulable,조작 변수,Y,at_decision,world_linked,DT_L48,R01,E028;E030;E042,"남은 재고(전산 기록, 선반+창고)",판단 시점의 약국 상태. 카드가 값을 정한다.
+S002,internal_state,실물 재고 확인,manipulable,조작 변수,Y,after_check,world_linked,DT_L48,R01,E030;E031,남은 재고(선반·창고 확인 결과),판단 시점의 약국 상태. 카드가 값을 정한다. 선반 확인 전에는 숨긴다.
 S004,internal_state,전산·실물 오차,manipulable,조작 변수,Y,after_check,world_linked,DT_L48,,E042,전산·실물 차이(C05),판단 시점의 약국 상태. 카드가 값을 정한다. 선반 확인 전에는 숨긴다.
 S005,internal_state,자주 쓰는 품목,manipulable,조작 변수,Y,at_decision,world_linked,DT_L48,R01,E031,어떤 약(자주 나가는 단일 품목),판단 시점의 약국 상태. 카드가 값을 정한다.
 S007,internal_state,상품별 판매 반응,manipulable,조작 변수,Y,at_decision,world_linked,DT_L47,,E016;E088,최근 판매량,판단 시점의 약국 상태. 카드가 값을 정한다.
 S008,internal_state,체감 잔여 사용기간,manipulable,조작 변수,Y,at_decision,world_linked,DT_L48,R02,E029,,판단 시점의 약국 상태. 카드가 값을 정한다.
-S011,internal_state,현재 자금 부담,manipulable,조작 변수,Y,at_decision,world_linked,DT_L49,R03,E034,통장 잔액,판단 시점의 약국 상태. 카드가 값을 정한다.
+S011,internal_state,현재 자금 부담,manipulable,조작 변수,Y,at_decision,world_linked,DT_L49,R03,E034,(10/6 통화 뒤 카드에서 뺌),판단 시점의 약국 상태. 카드가 값을 정한다.
 S013,internal_state,일반약 구매 규모,manipulable,조작 변수,Y,at_decision,world_linked,DT_L47,,E088,,판단 시점의 약국 상태. 카드가 값을 정한다.
 S016,internal_state,취급 상품 구성,manipulable,조작 변수,Y,at_decision,world_linked,DT_L15;DT_L56,R05;R06,E009;E010;E011,,판단 시점의 약국 상태. 카드가 값을 정한다.
 S017,internal_state,진열 위치,manipulable,조작 변수,Y,at_decision,world_linked,DT_L56,R07,E049;E050;E053,,판단 시점의 약국 상태. 카드가 값을 정한다.
