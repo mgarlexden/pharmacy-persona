@@ -113,6 +113,7 @@
           <dt>약사 답</dt><dd>같은 시나리오를 실제 약사에게 물어 받은 답입니다. 비교의 기준이 됩니다.</dd>
           <dt>근거</dt><dd>인터뷰에서 약사가 한 말(E 번호), 그 말에서 읽은 판단 방식(R 번호), 실제로 있었던 일(I 번호)입니다. 번호를 누르면 원문이 열립니다.</dd>
           <dt>정보 수준</dt><dd>AI에게 준 정보의 양입니다. <b>B1</b>은 인터뷰 없이, <b>P0</b>는 인터뷰 근거까지, <b>P1</b>은 그날 환경까지 줍니다. P1이 약사가 받는 정보와 같습니다.</dd>
+          <dt>B0 (교과서 계산)</dt><dd>재고 계산식으로 구한 "교과서라면 이 정도"라는 기준 수량입니다. 정답이 아니라 비교용이고, AI와 약사에게는 보여 주지 않습니다. 아래 "교과서 계산(B0)" 카드에 식이 있습니다.</dd>
           <dt>표시</dt><dd><span class="badge b-public">공공</span> 공공기관 자료의 실제 값 · <span class="badge b-interview">인터뷰</span> 약사가 한 말 · <span class="badge b-virtual">가상</span> 팀이 만든 가상 약국 기록 · <span class="badge b-hyp">가정</span> 자료가 없어 정한 값</dd>
         </dl>
       </section>
@@ -139,6 +140,38 @@
           </div>
         </div>
         <p class="small muted" style="margin:12px 0 0">3D는 끌어서 돌리고 휠로 확대합니다. 물건을 누르면 설명이 나옵니다. 왼쪽 위 <b>판단 품목</b>을 누르면 재고와 색 설명을 볼 수 있습니다.</p>
+      </section>
+
+      <section class="g-card" id="g-b0" style="grid-column: 1 / -1">
+        <h2>교과서 계산(B0)이란</h2>
+        <p class="small">B0는 재고관리에서 흔히 쓰는 <b>주기 점검 방식</b>으로 구한 기준 수량입니다. "정해진 주기마다 재고를 보고, 다음 주문이 들어올 때까지 버틸 만큼 채운다"는 계산입니다. AI가 약사답게 판단하는지를 보려고, 같은 장면에서 <b>교과서대로 계산하면 몇 팩인지</b>를 옆에 두는 용도입니다. 최적 주문량이나 정답이 아닙니다.</p>
+        <div class="b0-formula">
+          <p><span>목표재고</span><b>S = d × (R + L) + SS</b></p>
+          <p><span>필요량</span><b>g = S − 재고 위치</b> <small>(0보다 작으면 0)</small></p>
+          <p><span>할인이 있으면</span><b>10팩 미만이면 10팩까지 채운 값도 함께</b></p>
+        </div>
+        <div class="tbl-wrap"><table class="tbl"><thead><tr><th>기호</th><th>뜻</th><th>값</th><th>출처</th></tr></thead><tbody>
+          <tr><th>d</th><td>하루 판매량</td><td>5팩</td><td><span class="badge b-hyp">가정</span> 카드의 "사흘 내내 하루 5팩"</td></tr>
+          <tr><th>R</th><td>점검 주기</td><td>1일</td><td><span class="badge b-hyp">가정</span> 매일 본다고 둠</td></tr>
+          <tr><th>L</th><td>주문 후 입고까지</td><td>카드의 입고일 − 10/6</td><td><span class="badge b-interview">인터뷰</span> 보통 다음 날 들어온다는 10/6 통화 · 1일은 <span class="badge b-hyp">가정</span></td></tr>
+          <tr><th>SS</th><td>안전재고</td><td>2팩</td><td><span class="badge b-hyp">가정</span> 설명용 값</td></tr>
+          <tr><th>재고 위치</th><td>보유(선반+창고) + 이미 넣은 주문</td><td>카드 조건</td><td><span class="badge b-hyp">가정</span> B0는 확인한 실제 재고로 계산</td></tr>
+        </tbody></table></div>
+        <h3 style="margin-top:16px">계산 예</h3>
+        <div class="tbl-wrap"><table class="tbl"><thead><tr><th>장면</th><th class="num">입고 L</th><th class="num">목표 S</th><th class="num">재고 위치</th><th class="num">필요량 g</th></tr></thead><tbody>
+          <tr><td>기본 장면</td><td class="num">1일</td><td class="num">5×(1+1)+2 = 12</td><td class="num">8</td><td class="num"><b>4팩</b></td></tr>
+          <tr><td>입고가 모레</td><td class="num">2일</td><td class="num">5×(1+2)+2 = 17</td><td class="num">8</td><td class="num"><b>9팩</b></td></tr>
+          <tr><td>실제 재고 3팩</td><td class="num">1일</td><td class="num">12</td><td class="num">3</td><td class="num"><b>9팩</b></td></tr>
+          <tr><td>이미 넣은 주문 5팩</td><td class="num">1일</td><td class="num">12</td><td class="num">13</td><td class="num"><b>0팩</b></td></tr>
+          <tr><td>10팩 이상 할인</td><td class="num">1일</td><td class="num">12</td><td class="num">8</td><td class="num"><b>4팩</b> · 할인 포함 <b>10팩</b></td></tr>
+        </tbody></table></div>
+        <h3 style="margin-top:16px">읽을 때 주의</h3>
+        <ul class="small b0-notes">
+          <li><b>식에 없는 것:</b> 반품 가능 여부, 보관 공간, 품절 조짐, 결제 부담, 개업 초기의 수요 불확실. AI가 이런 조건에서 B0와 달라지면, 그 조건을 판단에 썼다는 신호로 읽습니다. 평가용 시나리오(E1~E4)가 이를 보려는 것입니다.</li>
+          <li><b>왜 판단 규칙으로 쓰지 않나:</b> 이 프로젝트는 최적 주문량이 아니라 이 약사가 어떻게 판단하는지를 재현합니다. 약사는 작은 약국에서 이런 계산까지는 하지 않는다고 했습니다. 식을 AI에게 주면 AI가 교과서 답을 따라 하게 됩니다.</li>
+          <li><b>값을 바꾸면:</b> d, R, SS는 설명용 가정이라 바꾸면 B0도 바뀝니다. 그래서 결과는 숫자 하나가 아니라 장면 사이의 방향(늘었나 줄었나)으로 봅니다.</li>
+          <li><b>출처:</b> 대한약사회 약국업무 매뉴얼(2024.02)에는 식과 수량별 단가 구간이 없고, 재고관리의 원칙(247~250쪽)만 있습니다. 위 식은 일반적인 주기 점검 방식을 단순화한 것이며, 특정 교재와 쪽수는 아직 확인되지 않았습니다.</li>
+        </ul>
       </section>
 
       <section class="g-card faq" id="g-faq">

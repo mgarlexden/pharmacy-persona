@@ -993,3 +993,11 @@ kbd { font-family: var(--mono); font-size: .8125rem; padding: 1px 6px; border: 1
 .delta b { font-size: .9375rem; line-height: 1.45; }
 .delta.base { background: var(--surface-2); border-color: var(--line); }
 .delta.base span { color: var(--muted); }
+
+/* 가이드: B0 설명 */
+.b0-formula { display: grid; gap: 6px; margin: 12px 0; }
+.b0-formula p { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding: 10px 14px; border-radius: var(--r2); background: var(--surface); border: 1px solid var(--line); }
+.b0-formula span { font-size: .75rem; font-weight: 700; color: var(--muted); min-width: 84px; }
+.b0-formula b { font-size: 1.0625rem; letter-spacing: -0.01em; }
+.b0-notes { margin: 0; padding-left: 18px; display: grid; gap: 6px; line-height: 1.55; }
+#g-b0 .tbl th { text-align: left; }
