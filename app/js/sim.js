@@ -14,7 +14,7 @@ const SPEED = { normal: 90000, fast: 30000 };
 const D0 = E.CAL[0];
 
 const S = {
-  mode: 'basic', step: 1, cardId: 'C01', layer: 'P1', useAns: false,
+  mode: 'basic', step: 1, cardId: 'C01', layer: 'P1',
   env: { date: D0, ili: null, temp: null, rain: null, dust: false },
   playing: false, speed: 'normal', checked: false,
   replay: { i: -1, timer: 0 }, ready: false,
@@ -36,9 +36,7 @@ async function loadAnswers() {
   } catch (e) { ANSWERS = []; }
 }
 const aiRuns = (cardId, layer) => (RUNS ? RUNS.results.filter((r) => r.card === cardId && r.layer === layer) : []);
-// 체크박스를 켜면 정보 수준 P1 은 P2(P1 + 10/6 약사 응답)의 결과로 바꿔 읽는다
-const effLayer = (l) => (l === 'P1' && S.useAns && RUNS && RUNS.layers.includes('P2') ? 'P2' : l);
-const aiRun = (cardId, layer = effLayer(S.layer)) => aiRuns(cardId, layer).sort((a, b) => a.rep - b.rep)[0] || null;
+const aiRun = (cardId, layer = S.layer) => aiRuns(cardId, layer).sort((a, b) => a.rep - b.rep)[0] || null;
 const answerOf = (cardId) => ANSWERS.filter((a) => a.card_id === cardId).sort((a, b) => Number(a.round) - Number(b.round))[0] || null;
 const finalOf = (run) => { const l = run.steps[run.steps.length - 1]; return qidOf(l.action, l.qty_packs); };
 
@@ -258,7 +256,7 @@ function scenarioStep() {
     const hasAI = !!aiRun(m.id, 'P1'), hasAns = !!answerOf(m.id);
     return `<label class="scn"><input type="radio" name="scn" value="${m.id}" ${m.id === S.cardId ? 'checked' : ''}><span>
       <span class="scn-no">${i + 1}</span>
-      <span class="scn-body"><b>${esc(m.title)}</b><small><span class="scn-kind k-${m.kind}">${KIND_KO[m.kind]}${S.useAns && DEV_CARDS.includes(m.id) ? ' · 개발용' : ''}</span> ${esc(m.short)}</small></span>
+      <span class="scn-body"><b>${esc(m.title)}</b><small><span class="scn-kind k-${m.kind}">${KIND_KO[m.kind]}${S.layer === 'P2' && DEV_CARDS.includes(m.id) ? ' · 개발용' : ''}</span> ${esc(m.short)}</small></span>
       <span class="scn-st"><i class="${hasAI ? 'on' : ''}" title="AI 답 ${hasAI ? '있음' : '없음'}">AI</i><i class="${hasAns ? 'on' : ''}" title="약사 답 ${hasAns ? '있음' : '없음'}">약사</i></span>
     </span></label>`;
   }).join('');
@@ -312,20 +310,18 @@ const median = (arr) => { const v = arr.filter((x) => x != null).sort((x, y) => 
 const repsText = (cardId, layer) => { const q = qtyList(cardId, layer); return q.length ? `${q.map((x) => (x == null ? '-' : x)).join(' · ')}팩` : '실행 없음'; };
 const arrow = (x, y) => (x == null || y == null ? '비교 불가' : x > y ? '▲ 늘어남' : x < y ? '▼ 줄어듦' : '＝ 같음');
 
+const LAYERS = ['B1', 'P0', 'P1', 'P2'];
+const LAYER_INFO = { B1: '장면만', P0: '+ 인터뷰 근거', P1: '+ 그날 환경', P2: '+ 10/6 약사 응답' };
+/** 정보 수준 4개는 순서가 아니라 서로 독립된 실행이다. 라디오는 화면에 어느 실행의 답을 보일지만 고른다 */
 function layerStrip() {
   if (!RUNS) return '';
-  const ls = ['B1', 'P0', 'P1'].filter((l) => RUNS.layers.includes(l));
-  const hasP2 = RUNS.layers.includes('P2');
-  const strip = `<div class="layer-strip" role="radiogroup" aria-label="AI에게 준 정보 수준">${ls.map((l) => { const r = aiRun(S.cardId, effLayer(l)); return `<label><input type="radio" name="ailayer" value="${l}" ${l === S.layer ? 'checked' : ''}><span><b>${esc(layerName(effLayer(l)))}</b><small>${r ? esc(ACTION_LABEL[finalOf(r)] || finalOf(r)) : '실행 없음'}</small></span></label>`; }).join('')}</div>
-    <p class="xs muted">P1 = 약사와 같은 정보를 받은 AI</p>`;
-  if (!hasP2) return strip;
-  const dev = DEV_CARDS.includes(S.cardId);
-  const cmp = S.layer === 'P1' && S.useAns ? `<table class="tbl useans-tbl"><thead><tr><th></th><th>같은 조건 ${aiRuns(S.cardId, 'P1').length}번의 주문 수량</th><th class="num">중앙값</th></tr></thead><tbody>
-      <tr class="${S.useAns ? '' : 'sel'}"><th>체크 안 함 (P1)</th><td>${esc(repsText(S.cardId, 'P1'))}</td><td class="num">${median(qtyList(S.cardId, 'P1')) ?? '-'}</td></tr>
-      <tr class="${S.useAns ? 'sel' : ''}"><th>체크함 (P2)</th><td>${esc(repsText(S.cardId, 'P2'))}</td><td class="num">${median(qtyList(S.cardId, 'P2')) ?? '-'}</td></tr></tbody></table>
-    ${dev ? '<p class="xs muted">이 시나리오는 10/6 응답이 질문으로 삼았거나 응답 내용에서 만든 장면입니다. 체크한 AI가 약사 답과 비슷해져도 평가에는 쓰지 않습니다(개발용). 평가는 응답에 없던 평가용 시나리오에서 봅니다.</p>' : ''}` : '';
-  return `${strip}
-    <label class="useans"><input type="checkbox" id="use-ans" ${S.useAns ? 'checked' : ''}><span><b>10/6 약사 응답을 근거에 포함 ${INTV}</b><small>${S.layer === 'P1' ? '켜면 아래 결과가 P2로 바뀝니다' : 'P1을 고르면 적용됩니다'}</small></span></label>${cmp}`;
+  const ls = LAYERS.filter((l) => RUNS.layers.includes(l));
+  const strip = `<div class="layer-strip l4" role="radiogroup" aria-label="AI에게 준 정보 수준">${ls.map((l) => { const r = aiRun(S.cardId, l); return `<label><input type="radio" name="ailayer" value="${l}" ${l === S.layer ? 'checked' : ''}><span><b>${l}<em>${LAYER_INFO[l]}</em></b><small>${r ? esc(ACTION_LABEL[finalOf(r)] || finalOf(r)) : '실행 없음'}</small></span></label>`; }).join('')}</div>
+    <p class="xs muted">네 가지는 순서가 아니라 <b>서로 독립된 실행</b>입니다. 받은 정보만 다릅니다. P1은 약사가 받는 정보와 같습니다.</p>`;
+  const rows = ls.map((l) => `<tr class="${l === S.layer ? 'sel' : ''}"><th>${l}</th><td>${esc(repsText(S.cardId, l))}</td><td class="num">${median(qtyList(S.cardId, l)) ?? '-'}</td></tr>`).join('');
+  const dev = S.layer === 'P2' && DEV_CARDS.includes(S.cardId);
+  return `${strip}<table class="tbl useans-tbl"><thead><tr><th>층</th><th>같은 조건에서 반복한 주문 수량</th><th class="num">중앙값</th></tr></thead><tbody>${rows}</tbody></table>
+    ${dev ? '<p class="xs muted">이 시나리오는 10/6 응답이 질문으로 삼았거나 응답 내용에서 만든 장면이라, P2 결과는 평가에 쓰지 않습니다(개발용).</p>' : ''}`;
 }
 
 /* ---------- 할인율 스윕 ---------- */
@@ -421,7 +417,7 @@ function aiStep() {
   const res = E.runAll(k.cond, E.DEMAND, qtys);
   const tagsOf = (q) => [q === 0 ? badge('neutral', '보류') : '', q === b.need ? badge('hyp', 'B0 필요량') : '', b.withTier !== b.need && q === b.withTier ? badge('hyp', 'B0 할인 포함') : '', q === qAi ? badge('neutral', 'AI 선택') : ''].filter(Boolean).join(' ');
   const resRows = res.map((x) => `<tr class="${x.packs === qAi ? 'sel' : ''}"><td>${x.packs}팩 ${tagsOf(x.packs)}</td><td class="num">${x.metrics.unmetTotal}명</td><td class="num">${x.metrics.endingPacks}팩</td><td class="num">${E.won(x.metrics.newCommitKrw)}</td></tr>`).join('');
-  const reasonS = sentences(last.reason), head = reasonS.slice(0, 2).join(' '), rest = reasonS.slice(2).join(' ');
+  const oneLine = (() => { const f = sentences(last.reason)[0] || ''; return f.length > 120 ? `${f.slice(0, 118)}…` : f; })();
   const flags = [...new Set(run.flags.map(flagText))];
   const nRuns = aiRuns(S.cardId, run.layer).length;
   return `
@@ -432,44 +428,97 @@ function aiStep() {
       <p class="hero-v">${esc(ACTION_LABEL[fin] || fin)}${last.strategy ? `<span class="hero-tag">${esc(E.STRATEGY_KO[last.strategy] || last.strategy)}</span>` : ''}</p>
       <div class="hero-sub">
         <span>같은 조건 ${nRuns}번<b>${esc(repsText(S.cardId, run.layer).replace('팩', ''))}팩</b></span>
-        <span>교과서 계산(B0)<b>${b.need}팩${b.withTier !== b.need ? ` · 할인 포함 ${b.withTier}팩` : ''}</b></span>
+        <span>B0 · 교과서 계산<b>${b.need}팩${b.withTier !== b.need ? ` · 할인 포함 ${b.withTier}팩` : ''}</b></span>
       </div>
     </section>
     <section class="box${show(0)}"><p class="box-k">AI가 본 상황 ${VIRT}</p>${tilesOf(k)}</section>
     ${checked ? `<section class="box step-act${show(1)}"><p class="box-k">먼저 한 행동</p><p class="act-line"><b>실물 확인</b><span>선반·창고 합계 <b>${k.cond.physical}팩</b>${k.cond.physical !== k.cond.book ? ` (전산보다 ${k.cond.book - k.cond.physical}팩 적음)` : ' (전산과 같음)'}</span></p></section>` : ''}
     <section class="box${show(nFinal)}"><p class="box-k">핵심 이유</p>
       ${(last.priorities || []).length ? `<div class="pri-chips">${last.priorities.map((p) => `<span>${esc(p)}</span>`).join('')}</div>` : ''}
-      <p class="why-text">${esc(head)}</p>
-      ${rest ? `<details class="more"><summary>이유 전체 보기</summary><p class="why-text">${esc(rest)}</p></details>` : ''}
+      <p class="why-one">${esc(oneLine)}</p>
+      ${factorBox(last.factors)}
     </section>
-    <section class="box${show(nFinal)}"><p class="box-k">근거</p>${factorBox(last.factors)}</section>
     ${flags.length ? `<p class="flag-line"><b>자동 점검 ${flags.length}건</b> ${flags.map(esc).join(' · ')}</p>` : ''}
-    <details class="help"><summary>자세히 (교과서 계산 · 사흘 뒤 결과 · 처음 판단)</summary>
+    <details class="help"><summary>자세히 (이유 전문 · 교과서 계산 · 사흘 뒤 결과)</summary>
       <p class="small"><b>교과서 계산 B0</b> ${ASSUME} 목표재고 = 하루 ${b.d}팩 × (점검 ${b.R}일 + 입고 ${b.L}일) + 안전재고 ${b.SS}팩 = ${b.target}팩. 재고 위치 ${b.pos}팩을 빼면 필요량 ${b.need}팩${b.withTier !== b.need ? `, 할인 구간(${E.BULK_MIN}팩)까지 채우면 ${b.withTier}팩` : ''}. AI에게는 보여 주지 않았고 정답이 아닙니다. 반품·공간·품절은 이 식에 없습니다.</p>
       <div class="tbl-wrap"><table class="tbl"><thead><tr><th>주문 수량</th><th class="num">못 판 손님</th><th class="num">남는 재고</th><th class="num">새 주문 금액</th></tr></thead><tbody>${resRows}</tbody></table></div>
       <p class="xs muted">하루 5명이 찾는다는 가정의 계산 ${VIRT}</p>
+      <p class="small"><b>AI가 쓴 이유 전문</b><br>${esc(last.reason)}</p>
       ${checked ? `<p class="small"><b>처음 판단 (실물 확인 전)</b><br>${esc(first.reason)}</p>` : ''}
       ${(last.missing_info || []).length ? `<p class="small"><b>더 알고 싶다고 한 것</b><br>${last.missing_info.map(esc).join(' · ')}</p>` : ''}
       <p class="xs muted">모델 ${esc(RUNS.model)} · ${esc(String(RUNS.created_at).replace('T', ' ').slice(0, 16))} · ${run.rep}번째 시도</p></details>
     ${sweepSection()}
     <div class="side-cta"><button class="btn" type="button" data-replay="1">3D에서 다시 보기</button><button class="btn btn-primary" type="button" data-step="3">약사 답과 비교</button></div>`;
 }
-function cmpRow(label, a, p, c, match) {
-  return `<div class="cmp-row"><p class="cmp-k">${label}${match ? ` ${match}` : ''}</p><div class="cmp-ai">${a}</div><div class="cmp-ph">${p}</div><div class="cmp-b0">${c}</div></div>`;
+/* ---------- 변수별 영향: 조건 하나를 바꿨을 때 AI 수량이 어느 쪽으로, 얼마나 움직였나 ---------- */
+// [배지 색, 짧은 이름, 한 줄 뜻]
+const JUDGE = {
+  signal: ['good', '차이가 확실함', 'AI를 3번 돌린 결과가 기준 장면의 결과와 하나도 겹치지 않습니다.'],
+  few: ['neutral', '표본 부족', '3번 반복이라 차이가 있는지 없는지 말할 수 없습니다. 더 많이 돌려야 합니다.'],
+  cap: ['hyp', '비교 어려움', '기준 장면이 이미 10팩(할인 구간)이라 할인으로 더 늘어날 여지가 없거나, 줄어들 가설인데 이미 0입니다.'],
+  none: ['unknown', '결과 없음', '기준 장면이나 이 장면의 AI 답이 아직 없습니다.'],
+};
+const HYP_DIR_KO = { up: '늘어남', down: '줄어듦', up_or_same: '같거나 늘어남', down_or_same: '같거나 줄어듦' };
+const EFFECT_IDS = ['C02', 'C03', 'C04', 'C05', 'C06', 'E1', 'E2', 'E3', 'E4'];
+/** 판정 규칙(위에서부터 먼저 맞는 것):
+ *  비교 불가 = 기준 장면이나 이 장면의 결과가 없음
+ *  신호 있음 = 이 장면의 반복 결과가 기준 장면의 반복 결과와 겹치지 않고 한쪽에 있음 (3번 반복 기준 매우 엄격한 조건)
+ *  천장에 막힘 = 할인 장면인데 기준 장면 중앙값이 이미 할인 구간 수량(10팩) 이상이라 더 늘 이유가 안 보임 / 바닥에 막힘 = 줄어들 가설인데 기준이 이미 0
+ *  표본 부족 = 그 밖 (겹치거나 변화가 안 보임. 3번으로는 "효과 없음"도 확인할 수 없다) */
+function effectOf(cardId, layer) {
+  const spec = DB.specById.get(cardId), baseId = spec && spec.base_card_id;
+  if (!baseId) return { state: 'none' };
+  const a = qtyList(baseId, layer).filter((x) => x != null), c = qtyList(cardId, layer).filter((x) => x != null);
+  if (!a.length || !c.length) return { state: 'none', why: !a.length && !c.length ? '기준 장면과 이 장면 모두 AI 결과가 없습니다.' : !c.length ? '이 장면의 AI 결과가 아직 없습니다.' : '기준 장면의 AI 결과가 없습니다.', reps: '' };
+  const ma = median(a), mc = median(c), d = mc - ma, dir = spec.hypothesis_dir || '';
+  let state, why = '';
+  const baseShort = cardById(baseId).short;
+  if (Math.min(...c) > Math.max(...a) || Math.max(...c) < Math.min(...a)) state = 'signal';
+  else if (dir.startsWith('up') && ma >= E.BULK_MIN && cardById(cardId).cond.bulk && !cardById(baseId).cond.bulk) {
+    state = 'cap';
+    why = `기준 장면(${baseShort})의 중앙값이 이미 ${ma}팩이라 할인 구간(${E.BULK_MIN}팩)보다 더 늘 여지가 없어, 할인 효과가 있어도 보이지 않습니다.`;
+  } else if (dir === 'down' && Math.max(...a) <= 0) {
+    state = 'cap';
+    why = `기준 장면(${baseShort})이 이미 0팩이라 더 줄어들 수 없습니다.`;
+  } else state = 'few';
+  let match = null;
+  if (state === 'signal' && dir) match = (d > 0 ? dir.startsWith('up') : dir.startsWith('down')) ? 'same' : 'opp';
+  return { state, ma, mc, d, match, why, reps: `기준 ${a.join('·')} / 이 장면 ${c.join('·')}` };
 }
-function directionBlock() {
-  const spec = DB.specById.get(S.cardId), baseId = spec && spec.base_card_id, layer = effLayer('P1');
-  if (!baseId || !aiRuns(S.cardId, layer).length || !aiRuns(baseId, layer).length) return '';
-  const k = card(), base = cardById(baseId);
-  const a = median(qtyList(S.cardId, layer)), a0 = median(qtyList(baseId, layer));
-  const b = E.b0(k.cond).withTier, b0 = E.b0(base.cond).withTier;
-  return `<section class="dir"><h3 class="side-h3">바뀐 조건 하나가 만든 방향</h3>
-    <p class="small"><b>${esc(base.title)}</b> → <b>${esc(k.title)}</b><br><span class="muted">바뀐 것: ${esc(spec.changed_ko)}</span></p>
-    <table class="tbl"><thead><tr><th></th><th class="num">${esc(base.short)}</th><th class="num">이 시나리오</th><th>방향</th></tr></thead><tbody>
-      <tr><th>AI 중앙값 (${esc(layerName(layer))})</th><td class="num">${a0 ?? '-'}팩</td><td class="num">${a ?? '-'}팩</td><td>${arrow(a, a0)}</td></tr>
-      <tr><th>B0 (할인 포함)</th><td class="num">${b0}팩</td><td class="num">${b}팩</td><td>${arrow(b, b0)}</td></tr></tbody></table>
-    ${k.hypo ? `<p class="small" style="margin-top:8px"><b>결과를 보기 전에 세운 기대</b> ${ASSUME}<br>${esc(k.hypo)}</p>` : ''}
-    <p class="xs muted">수량의 정답이 없어(약사가 수량을 답하지 않았습니다) 방향만 봅니다. 반복이 적어 한두 팩 차이는 흔들림일 수 있습니다.</p></section>`;
+const fmtD = (d) => (d > 0 ? `+${d}` : d < 0 ? `−${Math.abs(d)}` : '0');
+function effectsBox() {
+  const layer = S.layer;
+  const rows = EFFECT_IDS.map((id) => {
+    const spec = DB.specById.get(id), k = cardById(id), base = cardById(spec.base_card_id);
+    const ef = effectOf(id, layer);
+    const b0d = E.b0(k.cond).withTier - E.b0(base.cond).withTier;
+    const [jc, jt] = JUDGE[ef.state];
+    const pre = spec.hypothesis_when === '사전';
+    const matchTxt = ef.match ? (ef.match === 'same' ? '예상대로' : '예상과 반대') : '';
+    const matchCell = ef.match ? (pre ? badge(ef.match === 'same' ? 'good' : 'bad', matchTxt) : `<span class="xs muted">참고 · ${matchTxt}</span>`) : '<span class="xs muted">예상 확인 불가</span>';
+    return `<tr class="${id === S.cardId ? 'sel' : ''}">
+      <td><b>${esc(DELTA[id] || k.short)}</b><br><span class="xs muted">기준: ${esc(base.short)}</span></td>
+      <td><span class="htip" tabindex="0">${esc(HYP_DIR_KO[spec.hypothesis_dir] || '-')} ${badge(pre ? 'interview' : 'neutral', spec.hypothesis_when || '-')}<br><span class="xs muted htip-prev">${esc(spec.hypothesis_basis)}</span><span class="htip-pop" role="tooltip"><b>가설 (${esc(spec.hypothesis_when)})</b>${esc(spec.hypothesis_ko)}<b>근거</b>${esc(spec.hypothesis_basis)}</span></span></td>
+      <td class="num">${fmtD(b0d)}</td>
+      <td class="num">${ef.state === 'none' ? '-' : `${ef.ma}→${ef.mc} <b>(${fmtD(ef.d)})</b>`}</td>
+      <td>${badge(jc, jt)}<br>${matchCell}${ef.why ? `<p class="why-judge ${ef.state}">${esc(ef.why)}</p>` : ''}${ef.reps ? `<p class="xs muted reps-line">${esc(ef.reps)}</p>` : ''}</td></tr>`;
+  }).join('');
+  const all = EFFECT_IDS.map((id) => `<tr><th>${esc(DELTA[id] || cardById(id).short)}</th>${LAYERS.filter((l) => RUNS.layers.includes(l)).map((l) => { const e = effectOf(id, l); return `<td>${e.state === 'none' ? '-' : `${fmtD(e.d)} <span class="xs muted">${JUDGE[e.state][1]}</span>`}</td>`; }).join('')}</tr>`).join('');
+  const cnt = EFFECT_IDS.reduce((m, id) => { const s = effectOf(id, layer).state; m[s] = (m[s] || 0) + 1; return m; }, {});
+  return `<section class="box effects"><p class="box-k">변수별 영향 · <b class="lay-now">${esc(layerName(layer))}</b></p>
+    <p class="small">조건 하나를 바꿨을 때 AI 주문 수량(중앙값)이 얼마나 움직였는지입니다. ${EFFECT_IDS.length}개 중 차이가 확실함 ${cnt.signal || 0} · 표본 부족 ${cnt.few || 0} · 비교 어려움 ${cnt.cap || 0} · 결과 없음 ${cnt.none || 0}</p>
+    <ul class="judge-legend">${Object.values(JUDGE).map(([c, t, d]) => `<li>${badge(c, t)}<span>${esc(d)}</span></li>`).join('')}</ul>
+    <div class="tbl-wrap"><table class="tbl eff-tbl"><thead><tr><th>바뀐 조건</th><th>가설 (예상 방향)</th><th class="num">B0<br><span class="xs muted">교과서</span></th><th class="num">AI<br><span class="xs muted">기준→이 장면</span></th><th>결과 판정</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <details class="help"><summary>다른 정보 수준에서는? (변화 폭)</summary><div class="tbl-wrap"><table class="tbl"><thead><tr><th>바뀐 조건</th>${LAYERS.filter((l) => RUNS.layers.includes(l)).map((l) => `<th>${l}</th>`).join('')}</tr></thead><tbody>${all}</tbody></table></div></details>
+    <details class="help"><summary>가설의 "사전 · 사후"는 무슨 뜻인가요?</summary><ul class="small b0-notes">
+      <li><b>사전</b> AI 결과가 나오기 전에 적은 예상입니다. 이 예상과 같은지·반대인지만 판정에 씁니다.</li>
+      <li><b>사후</b> 결과를 본 뒤 정리한 문장입니다. 방향은 교과서 계산이나 약사 응답에서 가져왔지만, 참고로만 표시하고 판정에는 쓰지 않습니다.</li>
+      <li>예상은 결과를 본 뒤에 고치지 않습니다. 틀렸으면 "예상과 반대"로 남습니다.</li>
+      <li>약사 답은 수량이 없어 이 표에서 비교하지 않고 가설의 근거로만 씁니다. B0 열은 교과서 계산(할인 포함 기준)의 변화입니다.</li></ul></details>
+  </section>`;
+}
+function cmpTile(who, big, sub, cls = '') {
+  return `<div class="cmp-tile ${cls}"><span class="cmp-who">${who}</span><b>${big}</b>${sub ? `<small>${sub}</small>` : ''}</div>`;
 }
 function compareStep() {
   const k = card(), run = aiRun(S.cardId), ans = answerOf(S.cardId), b = E.b0(k.cond);
@@ -478,33 +527,46 @@ function compareStep() {
   const last = run ? run.steps[run.steps.length - 1] : null;
   const none = '<span class="muted">-</span>';
   const wait = '<span class="muted">대기 중</span>';
-  const notAsked = '<span class="muted">묻지 않음</span>';
   const qty = aiFin ? qtyOf(aiFin) : null;
   const aiOrders = qty == null ? null : qty > 0;
   const ansQ = ans ? qtyOf(ans.final_choice) : null;
   const ansOrders = ans ? (ans.final_choice === 'order_open' ? true : ansQ != null ? ansQ > 0 : null) : null;
   const inRange = ans && qty != null && ans.qty_min !== '' && ans.qty_max !== '' ? qty >= Number(ans.qty_min) && qty <= Number(ans.qty_max) : null;
-  const m1 = ans && run && ans.first_action ? badge(ans.first_action === aiFirst ? 'good' : 'bad', ans.first_action === aiFirst ? '같음' : '다름') : '';
-  const mOrder = aiOrders != null && ansOrders != null ? badge(aiOrders === ansOrders ? 'good' : 'bad', aiOrders === ansOrders ? '같음' : '다름') : '';
+  const m1 = ans && run && ans.first_action ? badge(ans.first_action === aiFirst ? 'good' : 'bad', `먼저 한 행동 ${ans.first_action === aiFirst ? '같음' : '다름'}`) : '';
+  const mOrder = aiOrders != null && ansOrders != null ? badge(aiOrders === ansOrders ? 'good' : 'bad', `발주 여부 ${aiOrders === ansOrders ? '같음' : '다름'}`) : '';
   const m2 = inRange == null ? '' : badge(inRange ? 'good' : 'bad', inRange ? '약사 범위 안' : '약사 범위 밖');
-  const strat = last && last.strategy ? `<br><span class="xs muted">${esc(E.STRATEGY_KO[last.strategy] || last.strategy)}</span>` : '';
-  const ordWord = (o) => (o ? '주문' : '보류');
+  const badges = [mOrder, m1, m2].filter(Boolean).join(' ');
+  const aiSub = last ? [last.strategy ? E.STRATEGY_KO[last.strategy] || last.strategy : '', aiFirst === 'check_physical_stock' ? '먼저 실물 확인' : ''].filter(Boolean).join(' · ') : '';
+  const phBig = ans ? (ans.final_choice === 'order_open' ? '주문' : esc(ACTION_LABEL[ans.final_choice] || ans.final_choice)) : wait;
+  const phSub = ans ? (ans.qty_min !== '' ? `괜찮다고 본 범위 ${esc(ans.qty_min)}~${esc(ans.qty_max)}팩` : '수량은 답하지 않음') : '';
+  const oneLine = (t) => { const s = sentences(t)[0] || ''; return s.length > 120 ? `${s.slice(0, 118)}…` : s; };
+  const phReason = ans ? (ans.reason_quote_ko ? `"${ans.reason_quote_ko}"` : ans.answer_ko || '') : '';
   return `
     <h2 class="side-h">AI 답 · 약사 답 · 교과서 계산</h2>
-    <p class="small muted">같은 시나리오, 같은 정보에 대한 답입니다. AI는 ${esc(layerName(effLayer('P1')))}, 교과서 계산(B0)은 AI와 약사에게 보여 주지 않은 기준선입니다.</p>
     ${layerStrip()}
-    <div class="cmp cmp3">
-      <div class="cmp-head"><span></span><b>AI ${badge('hyp', '페르소나')}</b><b>약사 ${INTV}</b><b>B0 ${ASSUME}</b></div>
-      ${cmpRow('먼저 한 행동', run ? esc(ACTION_LABEL[aiFirst]) : none, ans ? (ans.first_action ? esc(ACTION_LABEL[ans.first_action] || ans.first_action) : notAsked) : wait, none, m1)}
-      ${cmpRow('발주 여부', aiOrders == null ? none : `<b>${ordWord(aiOrders)}</b>`, ans ? (ansOrders == null ? none : `<b>${ordWord(ansOrders)}</b>`) : wait, `<b>${ordWord(b.need > 0)}</b>`, mOrder)}
-      ${cmpRow('수량', run ? `<b>${esc(ACTION_LABEL[aiFin])}</b>${strat}` : none, ans ? (ans.qty_min !== '' ? `괜찮다고 본 범위 ${esc(ans.qty_min)}~${esc(ans.qty_max)}팩` : '<span class="muted">수량은 답하지 않음</span>') : wait, `<b>${b.need}팩</b>${b.withTier !== b.need ? `<br><span class="xs muted">할인 구간까지 채우면 ${b.withTier}팩</span>` : ''}`, m2)}
-      ${cmpRow('중요하게 본 것', last && last.priorities ? last.priorities.map(esc).join('<br>') : none, ans ? [ans.priority_1_ko, ans.priority_2_ko].filter(Boolean).map(esc).join('<br>') || none : wait, none)}
-      ${cmpRow('이유', last ? `<span class="clip">${esc(last.reason)}</span>` : none, ans ? (ans.reason_quote_ko ? `"${esc(ans.reason_quote_ko)}"` : ans.answer_ko ? esc(ans.answer_ko) : none) : wait, `<span class="xs muted">${b.d}×(${b.R}+${b.L})+${b.SS} = ${b.target} − 재고 위치 ${b.pos}</span>`)}
-      ${cmpRow('더 알고 싶은 것', last && last.missing_info ? last.missing_info.map(esc).join('<br>') : none, ans ? esc(ans.need_more_ko) || none : wait, none)}
-    </div>
-    ${directionBlock()}
-    ${ans && ans.question_ko ? `<details class="help" style="margin-top:12px"><summary>약사에게 실제로 물은 것과 답</summary><p class="small"><b>질문</b> ${esc(ans.question_ko)}</p><p class="small"><b>답</b> ${esc(ans.answer_ko)}</p>${ans.source_kind_ko ? `<p class="xs muted">${esc(ans.source_kind_ko)}</p>` : ''}${ans.note_ko ? `<p class="xs muted">${esc(ans.note_ko)}</p>` : ''}</details>` : ''}
-    ${ans ? '' : `<div class="empty" style="margin-top:12px"><b>약사 답이 아직 없습니다.</b><p>약사에게 이 시나리오를 물어 받은 답을 운영진이 입력하면 가운데 칸이 채워집니다. 약사에게는 AI 답을 먼저 보여 주지 않습니다.</p></div>`}
+    <section class="box"><p class="box-k">최종 판단 비교</p>
+      <div class="cmp-tiles">
+        ${cmpTile(`AI <em>페르소나</em>`, run ? esc(ACTION_LABEL[aiFin] || aiFin) : none, aiSub, 'ai')}
+        ${cmpTile(`약사 <em>인터뷰 응답자</em>`, phBig, phSub)}
+        ${cmpTile(`B0 <em>교과서 계산</em>`, `${b.need}팩`, b.withTier !== b.need ? `할인 포함 ${b.withTier}팩` : '교과서 계산')}
+      </div>
+      ${badges ? `<p class="cmp-badges">${badges}</p>` : ''}
+      ${ans ? '' : '<p class="xs muted">약사 답이 아직 없습니다. 이 시나리오를 약사에게 물어 받은 답이 들어오면 가운데 칸이 채워집니다.</p>'}
+    </section>
+    <section class="box"><p class="box-k">이유 (한 문장씩)</p>
+      <div class="cmp-cols">
+        <div><span class="cmp-who">AI</span><p>${last ? esc(oneLine(last.reason)) : none}</p></div>
+        <div><span class="cmp-who">약사</span><p class="clip">${ans ? esc(phReason) || none : wait}</p></div>
+        <div><span class="cmp-who">B0</span><p>${b.d}×(${b.R}+${b.L})+${b.SS} = ${b.target}팩에서 재고 위치 ${b.pos}팩을 뺀 값</p></div>
+      </div>
+    </section>
+    ${effectsBox()}
+    <details class="help"><summary>중요하게 본 것 · 더 알고 싶은 것 · 약사에게 실제로 물은 것</summary>
+      <p class="small"><b>AI가 중요하게 본 것</b><br>${last && last.priorities ? last.priorities.map(esc).join(' · ') : '-'}</p>
+      <p class="small"><b>AI가 더 알고 싶다고 한 것</b><br>${last && last.missing_info ? last.missing_info.map(esc).join(' · ') : '-'}</p>
+      ${ans ? `<p class="small"><b>약사가 중요하게 본 것</b><br>${[ans.priority_1_ko, ans.priority_2_ko].filter(Boolean).map(esc).join(' · ') || '-'}</p><p class="small"><b>약사가 더 알고 싶다고 한 것</b><br>${esc(ans.need_more_ko) || '-'}</p>` : ''}
+      ${ans && ans.question_ko ? `<p class="small"><b>약사에게 한 질문</b><br>${esc(ans.question_ko)}</p><p class="small"><b>답 (팀원이 정리해 전달)</b><br>${esc(ans.answer_ko)}</p>${ans.note_ko ? `<p class="xs muted">${esc(ans.note_ko)}</p>` : ''}` : ''}
+    </details>
     <p class="xs muted" style="margin-top:10px">맞고 틀림을 판정하지 않습니다. 응답자가 1명이라 어디서 다른지 찾는 용도입니다.</p>
     <div class="side-cta"><button class="btn btn-primary" type="button" data-step="4">근거에 추가할지 정하기</button></div>`;
 }
@@ -648,8 +710,7 @@ $('#side').addEventListener('change', (e) => {
   else if (t.id === 'env-rain') { S.env.rain = t.checked; envChanged(); }
   else if (t.id === 'env-dust') { S.env.dust = t.checked; envChanged(); }
   else if (t.name === 'scn') { S.cardId = t.value; S.checked = false; S.replay.i = -1; caption(''); if (sc) sc.firstPerson('front'); applyScene(); render(); }
-  else if (t.name === 'ailayer') { S.layer = t.value; startReplay(); }
-  else if (t.id === 'use-ans') { S.useAns = t.checked; if (S.step === 2) startReplay(); else render(); }
+  else if (t.name === 'ailayer') { S.layer = t.value; if (S.step === 2) startReplay(); else render(); }
   else if (t.dataset.dec) { const d = decisions(); d[t.dataset.dec] = t.value; store.set(DEC_KEY, d); toast(t.value === 'candidate' ? '근거 후보로 표시했습니다. 운영진 검토 전까지는 근거가 아닙니다.' : '결정을 저장했습니다.'); }
 });
 function envChanged() {

@@ -34,7 +34,8 @@ function openRef(id, trigger) {
        ${r.situation ? `<p class="xs muted" style="margin-bottom:2px">상황</p><p>${esc(r.situation)}</p>` : ''}
        <p class="xs muted" style="margin-bottom:2px">${r.kind === '발언' ? '요약' : r.kind === '규칙' ? '판단' : r.kind === '사례' ? '결과' : '처리'}</p><p>${esc(r.summary)}</p>
        ${r.note ? `<p class="xs muted" style="margin-bottom:2px">읽을 때 주의</p><p>${esc(r.note)}</p>` : ''}
-       ${r.where ? `<p class="xs muted">출처 위치: ${esc(r.where)}</p>` : ''}`
+       ${r.where ? `<p class="xs muted">출처 위치: ${esc(r.where)}</p>` : ''}
+       ${r.kind === '규칙' ? `<p style="margin-top:14px"><button type="button" class="btn" data-goto-rule="${esc(r.id)}">약사 프로필의 판단 방식에서 보기</button></p>` : ''}`
     : `<h2 id="drawer-title">${esc(id)}</h2><p>데이터에서 이 번호를 찾지 못했습니다.</p>`;
   $('#drawer-body').innerHTML = body;
   $('#drawer').hidden = false;
@@ -44,6 +45,13 @@ function closeDrawer() { $('#drawer').hidden = true; if (drawerTrigger && docume
 $('#drawer-close').addEventListener('click', closeDrawer);
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('#drawer').hidden) closeDrawer(); });
 document.addEventListener('click', (e) => { const b = e.target.closest('[data-ref]'); if (b) openRef(b.dataset.ref, b); });
+document.addEventListener('click', (e) => {
+  const g = e.target.closest('[data-goto-rule]'); if (!g) return;
+  const id = g.dataset.gotoRule;
+  closeDrawer();
+  location.hash = '#/profile';
+  setTimeout(() => { const el = document.getElementById(`pf-${id}`); if (el) { el.scrollIntoView({ block: 'center' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 2400); } }, 250);
+});
 new ResizeObserver(() => document.documentElement.style.setProperty('--hdr-h', `${$('#site-header').offsetHeight}px`)).observe($('#site-header'));
 // 홈의 단계 링크: 시뮬레이터의 해당 단계로 바로 연다
 document.addEventListener('click', (e) => { const a = e.target.closest('[data-go-sim]'); if (a) openAt(Number(a.dataset.goSim)); });
@@ -65,7 +73,7 @@ function profilePage() {
   const od = openedDays();
   const facts = DB.profile.filter((r) => r.kind === 'fact');
   const narr = DB.profile.filter((r) => r.kind === 'narrative');
-  const rule = (r) => `<li><span class="pf-rid">${chip(r.rule_id)}</span><div><b>${esc(r.title_ko)}</b><p>${esc(r.judgement_ko)}</p></div></li>`;
+  const rule = (r) => `<li id="pf-${esc(r.rule_id)}"><span class="pf-rid">${chip(r.rule_id)}</span><div><b>${esc(r.title_ko)}</b><p>${esc(r.judgement_ko)}</p></div></li>`;
   const key = DB.rules.filter((r) => KEY_RULES.includes(r.rule_id));
   const other = DB.rules.filter((r) => !KEY_RULES.includes(r.rule_id));
   root.innerHTML = `
